@@ -1,0 +1,211 @@
+{
+  "categories": [
+    "Chains",
+    "Bracelets",
+    "Waist Chains",
+    "Anklets",
+    "Rings",
+    "Nose Pins"
+  ],
+  "products": [
+    {
+      "id": "prod-1",
+      "name": "Celestial Starlet Chain",
+      "description": "A delicate, sparkling chain dotted with miniature star charms. Made from premium sterling silver with a thick 18k rose gold plating. Catching light from every angle, this fancy chain is perfect for layering.",
+      "category": "Chains",
+      "price": 38,
+      "rating": 4.9,
+      "reviewsCount": 32,
+      "images": [
+        "/images/chain-1.jpg"
+      ],
+      "materials": [
+        "925 Sterling Silver",
+        "18k Rose Gold Plating",
+        "AAA Cubic Zirconia"
+      ],
+      "sizes": [
+        "16 inches",
+        "18 inches",
+        "20 inches"
+      ],
+      "isFeatured": true,
+      "inStock": true
+    },
+    {
+      "id": "prod-2",
+      "name": "Meadow Dainty Flower Bracelet",
+      "description": "Add a touch of whimsical spring to your wrist. Features hand-painted enamel floral charms and delicate pastel crystals. Adjustable clasp ensures a perfect fit.",
+      "category": "Bracelets",
+      "price": 24.5,
+      "rating": 4.7,
+      "reviewsCount": 18,
+      "images": [
+        "/images/bracelet-1.jpg"
+      ],
+      "materials": [
+        "Brass Base",
+        "Chic Enamel Paint",
+        "Pastel Crystals"
+      ],
+      "sizes": [
+        "6.5 inches - 8.0 inches (Adjustable)"
+      ],
+      "isFeatured": true,
+      "inStock": true
+    },
+    {
+      "id": "prod-3",
+      "name": "Glimmering Dewdrop Waist Chain",
+      "description": "An elegant waist chain designed to complement crop styles or swim aesthetics. Shimmering beads cascade gently, adding sparkle to your stride.",
+      "category": "Waist Chains",
+      "price": 45,
+      "rating": 4.8,
+      "reviewsCount": 41,
+      "images": [
+        "/images/waist-1.jpg"
+      ],
+      "materials": [
+        "Stainless Steel",
+        "High-Shine Glass Beads"
+      ],
+      "sizes": [
+        "26 inches + 6 inches extender",
+        "32 inches + 6 inches extender"
+      ],
+      "isFeatured": true,
+      "inStock": true
+    },
+    {
+      "id": "prod-4",
+      "name": "Sweetheart Double-Layer Anklet",
+      "description": "Double the charm with this two-strand anklet. One layer is a sleek cable chain, and the second holds tiny sweetheart charm drops. Light, fancy, and fun.",
+      "category": "Anklets",
+      "price": 19.99,
+      "rating": 4.6,
+      "reviewsCount": 27,
+      "images": [
+        "/images/anklet-1.jpg"
+      ],
+      "materials": [
+        "Alloy",
+        "Rose Gold Polish"
+      ],
+      "sizes": [
+        "9.0 inches + 2.0 inches extender"
+      ],
+      "isFeatured": true,
+      "inStock": true
+    },
+    {
+      "id": "prod-5",
+      "name": "Starlight Firefly Ring",
+      "description": "A cluster of brilliant marquise-cut gems mimicking the glow of fireflies under the stars. Set on a slender, adjustable band. A fancy statement ring.",
+      "category": "Rings",
+      "price": 29,
+      "rating": 4.9,
+      "reviewsCount": 54,
+      "images": [
+        "/images/ring-1.jpg"
+      ],
+      "materials": [
+        "925 Sterling Silver",
+        "Synthetic Opal",
+        "Marquise Cubic Zirconia"
+      ],
+      "sizes": [
+        "Adjustable (Fits sizes 5-9)"
+      ],
+      "isFeatured": true,
+      "inStock": true
+    },
+    {
+      "id": "prod-6",
+      "name": "Chic Flutter Butterfly Nose Pin",
+      "description": "A dazzling butterfly nose stud made with delicate rose-cut zircon wings. Hypoallergenic, comfortable, and designed to add a fancy shimmer to your face.",
+      "category": "Nose Pins",
+      "price": 14.99,
+      "rating": 4.8,
+      "reviewsCount": 15,
+      "images": [
+        "/images/nose-1.jpg"
+      ],
+      "materials": [
+        "925 Sterling Silver",
+        "AAAA Cubic Zirconia"
+      ],
+      "sizes": [
+        "L-Shape Post (Standard 20G)"
+      ],
+      "isFeatured": true,
+      "inStock": true
+    },
+    {
+      "id": "prod-7",
+      "name": "Whisper Heart Chain Choker",
+      "description": "A choker necklace that hugs the collarbone with subtle micro heart charms. A fancy and minimalist option that goes with everything from tees to gowns.",
+      "category": "Chains",
+      "price": 32,
+      "rating": 4.5,
+      "reviewsCount": 9,
+      "images": [
+        "/images/chain-2.jpg"
+      ],
+      "materials": [
+        "14k Gold Plated Brass",
+        "Mini Hearts Polish"
+      ],
+      "sizes": [
+        "12 inches + 3 inches extender"
+      ],
+      "isFeatured": false,
+      "inStock": true
+    },
+    {
+      "id": "prod-8",
+      "name": "Ocean Breeze Anklet",
+      "description": "Inspired by shoreline treasures. Features genuine freshwater pearls and miniature teal turquoise beads on a gold-finished chain. Perfect for sunny days.",
+      "category": "Anklets",
+      "price": 22,
+      "rating": 4.7,
+      "reviewsCount": 20,
+      "images": [
+        "/images/anklet-2.jpg"
+      ],
+      "materials": [
+        "Freshwater Pearls",
+        "Reconstituted Turquoise",
+        "Brass Polish"
+      ],
+      "sizes": [
+        "9.5 inches + 1.5 inches extender"
+      ],
+      "isFeatured": false,
+      "inStock": true
+    },
+    {
+      "id": "prod-9",
+      "name": "Classic Twist Stackable Ring Set",
+      "description": "Three slender stackable rings in silver, gold, and rose gold plating. Features a twisted rope texture that sparkles in the light. Wear them stacked or spread across fingers.",
+      "category": "Rings",
+      "price": 26,
+      "rating": 4.8,
+      "reviewsCount": 63,
+      "images": [
+        "/images/ring-2.jpg"
+      ],
+      "materials": [
+        "925 Sterling Silver base",
+        "Tri-color plating (Gold, Rose Gold, Silver)"
+      ],
+      "sizes": [
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "isFeatured": false,
+      "inStock": true
+    }
+  ]
+}

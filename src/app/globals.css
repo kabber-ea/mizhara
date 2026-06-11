@@ -1,26 +1,104 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fdfbfc;
+  --foreground: #1c1518;
+  --primary: #e5989b; /* Soft Rose Gold */
+  --primary-hover: #b5828c;
+  --primary-dark: #6d597a;
+  --secondary: #ffb5a7; /* Peach Sparkle */
+  --accent-pink: #fec5bb;
+  --accent-mint: #e2ece9;
+  --accent-gold: #dfb15b;
+  --card-bg: #ffffff;
+  --border-color: #fae0e4;
+  --muted: #8a7a80;
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-mint: var(--accent-mint);
+  --color-accent-gold: var(--accent-gold);
+  --color-card-bg: var(--card-bg);
+  --color-border-custom: var(--border-color);
+  --color-muted-custom: var(--muted);
+  --font-serif: var(--font-serif);
+  --font-sans: var(--font-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Custom styles and animations */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom glassmorphism navbar */
+.glass-nav {
+  background: rgba(253, 251, 252, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(229, 152, 155, 0.15);
+}
+
+/* Dynamic sparkle hover animations */
+@keyframes pulse-sparkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.animate-sparkle-pulse {
+  animation: pulse-sparkle 3s infinite ease-in-out;
+}
+
+/* Elegant gold/rose glow card hover shadow */
+.card-hover-shadow {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover-shadow:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(229, 152, 155, 0.15), 
+              0 0 20px 2px rgba(255, 181, 167, 0.05);
+}
+
+/* Sparkle Shine Sweep Effect on buttons */
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: none;
+}
+
+.shine-sweep:hover::after {
+  left: 150%;
+  transition: all 0.75s ease-in-out;
 }
