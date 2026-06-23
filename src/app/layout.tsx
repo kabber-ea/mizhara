@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import CartProvider from "@/app/components/CartProvider";
+import CartProvider from "@/ui/components/CartProvider";
+import AuthProvider from "@/ui/components/AuthProvider";
 
 const sansFont = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -31,9 +32,11 @@ export default function RootLayout({
       className={`${sansFont.variable} ${serifFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        <CartProvider>
-          {children}
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
