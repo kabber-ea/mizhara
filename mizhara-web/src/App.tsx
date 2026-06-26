@@ -1,7 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import AuthProvider from "@/components/AuthProvider";
-import CartProvider from "@/components/CartProvider";
-import { AdminLayout, CustomerRoute, GuestOnlyStore } from "@/components/ProtectedRoute";
+import AuthProvider from "@/providers/AuthProvider";
+import CartProvider from "@/providers/CartProvider";
+import { CustomerRoute, GuestOnlyStore } from "@/components/ProtectedRoute";
+import AdminLayout from "@/components/layout/AdminLayout";
 import HomePage from "@/pages/home/HomePage";
 import ShopPage from "@/pages/shop/ShopPage";
 import ProductDetailPage from "@/pages/product-detail/ProductDetailPage";
@@ -16,7 +17,7 @@ import DashboardPage from "@/pages/dashboard/DashboardPage";
 import CatalogPage from "@/pages/catalog/CatalogPage";
 import OrdersPage from "@/pages/orders/OrdersPage";
 import CustomersPage from "@/pages/customers/CustomersPage";
-import AdminShell from "@/components/admin/AdminShell";
+import OffersPage from "@/pages/offers/OffersPage";
 
 export default function App() {
   return (
@@ -38,12 +39,11 @@ export default function App() {
             <Route path="/account" element={<CustomerRoute><AccountPage /></CustomerRoute>} />
 
             <Route path="/admin" element={<AdminLayout />}>
-              <Route element={<AdminShell />}>
-                <Route index element={<DashboardPage />} />
-                <Route path="catalog" element={<CatalogPage />} />
-                <Route path="orders" element={<OrdersPage />} />
-                <Route path="customers" element={<CustomersPage />} />
-              </Route>
+              <Route index element={<DashboardPage />} />
+              <Route path="catalog" element={<CatalogPage />} />
+              <Route path="offers" element={<OffersPage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="customers" element={<CustomersPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

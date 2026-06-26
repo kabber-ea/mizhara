@@ -52,3 +52,4 @@ func Users() *mongo.Collection     { return Collection("users") }
 func Products() *mongo.Collection  { return Collection("products") }
 func Categories() *mongo.Collection { return Collection("categories") }
 func Orders() *mongo.Collection    { return Collection("orders") }
+func Offers() *mongo.Collection    { return Collection("offers") }

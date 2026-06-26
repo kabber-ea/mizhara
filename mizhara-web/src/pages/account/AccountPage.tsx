@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import StatusBadge from "@/components/admin/StatusBadge";
-import { useAuth } from "@/components/AuthProvider";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import StatusBadge from "@/components/StatusBadge";
+import { useAuth } from "@/providers/AuthProvider";
 import { forgotPasswordUrl } from "@/lib/auth-url";
 import { formatINR } from "@/lib/format";
 import { api, apiErrorMessage } from "@/lib/api";

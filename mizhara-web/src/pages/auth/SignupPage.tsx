@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import AuthShell from "@/components/auth/AuthShell";
-import { useAuth } from "@/components/AuthProvider";
+import AuthLayout from "@/components/layout/AuthLayout";
+import { useAuth } from "@/providers/AuthProvider";
 import { api, apiErrorMessage } from "@/lib/api";
 import { loginUrl, resolveAuthRedirect } from "@/lib/auth-url";
 
@@ -60,7 +60,7 @@ export default function SignupPage() {
   }
 
   return (
-    <AuthShell title="Create Account" subtitle="Join Mizhara for a sparkly shopping experience">
+    <AuthLayout title="Create Account" subtitle="Join Mizhara for a sparkly shopping experience">
       {error && (
         <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">{error}</div>
       )}
@@ -102,6 +102,6 @@ export default function SignupPage() {
           Continue without signing in
         </button>
       </div>
-    </AuthShell>
+    </AuthLayout>
   );
 }

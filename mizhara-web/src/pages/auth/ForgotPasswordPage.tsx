@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import AuthShell from "@/components/auth/AuthShell";
+import AuthLayout from "@/components/layout/AuthLayout";
 import { api, apiErrorMessage } from "@/lib/api";
 import { loginUrl } from "@/lib/auth-url";
 
@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthShell title="Forgot Password" subtitle="We'll email you a link to reset your password">
+    <AuthLayout title="Forgot Password" subtitle="We'll email you a link to reset your password">
       {error && (
         <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">{error}</div>
       )}
@@ -68,6 +68,6 @@ export default function ForgotPasswordPage() {
           Back to sign in
         </Link>
       </p>
-    </AuthShell>
+    </AuthLayout>
   );
 }

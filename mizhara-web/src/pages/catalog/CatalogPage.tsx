@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import ProductForm from "@/pages/catalog/components/ProductForm";
 import ProductList from "@/pages/catalog/components/ProductList";
 import CategoryManager from "@/pages/catalog/components/CategoryManager";
-import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
+import PageSkeleton from "@/components/PageSkeleton";
 import { api } from "@/lib/api";
 
-import type { AdminProduct } from "@/types/catalog";
+import type { AdminProduct, Category } from "@/types/catalog";
 
 export default function AdminCatalogPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
   const [showForm, setShowForm] = useState(false);
@@ -20,10 +20,10 @@ export default function AdminCatalogPage() {
       setLoading(true);
       const [{ data: productsData }, { data: categoriesData }] = await Promise.all([
         api.get<AdminProduct[]>("/api/products"),
-        api.get<string[]>("/api/categories"),
+        api.get<Category[]>("/api/categories"),
       ]);
-      setProducts(productsData);
-      setCategories(categoriesData);
+      setProducts(productsData ?? []);
+      setCategories(categoriesData ?? []);
     } catch (e) {
       console.error("Failed to load catalog", e);
     } finally {
@@ -100,12 +100,12 @@ export default function AdminCatalogPage() {
       </div>
 
       {loading && products.length === 0 ? (
-        <AdminPageSkeleton rows={4}  />
+        <PageSkeleton rows={4}  />
       ) : (
         <div className="space-y-6">
           {showForm && activeTab === "products" && (
             <ProductForm
-              categories={categories}
+              categories={categories.map((c) => c.name)}
               editingProduct={editingProduct}
               onSuccess={() => {
                 setShowForm(false);

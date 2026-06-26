@@ -15,8 +15,8 @@ import {
 } from "recharts";
 import { formatINR } from "@/lib/format";
 import { api } from "@/lib/api";
-import StatusBadge from "@/components/admin/StatusBadge";
-import AdminTableSkeleton from "@/components/admin/AdminTableSkeleton";
+import StatusBadge from "@/components/StatusBadge";
+import TableSkeleton from "@/components/TableSkeleton";
 import type { SerializedCustomer } from "@/types/admin";
 import type { SerializedOrder } from "@/types/admin";
 
@@ -83,7 +83,7 @@ export default function DashboardView() {
           <div className="h-64 bg-white border border-border-custom rounded-2xl"  />
           <div className="h-64 bg-white border border-border-custom rounded-2xl"  />
         </div>
-        <AdminTableSkeleton rows={4}  />
+        <TableSkeleton rows={4}  />
       </div>
     );
   }

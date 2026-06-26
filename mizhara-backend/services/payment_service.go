@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"time"
@@ -41,9 +42,13 @@ func generateOrderNumber() string {
 }
 
 type PaymentCreateInput struct {
-	Items            []models.OrderItem  `json:"items"`
-	ShippingAddress  models.ShippingAddress `json:"shippingAddress"`
-	Subtotal         float64             `json:"subtotal"`
+	Items           []models.OrderItem     `json:"items"`
+	ShippingAddress models.ShippingAddress `json:"shippingAddress"`
+	Subtotal        float64                `json:"subtotal"`
+	Total           float64                `json:"total"`
+	DiscountAmount  float64                `json:"discountAmount"`
+	OfferID         string                 `json:"offerId"`
+	OfferCode       string                 `json:"offerCode"`
 }
 
 func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateInput) (map[string]interface{}, error) {
@@ -68,14 +73,26 @@ func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateI
 		return nil, err
 	}
 
-	total := input.Subtotal
+	cartLines := make([]CartLineInput, len(input.Items))
+	for i, item := range input.Items {
+		cartLines[i] = CartLineInput{ProductID: item.ProductID, Quantity: item.Quantity}
+	}
+	orderItems, subtotal, discount, total, offerID, offerName, err := ResolveOrderPricing(ctx, cartLines, input.OfferID, input.OfferCode)
+	if err != nil {
+		return nil, err
+	}
+	if input.Total > 0 && math.Abs(total-input.Total) > 0.02 {
+		return nil, lib.BadRequest("order total changed — please refresh your bag")
+	}
+
 	orderNumber := generateOrderNumber()
 	now := time.Now()
 
 	order := models.Order{
 		ID: primitive.NewObjectID(), UserID: uid, OrderNumber: orderNumber,
-		Items: input.Items, ShippingAddress: input.ShippingAddress,
-		Subtotal: total, Shipping: 0, Total: total, Currency: "INR",
+		Items: orderItems, ShippingAddress: input.ShippingAddress,
+		Subtotal: subtotal, DiscountAmount: discount, OfferID: offerID, OfferName: offerName,
+		Shipping: 0, Total: total, Currency: "INR",
 		PaymentStatus: models.PaymentPending, DeliveryStatus: models.DeliveryProcessing,
 		CreatedAt: now, UpdatedAt: now,
 	}

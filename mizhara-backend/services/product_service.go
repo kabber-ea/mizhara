@@ -111,7 +111,9 @@ func DeleteProductForAdmin(ctx context.Context, session *lib.SessionPayload, id 
 }
 
 func ListProducts(ctx context.Context) ([]SerializedProduct, error) {
-	cur, err := lib.Products().Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+	cur, err := lib.Products().Find(ctx, bson.M{
+		"images.0": bson.M{"$exists": true, "$ne": ""},
+	}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +146,71 @@ func ListAdminProducts(ctx context.Context) ([]AdminProduct, error) {
 	return out, nil
 }
 
+func validateProductInput(input ProductInput) error {
+	if input.Name == "" || input.Category == "" || input.Price <= 0 {
+		return lib.BadRequest("name, category, and price are required")
+	}
+	if len(input.Images) == 0 || input.Images[0] == "" {
+		return lib.BadRequest("at least one product image is required")
+	}
+	return nil
+}
+
 func GetFeaturedProducts(ctx context.Context, limit int64) ([]SerializedProduct, error) {
 	if limit == 0 {
-		limit = 4
+		limit = 8
 	}
-	cur, err := lib.Products().Find(ctx, bson.M{"isFeatured": true, "inStock": true},
-		options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
+	cur, err := lib.Products().Find(ctx, bson.M{
+		"isFeatured": true,
+		"inStock":    true,
+		"images.0":   bson.M{"$exists": true, "$ne": ""},
+	}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
+	if err != nil {
+		return []SerializedProduct{}, nil
+	}
+	defer cur.Close(ctx)
+	var out []SerializedProduct
+	for cur.Next(ctx) {
+		var p models.Product
+		_ = cur.Decode(&p)
+		out = append(out, serializeProduct(p))
+	}
+	return out, nil
+}
+
+func GetNewProducts(ctx context.Context, limit int64) ([]SerializedProduct, error) {
+	if limit == 0 {
+		limit = 8
+	}
+	cur, err := lib.Products().Find(ctx, bson.M{
+		"inStock":  true,
+		"images.0": bson.M{"$exists": true, "$ne": ""},
+	}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
+	if err != nil {
+		return []SerializedProduct{}, nil
+	}
+	defer cur.Close(ctx)
+	var out []SerializedProduct
+	for cur.Next(ctx) {
+		var p models.Product
+		_ = cur.Decode(&p)
+		out = append(out, serializeProduct(p))
+	}
+	return out, nil
+}
+
+func GetTrendingProducts(ctx context.Context, limit int64) ([]SerializedProduct, error) {
+	if limit == 0 {
+		limit = 8
+	}
+	cur, err := lib.Products().Find(ctx, bson.M{
+		"inStock":  true,
+		"images.0": bson.M{"$exists": true, "$ne": ""},
+	}, options.Find().SetSort(bson.D{
+		{Key: "reviewsCount", Value: -1},
+		{Key: "rating", Value: -1},
+		{Key: "createdAt", Value: -1},
+	}).SetLimit(limit))
 	if err != nil {
 		return []SerializedProduct{}, nil
 	}
@@ -203,6 +264,9 @@ func GetRelatedProducts(ctx context.Context, category, excludeID string, limit i
 }
 
 func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, error) {
+	if err := validateProductInput(input); err != nil {
+		return nil, err
+	}
 	now := time.Now()
 	sizes := input.Sizes
 	if len(sizes) == 0 {
@@ -232,6 +296,9 @@ func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 }
 
 func UpdateProduct(ctx context.Context, input ProductInput) (*AdminProduct, error) {
+	if err := validateProductInput(input); err != nil {
+		return nil, err
+	}
 	oid, err := primitive.ObjectIDFromHex(input.ID)
 	if err != nil {
 		return nil, nil

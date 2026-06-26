@@ -74,6 +74,11 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
             setLoading(false);
             return;
         }
+        if (images.length === 0) {
+            setError("At least one product image is required.");
+            setLoading(false);
+            return;
+        }
 
         const payload = {
             id: editingProduct?.id,
@@ -145,15 +150,20 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
                 <div className="flex items-end">
                     <label className="flex items-center gap-3 cursor-pointer text-xs font-semibold">
                         <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="accent-primary"  />
-                        Featured on homepage
+                        Featured on homepage (multiple allowed)
                     </label>
                 </div>
             </div>
 
             <div>
-                <label className="block text-[10px] font-bold uppercase mb-1">Product Images (Cloudinary)</label>
-                <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="text-xs"  />
+                <label className="block text-[10px] font-bold uppercase mb-1">
+                    Product Images (Cloudinary) <span className="text-rose-500">*</span>
+                </label>
+                <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} required={images.length === 0} className="text-xs"  />
                 {uploading && <p className="text-[10px] text-muted-custom mt-1">Uploading...</p>}
+                {images.length === 0 && (
+                    <p className="text-[10px] text-muted-custom mt-1">Upload at least one image before saving.</p>
+                )}
                 {images.length > 0 && (
                     <div className="flex gap-2 mt-2 flex-wrap">
                         {images.map((url) => (

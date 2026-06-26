@@ -1,84 +1,50 @@
-import React from "react";
 import { Link } from "react-router-dom";
+import SectionHeader from "./SectionHeader";
+
+const categories = [
+  { name: "Rings", description: "Adjustable bands", query: "Rings", tone: "from-secondary/80 to-accent-pink/40" },
+  { name: "Anklets", description: "Layered chains", query: "Anklets", tone: "from-accent-pink/50 to-secondary/60" },
+  { name: "Chains", description: "Neck & chokers", query: "Chains", tone: "from-secondary to-background" },
+  { name: "Waist Chains", description: "Dewdrop styles", query: "Waist Chains", tone: "from-accent-pink/30 to-secondary/70" },
+  { name: "Nose Pins", description: "Studs & hooks", query: "Nose Pins", tone: "from-secondary/90 to-accent-pink/20" },
+  { name: "Bracelets", description: "Dainty links", query: "Bracelets", tone: "from-accent-pink/40 to-secondary/50" },
+];
+
 export default function FeaturedCategories() {
-    const categories = [
-        {
-            name: "Rings",
-            icon: "💍",
-            description: "Adjustable bands & gems",
-            bg: "bg-amber-50 text-amber-600",
-            query: "Rings"
-        },
-        {
-            name: "Anklets",
-            icon: "💫",
-            description: "Charming double layers",
-            bg: "bg-pink-50 text-pink-600",
-            query: "Anklets"
-        },
-        {
-            name: "Chains",
-            icon: "📿",
-            description: "Starlets & chokers",
-            bg: "bg-purple-50 text-purple-600",
-            query: "Chains"
-        },
-        {
-            name: "Waist Chains",
-            icon: "✨",
-            description: "Dewdrop style drops",
-            bg: "bg-blue-50 text-blue-600",
-            query: "Waist Chains"
-        },
-        {
-            name: "Nose Pins",
-            icon: "💎",
-            description: "Dazzling studs & hooks",
-            bg: "bg-teal-50 text-teal-600",
-            query: "Nose Pins"
-        },
-        {
-            name: "Bracelets",
-            icon: "🌸",
-            description: "Dainty blossom chains",
-            bg: "bg-rose-50 text-rose-600",
-            query: "Bracelets"
-        }
-    ];
-    return (
-        <section className="py-16 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Section Header */}
-                <div className="text-center max-w-2xl mx-auto space-y-3">
-                    <h2 className="font-serif text-3xl font-bold tracking-tight text-primary-dark">
-                        Shop by Ornament Type
-                    </h2>
-                    <p className="text-xs text-muted-custom">
-                        Select an ornament style to find your perfect sparkling match.
-                    </p>
-                </div>
-                {/* Categories Grid */}
-                <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
-                    {categories.map((cat) => (
-                        <Link
-                            key={cat.name}
-                            to={`/products?category=${encodeURIComponent(cat.query)}`}
-                            className="group flex flex-col items-center text-center p-6 border border-border-custom rounded-2xl hover:border-primary/45 bg-background hover:bg-accent-pink/5 transition-all duration-300 card-hover-shadow"
-                        >
-                            {/* Emoji Icon Container */}
-                            <div className={`h-16 w-16 rounded-full flex items-center justify-center text-3xl transition-transform duration-300 group-hover:scale-110 shadow-xs ${cat.bg}`}>
-                                {cat.icon}
-                            </div>
-                            <h3 className="mt-4 font-serif text-sm font-bold tracking-wide text-foreground">
-                                {cat.name}
-                            </h3>
-                            <p className="mt-1.5 text-[10px] text-muted-custom leading-tight">
-                                {cat.description}
-                            </p>
-                        </Link>
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
+  return (
+    <section className="py-20 sm:py-24 bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeader
+          index="01"
+          label="Collections"
+          title="Shop by Style"
+          subtitle="From delicate everyday pieces to statement ornaments — find what speaks to you."
+          align="center"
+        />
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          {categories.map((cat) => (
+            <Link
+              key={cat.name}
+              to={`/products?category=${encodeURIComponent(cat.query)}`}
+              className="home-category-card group relative overflow-hidden aspect-[3/4] flex flex-col justify-end p-4 sm:p-5"
+            >
+              <div className={`absolute inset-0 bg-gradient-to-b ${cat.tone} transition-transform duration-500 group-hover:scale-105`} />
+              <div className="absolute inset-0 border border-border-custom/80 group-hover:border-accent-gold/40 transition-colors" />
+              <div className="relative z-10">
+                <span className="font-serif text-3xl sm:text-4xl text-primary/25 group-hover:text-accent-gold/50 transition-colors leading-none">
+                  {cat.name.charAt(0)}
+                </span>
+                <h3 className="font-serif text-sm sm:text-base text-primary-dark mt-3 tracking-wide">{cat.name}</h3>
+                <p className="text-[10px] text-muted-custom mt-1 font-light">{cat.description}</p>
+                <span className="inline-block mt-3 text-[9px] font-bold uppercase tracking-[0.15em] text-primary opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                  Shop →
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }

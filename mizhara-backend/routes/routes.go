@@ -38,6 +38,7 @@ func Setup() *gin.Engine {
 	dashboard := controllers.DashboardController{}
 	upload := controllers.UploadController{}
 	contact := controllers.ContactController{}
+	offers := controllers.OffersController{}
 
 	api := r.Group("/api")
 	{
@@ -55,6 +56,8 @@ func Setup() *gin.Engine {
 		// Products — role decided in service from session token
 		api.GET("/products", middleware.OptionalAuth(), products.List)
 		api.GET("/products/featured", products.Featured)
+		api.GET("/products/new", products.New)
+		api.GET("/products/trending", products.Trending)
 		api.GET("/products/:id", products.GetByID)
 		api.GET("/products/:id/related", products.Related)
 		api.POST("/products", middleware.AuthRequired(), products.Create)
@@ -64,6 +67,15 @@ func Setup() *gin.Engine {
 		// Categories
 		api.GET("/categories", categories.List)
 		api.POST("/categories", middleware.AuthRequired(), categories.Create)
+		api.PUT("/categories", middleware.AuthRequired(), categories.Update)
+
+		// Offers
+		api.GET("/offers/active", offers.ListActive)
+		api.POST("/offers/preview", offers.Preview)
+		api.GET("/offers", middleware.AuthRequired(), offers.List)
+		api.POST("/offers", middleware.AuthRequired(), offers.Create)
+		api.PUT("/offers", middleware.AuthRequired(), offers.Update)
+		api.DELETE("/offers", middleware.AuthRequired(), offers.Delete)
 
 		// Account & payment — customer role verified in service
 		api.GET("/account/profile", middleware.AuthRequired(), account.GetProfile)

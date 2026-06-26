@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/components/AuthProvider";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/providers/AuthProvider";
 import { loginUrl } from "@/lib/auth-url";
-import { useCart } from "@/components/CartProvider";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { useCart } from "@/providers/CartProvider";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 import { formatINR } from "@/lib/format";
 import { api, apiErrorMessage } from "@/lib/api";
+import type { OfferPreview } from "@/types/offer";
 
 declare global {
   interface Window {
@@ -17,11 +18,18 @@ declare global {
 export default function CartPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlCode = searchParams.get("code")?.trim().toUpperCase() ?? "";
   const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
   const [step, setStep] = useState<"cart" | "shipping" | "payment" | "success">("cart");
   const [orderId, setOrderId] = useState("");
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [offerPreview, setOfferPreview] = useState<OfferPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const [shippingForm, setShippingForm] = useState({
     name: "",
@@ -32,6 +40,13 @@ export default function CartPage() {
     pincode: "",
     phone: "",
   });
+
+  useEffect(() => {
+    if (urlCode) {
+      setCouponInput(urlCode);
+      setAppliedCoupon(urlCode);
+    }
+  }, [urlCode]);
 
   useEffect(() => {
     if ((!user || user.role !== "customer") && step !== "cart" && step !== "success") {
@@ -57,6 +72,48 @@ export default function CartPage() {
       })
       .catch(() => undefined);
   }, [user]);
+
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setOfferPreview(null);
+      return;
+    }
+    setPreviewLoading(true);
+    api
+      .post<OfferPreview>("/api/offers/preview", {
+        items: cartItems.map((item) => ({ productId: item.id, quantity: item.quantity })),
+        offerCode: appliedCoupon || undefined,
+      })
+      .then(({ data }) => {
+        setOfferPreview(data);
+        if (appliedCoupon && data.discountAmount === 0) {
+          setCouponError("This code doesn't apply to your bag.");
+        } else {
+          setCouponError("");
+        }
+      })
+      .catch(() => setOfferPreview(null))
+      .finally(() => setPreviewLoading(false));
+  }, [cartItems, appliedCoupon]);
+
+  const subtotal = offerPreview?.subtotal ?? cartTotal;
+  const discount = offerPreview?.discountAmount ?? 0;
+  const orderTotal = offerPreview?.total ?? cartTotal;
+
+  const handleApplyCoupon = () => {
+    setCouponError("");
+    if (!couponInput.trim()) {
+      setAppliedCoupon("");
+      return;
+    }
+    setAppliedCoupon(couponInput.trim().toUpperCase());
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon("");
+    setCouponInput("");
+    setCouponError("");
+  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,7 +147,7 @@ export default function CartPage() {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        size: item.size,
+        size: "Standard",
         image: item.image,
       }));
 
@@ -102,7 +159,11 @@ export default function CartPage() {
       }>("/api/payment", {
         items,
         shippingAddress: shippingForm,
-        subtotal: cartTotal,
+        subtotal,
+        total: orderTotal,
+        discountAmount: discount,
+        offerId: appliedCoupon ? "" : offerPreview?.offerId ?? "",
+        offerCode: appliedCoupon,
       });
 
       if (!window.Razorpay) {
@@ -121,7 +182,7 @@ export default function CartPage() {
           email: shippingForm.email,
           contact: shippingForm.phone,
         },
-        theme: { color: "#c9184a" },
+        theme: { color: "#3c342e" },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
@@ -195,7 +256,7 @@ export default function CartPage() {
               <>
                 <div className="lg:col-span-2 space-y-4">
                   {cartItems.map((item) => (
-                    <div key={`${item.id}-${item.size}`} className="flex p-4 bg-white border border-border-custom rounded-2xl items-center justify-between">
+                    <div key={item.id} className="flex p-4 bg-white border border-border-custom rounded-2xl items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="relative h-16 w-16 rounded-xl border border-border-custom overflow-hidden bg-accent-pink/10">
                           {item.image && (
@@ -204,15 +265,20 @@ export default function CartPage() {
                         </div>
                         <div>
                           <h3 className="text-sm font-semibold">{item.name}</h3>
-                          <p className="text-xs text-muted-custom">Size: {item.size}</p>
-                          <button onClick={() => removeFromCart(item.id, item.size)} className="text-[10px] text-primary underline pt-1">Remove</button>
+                          <button onClick={() => removeFromCart(item.id)} className="text-[10px] text-primary underline pt-1">Remove</button>
                         </div>
                       </div>
                       <div className="flex items-center space-x-6">
                         <div className="flex items-center border border-border-custom rounded-full overflow-hidden">
-                          <button onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)} className="px-2.5 py-1 font-bold">-</button>
+                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="px-2.5 py-1 font-bold">-</button>
                           <span className="px-2 text-xs font-bold">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)} className="px-2.5 py-1 font-bold">+</button>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            disabled={item.quantity >= item.maxStock}
+                            className="px-2.5 py-1 font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            +
+                          </button>
                         </div>
                         <p className="text-sm font-bold text-primary-dark min-w-[90px] text-right">{formatINR(item.price * item.quantity)}</p>
                       </div>
@@ -222,9 +288,56 @@ export default function CartPage() {
                 <div className="lg:col-span-1">
                   <div className="p-6 bg-white border border-border-custom rounded-2xl space-y-4">
                     <h3 className="font-serif text-base font-bold text-primary-dark border-b pb-3">Order Summary</h3>
-                    <div className="flex justify-between text-xs"><span>Subtotal</span><span className="font-semibold">{formatINR(cartTotal)}</span></div>
+
+                    <div className="space-y-2">
+                      <label className="block text-[10px] font-bold uppercase text-muted-custom">Promo Code</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                          placeholder="Enter code"
+                          className="flex-1 px-3 py-2 border border-border-custom rounded-xl text-xs uppercase"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          className="px-3 py-2 bg-primary-dark text-white text-[10px] font-bold uppercase rounded-xl"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                      {appliedCoupon && (
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-primary font-semibold">{appliedCoupon} applied</span>
+                          <button type="button" onClick={handleRemoveCoupon} className="text-muted-custom underline">Remove</button>
+                        </div>
+                      )}
+                      {couponError && <p className="text-[10px] text-rose-600">{couponError}</p>}
+                      <p className="text-[10px] text-muted-custom leading-relaxed">
+                        One offer per order. A coupon replaces any automatic deal.
+                      </p>
+                    </div>
+
+                    {offerPreview && discount > 0 && (
+                      <div className="p-3 bg-accent-pink/30 border border-border-custom rounded-xl text-[10px]">
+                        <p className="font-bold text-primary-dark">{offerPreview.offerName}</p>
+                        <p className="text-muted-custom mt-0.5">{offerPreview.offerLabel}</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between text-xs"><span>Subtotal</span><span className="font-semibold">{formatINR(subtotal)}</span></div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-xs text-emerald-700">
+                        <span>Discount</span>
+                        <span className="font-semibold">−{formatINR(discount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-xs"><span>Shipping</span><span className="text-emerald-600 font-semibold">Free</span></div>
-                    <div className="flex justify-between text-sm font-extrabold border-t pt-3"><span>Total</span><span className="text-primary-dark">{formatINR(cartTotal)}</span></div>
+                    <div className="flex justify-between text-sm font-extrabold border-t pt-3">
+                      <span>Total</span>
+                      <span className="text-primary-dark">{previewLoading ? "…" : formatINR(orderTotal)}</span>
+                    </div>
                     <button type="button" onClick={handleProceedToCheckout} className="w-full py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl shine-sweep">
                       {user?.role === "customer" ? "Proceed to Shipping" : "Sign in to Checkout"}
                     </button>
@@ -279,7 +392,10 @@ export default function CartPage() {
               </form>
             </div>
             <div className="p-6 bg-white border border-border-custom rounded-2xl">
-              <h3 className="font-serif text-base font-bold mb-3">Total: {formatINR(cartTotal)}</h3>
+              <h3 className="font-serif text-base font-bold mb-3">Total: {formatINR(orderTotal)}</h3>
+              {discount > 0 && (
+                <p className="text-xs text-emerald-700 mb-1">You save {formatINR(discount)}</p>
+              )}
               <p className="text-xs text-muted-custom">All prices in Indian Rupees (INR)</p>
             </div>
           </div>
@@ -289,10 +405,11 @@ export default function CartPage() {
           <div className="max-w-lg mx-auto p-8 bg-white border border-border-custom rounded-2xl space-y-6 text-center">
             <h3 className="font-serif text-xl font-bold text-primary-dark">Pay with Razorpay</h3>
             <p className="text-xs text-muted-custom">Secure UPI, cards, netbanking — all in INR</p>
-            <p className="text-2xl font-extrabold text-primary-dark">{formatINR(cartTotal)}</p>
+            <p className="text-2xl font-extrabold text-primary-dark">{formatINR(orderTotal)}</p>
+            {discount > 0 && <p className="text-xs text-emerald-700">Includes {formatINR(discount)} savings</p>}
             {error && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl">{error}</div>}
             <button onClick={handleRazorpayPayment} disabled={paying} className="w-full py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl shine-sweep disabled:opacity-60">
-              {paying ? "Opening Razorpay..." : `Pay ${formatINR(cartTotal)}`}
+              {paying ? "Opening Razorpay..." : `Pay ${formatINR(orderTotal)}`}
             </button>
             <button type="button" onClick={() => setStep("shipping")} className="text-xs text-muted-custom hover:text-primary">Back to shipping</button>
           </div>

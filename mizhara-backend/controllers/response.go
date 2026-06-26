@@ -3,11 +3,26 @@ package controllers
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"mizhara-backend/lib"
 )
+
+func parseLimit(raw string, fallback int64) int64 {
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	if n > 24 {
+		return 24
+	}
+	return n
+}
 
 func respondError(c *gin.Context, err error) {
 	if err == nil {

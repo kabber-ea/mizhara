@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { formatINR } from "@/lib/format";
 import { api } from "@/lib/api";
-import AdminPagination from "@/components/admin/AdminPagination";
-import ProductThumbnail from "@/components/admin/ProductThumbnail";
+import Pagination from "@/components/Pagination";
+import ProductThumbnail from "@/components/ProductThumbnail";
 import type { AdminProduct } from "@/types/catalog";
 import type { PaginationMeta } from "@/lib/pagination";
 
@@ -164,7 +164,7 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
               </tbody>
             </table>
           </div>
-          <AdminPagination pagination={pagination} onPageChange={setPage} />
+          <Pagination pagination={pagination} onPageChange={setPage} />
         </>
       )}
     </div>

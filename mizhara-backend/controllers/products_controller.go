@@ -21,7 +21,28 @@ func (ProductsController) List(c *gin.Context) {
 }
 
 func (ProductsController) Featured(c *gin.Context) {
-	items, err := services.GetFeaturedProducts(c.Request.Context(), 4)
+	limit := parseLimit(c.Query("limit"), 8)
+	items, err := services.GetFeaturedProducts(c.Request.Context(), limit)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, items)
+}
+
+func (ProductsController) New(c *gin.Context) {
+	limit := parseLimit(c.Query("limit"), 8)
+	items, err := services.GetNewProducts(c.Request.Context(), limit)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, items)
+}
+
+func (ProductsController) Trending(c *gin.Context) {
+	limit := parseLimit(c.Query("limit"), 8)
+	items, err := services.GetTrendingProducts(c.Request.Context(), limit)
 	if err != nil {
 		respondError(c, err)
 		return

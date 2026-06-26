@@ -1,3 +1,10 @@
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+};
+
 export type SerializedProduct = {
   id: string;
   name: string;

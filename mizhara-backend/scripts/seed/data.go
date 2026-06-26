@@ -1,9 +1,23 @@
 package seed
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+
+	"mizhara-backend/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 var Categories = []string{
 	"Chains", "Bracelets", "Waist Chains", "Anklets", "Rings", "Nose Pins", "Earrings", "Bangles",
+}
+
+func CategoryImage(name string) string {
+	images := CategoryImages[name]
+	if len(images) > 0 {
+		return images[0]
+	}
+	return ""
 }
 
 func px(id int) string {
@@ -29,6 +43,7 @@ var CategoryImages = map[string][]string{
 		px(1454227),
 	},
 	"Bracelets": {
+		us("photo-1602173574767-37ac01994b2a"),
 		us("photo-1611591437281-460bfbe1220a"),
 		px(1191531),
 		px(265696),
@@ -38,11 +53,11 @@ var CategoryImages = map[string][]string{
 		px(1003414),
 	},
 	"Waist Chains": {
+		px(14825268),
+		px(8182278),
 		px(6740104),
 		px(3999379),
-		px(6311576),
 		us("photo-1599643478518-a784e5dc4c8f"),
-		us("photo-1515562141203-67a3bb8b5221"),
 		px(1927259),
 		px(265906),
 	},
@@ -65,13 +80,13 @@ var CategoryImages = map[string][]string{
 		px(17845823),
 	},
 	"Nose Pins": {
-		px(7879613),
+		"https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Antique_Indian_Nose_Ring_Jewellery.jpg/960px-Antique_Indian_Nose_Ring_Jewellery.jpg",
+		"https://upload.wikimedia.org/wikipedia/commons/b/b4/Gold_nose_ring_from_Rajasthan.jpg",
+		"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Small_nose_ring_example.jpg/960px-Small_nose_ring_example.jpg",
+		px(14018038),
 		px(4934917),
 		px(9577870),
-		px(6311576),
-		px(1003414),
 		px(1191531),
-		px(265906),
 	},
 	"Earrings": {
 		us("photo-1535632066927-ab7c9ab60908"),
@@ -83,6 +98,7 @@ var CategoryImages = map[string][]string{
 		px(6311576),
 	},
 	"Bangles": {
+		us("photo-1611591437281-460bfbe1220a"),
 		us("photo-1602173574767-37ac01994b2a"),
 		us("photo-1611652022419-a9419f74343d"),
 		px(6311658),
@@ -212,11 +228,65 @@ func GenerateProducts() []SeedProduct {
 				Images:      []string{images[i%len(images)]},
 				Materials:   categoryMaterials[category],
 				Sizes:       categorySizes[category],
-				IsFeatured:  i < 2,
+				IsFeatured:  i < 4,
 				InStock:     stock > 0,
 			})
 			idx++
 		}
 	}
 	return products
+}
+
+func productIDsByCategories(productByID map[primitive.ObjectID]models.Product, categories []string, perCategory int) []string {
+	var ids []string
+	for _, cat := range categories {
+		n := 0
+		for id, p := range productByID {
+			if p.Category != cat {
+				continue
+			}
+			ids = append(ids, id.Hex())
+			n++
+			if perCategory > 0 && n >= perCategory {
+				break
+			}
+		}
+	}
+	return ids
+}
+
+func GenerateOffers(now time.Time, productByID map[primitive.ObjectID]models.Product) []models.Offer {
+	ringIDs := productIDsByCategories(productByID, []string{"Rings"}, 5)
+	selectedIDs := productIDsByCategories(productByID, []string{"Anklets", "Earrings"}, 3)
+	bangleIDs := productIDsByCategories(productByID, []string{"Bangles"}, 0)
+
+	return []models.Offer{
+		{
+			ID: primitive.NewObjectID(), Name: "Festive Edit Sale",
+			Description: "20% off every piece — applied automatically at checkout.",
+			Type: models.OfferTypePercentage, Scope: models.OfferScopeAll, Percentage: 20,
+			Active: true, CreatedAt: now, UpdatedAt: now,
+		},
+		{
+			ID: primitive.NewObjectID(), Name: "Welcome to Mizhara",
+			Description: "15% off anklets and earrings with code MIZHARA15.",
+			Type: models.OfferTypePercentage, Scope: models.OfferScopeSelected, Percentage: 15,
+			ProductIDs: selectedIDs, Code: "MIZHARA15",
+			Active: true, CreatedAt: now, UpdatedAt: now,
+		},
+		{
+			ID: primitive.NewObjectID(), Name: "Ring Duo Deal",
+			Description: "Buy 2 rings, get 1 free on selected styles.",
+			Type: models.OfferTypeBogo, Scope: models.OfferScopeSelected,
+			BuyQuantity: 2, FreeQuantity: 1, ProductIDs: ringIDs,
+			Active: true, CreatedAt: now, UpdatedAt: now,
+		},
+		{
+			ID: primitive.NewObjectID(), Name: "Bangle Bundle",
+			Description: "Buy 3 bangles, get 1 free — stack your wrist stack.",
+			Type: models.OfferTypeBogo, Scope: models.OfferScopeSelected,
+			BuyQuantity: 3, FreeQuantity: 1, ProductIDs: bangleIDs,
+			Active: true, CreatedAt: now, UpdatedAt: now,
+		},
+	}
 }

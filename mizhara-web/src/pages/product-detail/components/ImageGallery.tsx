@@ -7,18 +7,14 @@ interface ImageGalleryProps {
 }
 
 export default function ImageGallery({ images, name }: ImageGalleryProps) {
-  const gallery = images?.length ? images : [];
+  const gallery = images;
   const [active, setActive] = useState(0);
   const current = gallery[active];
 
   return (
     <div className="space-y-4">
       <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-border-custom bg-accent-pink/10">
-        {current ? (
-          <img src={current} alt={name} className="object-cover w-full h-full" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-6xl">✨</div>
-        )}
+        <img src={current} alt={name} className="object-cover w-full h-full" />
         <div className="absolute top-4 right-4 animate-sparkle-pulse text-accent-gold text-xl">✦</div>
       </div>
       {gallery.length > 1 && (

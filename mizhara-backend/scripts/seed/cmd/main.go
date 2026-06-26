@@ -31,6 +31,7 @@ func main() {
 	_, _ = lib.Categories().DeleteMany(ctx, bson.M{})
 	_, _ = lib.Products().DeleteMany(ctx, bson.M{})
 	_, _ = lib.Orders().DeleteMany(ctx, bson.M{})
+	_, _ = lib.Offers().DeleteMany(ctx, bson.M{})
 
 	adminEmail := envOr("ADMIN_EMAIL", "admin@mizhara.in")
 	adminPassword := envOr("ADMIN_PASSWORD", "Admin@123")
@@ -82,6 +83,7 @@ func main() {
 		_, _ = lib.Categories().InsertOne(ctx, models.Category{
 			ID: primitive.NewObjectID(), Name: name,
 			Slug: strings.ToLower(strings.ReplaceAll(name, " ", "-")),
+			Image: seed.CategoryImage(name),
 			CreatedAt: now, UpdatedAt: now,
 		})
 	}
@@ -104,6 +106,13 @@ func main() {
 		productByID[id] = doc
 		_, _ = lib.Products().InsertOne(ctx, doc)
 	}
+
+	offers := seed.GenerateOffers(now, productByID)
+	offerDocs := make([]interface{}, len(offers))
+	for i, o := range offers {
+		offerDocs[i] = o
+	}
+	_, _ = lib.Offers().InsertMany(ctx, offerDocs)
 
 	deliveryStatuses := []models.DeliveryStatus{
 		models.DeliveryProcessing, models.DeliveryPacked, models.DeliveryShipped,
@@ -157,6 +166,7 @@ func main() {
 	fmt.Println("Seed complete!")
 	fmt.Printf("  Admin:     %s / %s\n", adminEmail, adminPassword)
 	fmt.Printf("  Products:  %d\n", len(products))
+	fmt.Printf("  Offers:    %d\n", len(offers))
 	fmt.Printf("  Customers: %d\n", len(customerIDs))
 	fmt.Printf("  Orders:    %d\n", orderCount)
 	fmt.Printf("  Demo customer: %s / %s\n", demoCustomerEmail, customerPassword)

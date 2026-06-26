@@ -4,9 +4,9 @@ import { formatINR } from "@/lib/format";
 import { api } from "@/lib/api";
 import type { SerializedCustomer } from "@/types/admin";
 import type { PaginationMeta } from "@/lib/pagination";
-import AdminSearchInput from "@/components/admin/AdminSearchInput";
-import AdminPagination from "@/components/admin/AdminPagination";
-import AdminTableSkeleton from "@/components/admin/AdminTableSkeleton";
+import SearchInput from "@/components/SearchInput";
+import Pagination from "@/components/Pagination";
+import TableSkeleton from "@/components/TableSkeleton";
 
 export default function AdminCustomersPage() {
   const [search, setSearch] = useState("");
@@ -61,7 +61,7 @@ export default function AdminCustomersPage() {
       <div className="bg-white border border-border-custom rounded-2xl p-6 space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h3 className="font-serif text-base font-bold text-primary-dark">Customer Directory</h3>
-          <AdminSearchInput
+          <SearchInput
             value={search}
             onChange={setSearch}
             placeholder="Search name, email, or phone..."
@@ -69,7 +69,7 @@ export default function AdminCustomersPage() {
         </div>
 
         {loading && items.length === 0 ? (
-          <AdminTableSkeleton rows={6} />
+          <TableSkeleton rows={6} />
         ) : items.length === 0 ? (
           <p className="text-center py-12 text-xs text-muted-custom">No customers found.</p>
         ) : (
@@ -125,7 +125,7 @@ export default function AdminCustomersPage() {
                 </tbody>
               </table>
             </div>
-            <AdminPagination pagination={pagination} onPageChange={setPage} />
+            <Pagination pagination={pagination} onPageChange={setPage} />
           </>
           </div>
         )}

@@ -6,10 +6,10 @@ import { TRACKING_PROVIDERS } from "@/lib/tracking";
 import type { SerializedOrder } from "@/types/admin";
 import type { DeliveryStatus } from "@/types/order";
 import type { PaginationMeta } from "@/lib/pagination";
-import AdminSearchInput from "@/components/admin/AdminSearchInput";
-import AdminPagination from "@/components/admin/AdminPagination";
-import AdminTableSkeleton from "@/components/admin/AdminTableSkeleton";
-import StatusBadge from "@/components/admin/StatusBadge";
+import SearchInput from "@/components/SearchInput";
+import Pagination from "@/components/Pagination";
+import TableSkeleton from "@/components/TableSkeleton";
+import StatusBadge from "@/components/StatusBadge";
 
 const DELIVERY_FILTERS: { value: string; label: string }[] = [
   { value: "all", label: "All statuses" },
@@ -130,7 +130,7 @@ export default function AdminOrdersPage() {
                 </option>
               ))}
             </select>
-            <AdminSearchInput
+            <SearchInput
               value={search}
               onChange={setSearch}
               placeholder="Search order #, customer..."
@@ -139,7 +139,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {loading && items.length === 0 ? (
-          <AdminTableSkeleton rows={6} />
+          <TableSkeleton rows={6} />
         ) : items.length === 0 ? (
           <p className="text-center py-12 text-xs text-muted-custom">No orders found.</p>
         ) : (
@@ -178,7 +178,7 @@ export default function AdminOrdersPage() {
                 </tbody>
               </table>
             </div>
-            <AdminPagination pagination={pagination} onPageChange={setPage} />
+            <Pagination pagination={pagination} onPageChange={setPage} />
           </>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import AuthShell from "@/components/auth/AuthShell";
-import { useAuth } from "@/components/AuthProvider";
+import AuthLayout from "@/components/layout/AuthLayout";
+import { useAuth } from "@/providers/AuthProvider";
 import { DEMO_ACCOUNTS, maskPassword } from "@/lib/demo-credentials";
 import { api, apiErrorMessage } from "@/lib/api";
 import { forgotPasswordUrl, resolveAuthRedirect, signupUrl } from "@/lib/auth-url";
@@ -66,7 +66,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell title="Sign In" subtitle="Welcome back to Mizhara">
+    <AuthLayout title="Sign In" subtitle="Welcome back to Mizhara">
       {error && (
         <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">{error}</div>
       )}
@@ -147,6 +147,6 @@ export default function LoginPage() {
           Continue without signing in
         </button>
       </div>
-    </AuthShell>
+    </AuthLayout>
   );
 }

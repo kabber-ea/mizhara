@@ -50,6 +50,9 @@ type Order struct {
 	Items             []OrderItem        `bson:"items" json:"items"`
 	ShippingAddress   ShippingAddress    `bson:"shippingAddress" json:"shippingAddress"`
 	Subtotal          float64            `bson:"subtotal" json:"subtotal"`
+	DiscountAmount    float64            `bson:"discountAmount,omitempty" json:"discountAmount,omitempty"`
+	OfferID           string             `bson:"offerId,omitempty" json:"offerId,omitempty"`
+	OfferName         string             `bson:"offerName,omitempty" json:"offerName,omitempty"`
 	Shipping          float64            `bson:"shipping" json:"shipping"`
 	Total             float64            `bson:"total" json:"total"`
 	Currency          string             `bson:"currency" json:"currency"`

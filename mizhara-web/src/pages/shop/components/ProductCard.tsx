@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useCart } from "@/components/CartProvider";
+import { useCart } from "@/providers/CartProvider";
 import { formatINR } from "@/lib/format";
+import { getProductBogoBadge, getProductPercentageDisplay } from "@/lib/offer-label";
+import type { Offer } from "@/types/offer";
 
 interface ProductCardProps {
   product: {
@@ -14,109 +16,93 @@ interface ProductCardProps {
     images: string[];
     isFeatured?: boolean;
     inStock?: boolean;
+    stockQuantity?: number;
   };
+  offers?: Offer[];
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, offers = [] }: ProductCardProps) {
   const { addToCart } = useCart();
-  const [imageBroken, setImageBroken] = useState(false);
-  const imageUrl = product.images?.[0];
+  const [cartError, setCartError] = useState("");
+  const imageUrl = product.images[0];
+  const inStock = product.inStock !== false && (product.stockQuantity == null || product.stockQuantity > 0);
+  const bogoBadge = getProductBogoBadge(product.id, offers);
+  const percentageOffer = getProductPercentageDisplay(product.id, product.price, offers);
 
-  const getDefaultSize = (category: string) => {
-    switch (category.toLowerCase()) {
-      case "rings":
-        return "7";
-      case "chains":
-        return "18 inches";
-      case "anklets":
-        return "9.5 inches + Extender";
-      case "bracelets":
-        return "Adjustable";
-      default:
-        return "One Size";
-    }
-  };
-
-  const handleQuickAdd = (e: React.MouseEvent) => {
+  const handleAddToBag = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(
-      { ...product, images: product.images },
-      1,
-      getDefaultSize(product.category)
-    );
+    setCartError("");
+    const result = addToCart({ ...product, images: product.images }, 1);
+    if (!result.ok) setCartError(result.message);
   };
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border-custom bg-white card-hover-shadow">
-      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-        <span className="inline-flex items-center rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary shadow-xs backdrop-blur-xs">
-          {product.category}
-        </span>
-        {product.isFeatured && (
-          <span className="inline-flex items-center rounded-full bg-primary px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs animate-sparkle-pulse">
-            ★ Popular
-          </span>
-        )}
-      </div>
-
-      <Link to={`/products/${product.id}`} className="relative block aspect-square w-full overflow-hidden bg-accent-pink/10">
-        {imageUrl && !imageBroken ? (
+    <article className="group product-card flex flex-col overflow-hidden h-full rounded-2xl">
+      <Link to={`/products/${product.id}`} className="relative block shrink-0">
+        <div className="relative aspect-square w-full overflow-hidden rounded-t-2xl bg-accent-pink/30">
+          {product.isFeatured && (
+            <span className="absolute top-3 left-3 z-10 px-2 py-0.5 bg-white/95 text-primary-dark text-[8px] font-bold uppercase tracking-widest shadow-sm rounded-full">
+              Popular
+            </span>
+          )}
+          {bogoBadge && (
+            <span className="offer-badge absolute top-3 right-3 z-10 rounded-full">
+              {bogoBadge}
+            </span>
+          )}
+          {!inStock && (
+            <span className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 text-[10px] font-bold uppercase tracking-widest text-primary-dark">
+              Sold Out
+            </span>
+          )}
           <img
             src={imageUrl}
             alt={product.name}
             loading="lazy"
             referrerPolicy="no-referrer"
-            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-            onError={() => setImageBroken(true)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-accent-pink/15 text-[10px] font-bold uppercase text-primary px-2 text-center">
-            {product.category}
-          </div>
-        )}
-
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
-          <button
-            onClick={handleQuickAdd}
-            className="w-full bg-white hover:bg-primary hover:text-white text-foreground font-semibold text-xs py-2.5 rounded-xl shadow-lg transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 shine-sweep flex items-center justify-center gap-1.5"
-          >
-            Quick Add
-          </button>
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col p-4 bg-white">
-        <div className="flex-1">
-          <Link to={`/products/${product.id}`} className="hover:text-primary transition-colors block">
-            <h3 className="text-sm font-semibold tracking-wide text-foreground line-clamp-1">
-              {product.name}
-            </h3>
-          </Link>
-          <p className="mt-1 text-xs text-muted-custom line-clamp-2">
-            {product.description}
-          </p>
+      <div className="flex flex-1 flex-col px-3.5 pt-3 pb-4 bg-white">
+        <Link to={`/products/${product.id}`} className="hover:text-primary transition-colors">
+          <h3 className="text-[13px] text-primary-dark line-clamp-2 leading-snug font-medium">
+            {product.name}
+          </h3>
+        </Link>
+
+        <div className="mt-2 flex items-center flex-wrap gap-x-2 gap-y-1">
+          {percentageOffer?.salePrice != null ? (
+            <>
+              <p className="text-sm font-bold text-primary-dark">{formatINR(percentageOffer.salePrice)}</p>
+              <p className="text-xs text-muted-custom line-through">{formatINR(product.price)}</p>
+              <span className="offer-price-tag">{percentageOffer.shortTag}</span>
+            </>
+          ) : (
+            <p className="text-sm font-bold text-primary-dark">{formatINR(product.price)}</p>
+          )}
         </div>
 
-        <div className="mt-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-bold text-accent-gold">★</span>
-            <span className="text-xs font-medium text-foreground">{product.rating.toFixed(1)}</span>
-          </div>
+        <div className="mt-1 flex items-center justify-end">
+          <span className="text-[10px] text-muted-custom flex items-center gap-0.5 shrink-0">
+            <span className="text-accent-gold">★</span>
+            {product.rating.toFixed(1)}
+          </span>
         </div>
 
-        <div className="mt-3.5 pt-3 border-t border-border-custom/50 flex items-center justify-between">
-          <p className="text-sm font-extrabold text-primary-dark">
-            {formatINR(product.price)}
-          </p>
-          <Link
-            to={`/products/${product.id}`}
-            className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-0.5 transition-colors"
-          >
-            Details &rarr;
-          </Link>
-        </div>
+        {cartError && <p className="mt-2 text-[10px] text-rose-600 leading-snug">{cartError}</p>}
+
+        <button
+          type="button"
+          onClick={handleAddToBag}
+          disabled={!inStock}
+          className="product-card-add-btn mt-3 w-full py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {inStock ? "Add to Bag" : "Sold Out"}
+        </button>
       </div>
-    </div>
+    </article>
   );
 }

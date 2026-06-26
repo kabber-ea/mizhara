@@ -112,6 +112,7 @@ export default function FilterSidebar({
                     className="w-full px-3 py-2 border border-border-custom rounded-xl text-xs bg-background/50 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-white transition-all font-medium"
                 >
                     <option value="popular">Best Sellers</option>
+                    <option value="newest">Newest First</option>
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
                     <option value="rating">Top Rated</option>

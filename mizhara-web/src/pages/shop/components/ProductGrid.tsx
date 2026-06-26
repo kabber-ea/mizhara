@@ -1,13 +1,16 @@
 import React from "react";
 import ProductCard from "./ProductCard";
+import type { Offer } from "@/types/offer";
+
 interface ProductGridProps {
     products: any[];
     loading: boolean;
+    offers?: Offer[];
 }
-export default function ProductGrid({ products, loading }: ProductGridProps) {
+export default function ProductGrid({ products, loading, offers = [] }: ProductGridProps) {
     if (loading) {
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {[...Array(6)].map((_, i) => (
                     <div
                         key={i}
@@ -46,9 +49,9 @@ export default function ProductGrid({ products, loading }: ProductGridProps) {
                 <p>Showing <span className="font-bold text-foreground">{products.length}</span> fancy ornaments</p>
             </div>
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {products.map((product) => (
-                    <ProductCard key={product.id} product={product}  />
+                    <ProductCard key={product.id} product={product} offers={offers} />
                 ))}
             </div>
         </div>
