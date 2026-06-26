@@ -12,7 +12,7 @@ import (
 type CategoriesController struct{}
 
 func (CategoriesController) List(c *gin.Context) {
-	items, err := services.ListCategories(c.Request.Context())
+	items, err := services.ListCategoriesForViewer(c.Request.Context(), middleware.GetSession(c))
 	if err != nil {
 		respondError(c, err)
 		return

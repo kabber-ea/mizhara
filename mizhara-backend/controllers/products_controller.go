@@ -51,7 +51,7 @@ func (ProductsController) Trending(c *gin.Context) {
 }
 
 func (ProductsController) GetByID(c *gin.Context) {
-	item, err := services.GetProductByID(c.Request.Context(), c.Param("id"))
+	item, err := services.GetProductByIDForViewer(c.Request.Context(), c.Param("id"), middleware.GetSession(c))
 	if err != nil {
 		respondError(c, err)
 		return

@@ -59,6 +59,18 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
     }
   };
 
+  const handleToggleActive = async (product: AdminProduct) => {
+    try {
+      await api.put("/api/products", {
+        ...product,
+        isActive: !product.isActive,
+      });
+      onRefresh();
+    } catch (e) {
+      console.error("Failed to toggle active state", e);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this ornament?")) return;
     try {
@@ -72,7 +84,7 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
   return (
     <div className="bg-white border border-border-custom rounded-2xl overflow-hidden shadow-xs space-y-4 p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border-custom/50 pb-4">
-        <h3 className="font-serif text-base font-bold text-primary-dark">Active Catalog</h3>
+        <h3 className="font-serif text-base font-bold text-primary-dark">Product Catalog</h3>
         <input
           type="text"
           placeholder="Filter catalog items..."
@@ -99,6 +111,7 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
                   <th className="px-4 py-3 text-center">Stock</th>
                   <th className="px-4 py-3 text-center">Margin</th>
                   <th className="px-4 py-3 text-center">Featured</th>
+                  <th className="px-4 py-3 text-center">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -107,7 +120,7 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
                   const margin = product.price - product.costPrice;
                   const marginPct = product.price > 0 ? Math.round((margin / product.price) * 100) : 0;
                   return (
-                    <tr key={product.id} className="hover:bg-accent-pink/5 transition-colors">
+                    <tr key={product.id} className={`hover:bg-accent-pink/5 transition-colors ${!product.isActive ? "opacity-60" : ""}`}>
                       <td className="px-4 py-3">
                         <ProductThumbnail
                           src={product.images?.[0]}
@@ -142,6 +155,17 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
                           }`}
                         >
                           {product.isFeatured ? "★ Yes" : "☆ No"}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleActive(product)}
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            product.isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {product.isActive ? "Active" : "Inactive"}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">

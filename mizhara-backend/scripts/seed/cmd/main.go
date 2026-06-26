@@ -80,10 +80,12 @@ func main() {
 	_, _ = lib.Users().InsertMany(ctx, customerDocs)
 
 	for _, name := range seed.Categories {
+		isActive := true
 		_, _ = lib.Categories().InsertOne(ctx, models.Category{
 			ID: primitive.NewObjectID(), Name: name,
 			Slug: strings.ToLower(strings.ReplaceAll(name, " ", "-")),
 			Image: seed.CategoryImage(name),
+			IsActive: &isActive,
 			CreatedAt: now, UpdatedAt: now,
 		})
 	}
@@ -95,11 +97,13 @@ func main() {
 	for _, p := range products {
 		id := primitive.NewObjectID()
 		productIDs = append(productIDs, id)
+		isActive := true
 		doc := models.Product{
 			ID: id, Name: p.Name, Description: p.Description,
 			Category: p.Category, CostPrice: p.CostPrice, Price: p.Price,
 			Rating: p.Rating, ReviewsCount: p.ReviewsCount, Images: p.Images,
 			Materials: p.Materials, Sizes: p.Sizes, IsFeatured: p.IsFeatured,
+			IsActive: &isActive,
 			StockQuantity: p.StockQuantity, InStock: p.StockQuantity > 0,
 			CreatedAt: now.AddDate(0, 0, -rng.Intn(90)), UpdatedAt: now,
 		}

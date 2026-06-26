@@ -28,9 +28,9 @@ export default function Navbar() {
           <div className="flex h-16 items-center justify-between">
             <Link
               to="/"
-              className="font-serif text-2xl tracking-widest text-primary-dark font-extrabold hover:opacity-90"
+              className="font-serif text-[1.35rem] sm:text-2xl tracking-[0.18em] text-primary-dark font-semibold hover:opacity-80 transition-opacity"
             >
-              MIZHARA<span className="text-primary animate-sparkle-pulse">✦</span>
+              MIZHARA
             </Link>
 
             {showStoreNav && (
@@ -230,7 +230,7 @@ export default function Navbar() {
                       <span className="text-sm text-muted-custom">Subtotal</span>
                       <span className="text-lg font-extrabold text-primary-dark">{formatINR(cartTotal)}</span>
                     </div>
-                    <Link to="/cart" onClick={() => setIsCartOpen(false)} className="block w-full py-3 bg-primary-dark text-white text-center text-xs font-bold uppercase tracking-[0.15em] shine-sweep">
+                    <Link to="/cart" onClick={() => setIsCartOpen(false)} className="block w-full py-3 bg-primary-dark text-white text-center text-xs font-semibold uppercase tracking-[0.12em]">
                       View Bag
                     </Link>
                   </div>

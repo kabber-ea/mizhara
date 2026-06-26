@@ -16,6 +16,7 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
     const [materials, setMaterials] = useState("");
     const [sizes, setSizes] = useState("");
     const [isFeatured, setIsFeatured] = useState(false);
+    const [isActive, setIsActive] = useState(true);
     const [stockQuantity, setStockQuantity] = useState("10");
     const [images, setImages] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
@@ -32,6 +33,7 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
             setMaterials(editingProduct.materials ? editingProduct.materials.join(", ") : "");
             setSizes(editingProduct.sizes ? editingProduct.sizes.join(", ") : "");
             setIsFeatured(!!editingProduct.isFeatured);
+            setIsActive(editingProduct.isActive !== false);
             setStockQuantity(editingProduct.stockQuantity != null ? String(editingProduct.stockQuantity) : "0");
             setImages(editingProduct.images || []);
         } else {
@@ -43,6 +45,7 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
             setMaterials("925 Sterling Silver, Cubic Zirconia");
             setSizes("");
             setIsFeatured(false);
+            setIsActive(true);
             setStockQuantity("10");
             setImages([]);
         }
@@ -90,6 +93,7 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
             materials: materials.split(",").map((m) => m.trim()).filter(Boolean),
             sizes: sizes.split(",").map((s) => s.trim()).filter(Boolean) || ["One Size"],
             isFeatured,
+            isActive,
             stockQuantity: Math.max(0, Number(stockQuantity) || 0),
             images,
         };
@@ -153,6 +157,13 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
                         Featured on homepage (multiple allowed)
                     </label>
                 </div>
+            </div>
+
+            <div>
+                <label className="flex items-center gap-3 cursor-pointer text-xs font-semibold">
+                    <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-primary" />
+                    Visible to customers
+                </label>
             </div>
 
             <div>

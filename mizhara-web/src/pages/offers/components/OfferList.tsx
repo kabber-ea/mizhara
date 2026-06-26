@@ -37,7 +37,7 @@ export default function OfferList({ offers, products, onEdit, onRefresh }: Offer
     try {
       await api.put("/api/offers", {
         ...offer,
-        active: !offer.active,
+        isActive: !offer.isActive,
         productIds: offer.productIds || [],
         percentage: offer.percentage ?? 0,
         buyQuantity: offer.buyQuantity ?? 0,
@@ -96,10 +96,10 @@ export default function OfferList({ offers, products, onEdit, onRefresh }: Offer
                     type="button"
                     onClick={() => toggleActive(offer)}
                     className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                      offer.active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                      offer.isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
                     }`}
                   >
-                    {offer.active ? "Active" : "Off"}
+                    {offer.isActive ? "Active" : "Inactive"}
                   </button>
                 </td>
                 <td className="px-4 py-3 text-right space-x-2">

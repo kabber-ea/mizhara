@@ -87,7 +87,7 @@ export default function HomePage() {
           viewAllHref="/products?sort=popular"
           viewAllLabel="View all"
           layout="grid"
-          className="py-12 sm:py-16 bg-accent-pink/20"
+          className="py-12 sm:py-16 bg-secondary/30"
         />
 
         <BudgetSection />

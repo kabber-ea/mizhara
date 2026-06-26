@@ -25,6 +25,7 @@ type SerializedProduct struct {
 	Materials    []string `json:"materials"`
 	Sizes        []string `json:"sizes"`
 	IsFeatured    bool     `json:"isFeatured"`
+	IsActive      bool     `json:"isActive"`
 	StockQuantity int      `json:"stockQuantity"`
 	InStock       bool     `json:"inStock"`
 }
@@ -47,8 +48,44 @@ type ProductInput struct {
 	Materials    []string `json:"materials"`
 	Sizes        []string `json:"sizes"`
 	IsFeatured    bool     `json:"isFeatured"`
+	IsActive      *bool    `json:"isActive,omitempty"`
 	StockQuantity int      `json:"stockQuantity"`
 	InStock       bool     `json:"inStock"`
+}
+
+func productIsActive(p models.Product) bool {
+	if p.IsActive == nil {
+		return true
+	}
+	return *p.IsActive
+}
+
+func productVisibleToCustomer(p models.Product, activeCategoryNames []string) bool {
+	if !productIsActive(p) {
+		return false
+	}
+	if len(activeCategoryNames) == 0 {
+		return false
+	}
+	for _, name := range activeCategoryNames {
+		if p.Category == name {
+			return true
+		}
+	}
+	return false
+}
+
+func customerProductBaseFilter(activeCategoryNames []string) bson.M {
+	filter := bson.M{
+		"images.0": bson.M{"$exists": true, "$ne": ""},
+		"isActive": bson.M{"$ne": false},
+	}
+	if len(activeCategoryNames) > 0 {
+		filter["category"] = bson.M{"$in": activeCategoryNames}
+	} else {
+		filter["category"] = bson.M{"$in": []string{}}
+	}
+	return filter
 }
 
 func serializeProduct(p models.Product) SerializedProduct {
@@ -60,7 +97,7 @@ func serializeProduct(p models.Product) SerializedProduct {
 		ID: p.ID.Hex(), Name: p.Name, Description: p.Description, Category: p.Category,
 		Price: p.Price, Rating: p.Rating, ReviewsCount: p.ReviewsCount,
 		Images: p.Images, Materials: p.Materials, Sizes: p.Sizes,
-		IsFeatured: p.IsFeatured, StockQuantity: stock, InStock: syncInStock(stock),
+		IsFeatured: p.IsFeatured, IsActive: productIsActive(p), StockQuantity: stock, InStock: syncInStock(stock),
 	}
 }
 
@@ -111,9 +148,11 @@ func DeleteProductForAdmin(ctx context.Context, session *lib.SessionPayload, id 
 }
 
 func ListProducts(ctx context.Context) ([]SerializedProduct, error) {
-	cur, err := lib.Products().Find(ctx, bson.M{
-		"images.0": bson.M{"$exists": true, "$ne": ""},
-	}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+	activeCats, err := ListActiveCategoryNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cur, err := lib.Products().Find(ctx, customerProductBaseFilter(activeCats), options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
 	if err != nil {
 		return nil, err
 	}
@@ -160,11 +199,14 @@ func GetFeaturedProducts(ctx context.Context, limit int64) ([]SerializedProduct,
 	if limit == 0 {
 		limit = 8
 	}
-	cur, err := lib.Products().Find(ctx, bson.M{
-		"isFeatured": true,
-		"inStock":    true,
-		"images.0":   bson.M{"$exists": true, "$ne": ""},
-	}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
+	activeCats, err := ListActiveCategoryNames(ctx)
+	if err != nil {
+		return []SerializedProduct{}, nil
+	}
+	filter := customerProductBaseFilter(activeCats)
+	filter["isFeatured"] = true
+	filter["inStock"] = true
+	cur, err := lib.Products().Find(ctx, filter, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
 	if err != nil {
 		return []SerializedProduct{}, nil
 	}
@@ -182,10 +224,13 @@ func GetNewProducts(ctx context.Context, limit int64) ([]SerializedProduct, erro
 	if limit == 0 {
 		limit = 8
 	}
-	cur, err := lib.Products().Find(ctx, bson.M{
-		"inStock":  true,
-		"images.0": bson.M{"$exists": true, "$ne": ""},
-	}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
+	activeCats, err := ListActiveCategoryNames(ctx)
+	if err != nil {
+		return []SerializedProduct{}, nil
+	}
+	filter := customerProductBaseFilter(activeCats)
+	filter["inStock"] = true
+	cur, err := lib.Products().Find(ctx, filter, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
 	if err != nil {
 		return []SerializedProduct{}, nil
 	}
@@ -203,10 +248,13 @@ func GetTrendingProducts(ctx context.Context, limit int64) ([]SerializedProduct,
 	if limit == 0 {
 		limit = 8
 	}
-	cur, err := lib.Products().Find(ctx, bson.M{
-		"inStock":  true,
-		"images.0": bson.M{"$exists": true, "$ne": ""},
-	}, options.Find().SetSort(bson.D{
+	activeCats, err := ListActiveCategoryNames(ctx)
+	if err != nil {
+		return []SerializedProduct{}, nil
+	}
+	filter := customerProductBaseFilter(activeCats)
+	filter["inStock"] = true
+	cur, err := lib.Products().Find(ctx, filter, options.Find().SetSort(bson.D{
 		{Key: "reviewsCount", Value: -1},
 		{Key: "rating", Value: -1},
 		{Key: "createdAt", Value: -1},
@@ -224,7 +272,29 @@ func GetTrendingProducts(ctx context.Context, limit int64) ([]SerializedProduct,
 	return out, nil
 }
 
-func GetProductByID(ctx context.Context, id string) (*SerializedProduct, error) {
+func GetProductByIDForViewer(ctx context.Context, id string, session *lib.SessionPayload) (*SerializedProduct, error) {
+	p, err := findProductByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if p == nil {
+		return nil, nil
+	}
+	isAdmin := session != nil && session.Role == lib.RoleAdmin
+	if !isAdmin {
+		activeCats, err := ListActiveCategoryNames(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !productVisibleToCustomer(*p, activeCats) {
+			return nil, nil
+		}
+	}
+	s := serializeProduct(*p)
+	return &s, nil
+}
+
+func findProductByID(ctx context.Context, id string) (*models.Product, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, nil
@@ -237,7 +307,15 @@ func GetProductByID(ctx context.Context, id string) (*SerializedProduct, error) 
 	if err != nil {
 		return nil, err
 	}
-	s := serializeProduct(p)
+	return &p, nil
+}
+
+func GetProductByID(ctx context.Context, id string) (*SerializedProduct, error) {
+	p, err := findProductByID(ctx, id)
+	if err != nil || p == nil {
+		return nil, err
+	}
+	s := serializeProduct(*p)
 	return &s, nil
 }
 
@@ -245,7 +323,22 @@ func GetRelatedProducts(ctx context.Context, category, excludeID string, limit i
 	if limit == 0 {
 		limit = 4
 	}
-	filter := bson.M{"category": category, "inStock": true}
+	activeCats, err := ListActiveCategoryNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	categoryActive := false
+	for _, name := range activeCats {
+		if name == category {
+			categoryActive = true
+			break
+		}
+	}
+	if !categoryActive {
+		return []SerializedProduct{}, nil
+	}
+	filter := customerProductBaseFilter(activeCats)
+	filter["category"] = category
 	if oid, err := primitive.ObjectIDFromHex(excludeID); err == nil {
 		filter["_id"] = bson.M{"$ne": oid}
 	}
@@ -276,12 +369,16 @@ func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 	if stock <= 0 && input.InStock {
 		stock = 10
 	}
+	isActive := true
+	if input.IsActive != nil {
+		isActive = *input.IsActive
+	}
 	p := models.Product{
 		ID: primitive.NewObjectID(), Name: input.Name, Description: input.Description,
 		Category: input.Category, CostPrice: input.CostPrice, Price: input.Price,
 		Rating: input.Rating, ReviewsCount: input.ReviewsCount,
 		Images: input.Images, Materials: input.Materials, Sizes: sizes,
-		IsFeatured: input.IsFeatured, StockQuantity: stock, InStock: syncInStock(stock),
+		IsFeatured: input.IsFeatured, IsActive: boolPtr(isActive), StockQuantity: stock, InStock: syncInStock(stock),
 		CreatedAt: now, UpdatedAt: now,
 	}
 	if p.Rating == 0 {
@@ -312,6 +409,9 @@ func UpdateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 		"costPrice": input.CostPrice, "price": input.Price, "materials": input.Materials,
 		"sizes": input.Sizes, "images": input.Images, "isFeatured": input.IsFeatured,
 		"stockQuantity": stock, "inStock": syncInStock(stock), "updatedAt": time.Now(),
+	}
+	if input.IsActive != nil {
+		update["isActive"] = *input.IsActive
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var p models.Product

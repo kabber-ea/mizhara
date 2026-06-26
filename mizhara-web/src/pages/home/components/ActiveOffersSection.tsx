@@ -10,10 +10,10 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
   if (!offers?.length) return null;
 
   return (
-    <section className="py-14 sm:py-16 bg-accent-pink/30">
+    <section className="py-14 sm:py-16 bg-secondary/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-serif text-xl sm:text-2xl text-primary-dark text-center mb-8">
-          Shop by Offer
+        <h2 className="font-serif text-2xl sm:text-3xl font-light text-primary-dark text-center mb-10 tracking-tight">
+          Curated Offers
         </h2>
 
         <div className="offer-collection-scroll -mx-4 px-4 sm:mx-0 sm:px-0">

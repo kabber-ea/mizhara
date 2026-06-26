@@ -3,6 +3,7 @@ export type Category = {
   name: string;
   slug: string;
   image?: string;
+  isActive: boolean;
 };
 
 export type SerializedProduct = {
@@ -17,6 +18,7 @@ export type SerializedProduct = {
   materials: string[];
   sizes: string[];
   isFeatured: boolean;
+  isActive: boolean;
   stockQuantity: number;
   inStock: boolean;
 };
@@ -32,6 +34,7 @@ export type ProductInput = {
   sizes?: string[];
   images?: string[];
   isFeatured?: boolean;
+  isActive?: boolean;
   stockQuantity?: number;
   inStock?: boolean;
   rating?: number;

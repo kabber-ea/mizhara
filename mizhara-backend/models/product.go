@@ -19,6 +19,7 @@ type Product struct {
 	Materials    []string           `bson:"materials" json:"materials"`
 	Sizes        []string           `bson:"sizes" json:"sizes"`
 	IsFeatured    bool `bson:"isFeatured" json:"isFeatured"`
+	IsActive      *bool `bson:"isActive,omitempty" json:"isActive"`
 	StockQuantity int  `bson:"stockQuantity" json:"stockQuantity"`
 	InStock       bool `bson:"inStock" json:"inStock"`
 	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`

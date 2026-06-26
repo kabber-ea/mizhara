@@ -20,7 +20,7 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
   const [freeQuantity, setFreeQuantity] = useState("1");
   const [productIds, setProductIds] = useState<string[]>([]);
   const [code, setCode] = useState("");
-  const [active, setActive] = useState(true);
+  const [isActive, setIsActive] = useState(true);
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,7 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       setFreeQuantity(String(editingOffer.freeQuantity ?? 1));
       setProductIds(editingOffer.productIds || []);
       setCode(editingOffer.code || "");
-      setActive(editingOffer.active);
+      setIsActive(editingOffer.isActive);
       setStartsAt(editingOffer.startsAt ? editingOffer.startsAt.slice(0, 16) : "");
       setEndsAt(editingOffer.endsAt ? editingOffer.endsAt.slice(0, 16) : "");
     } else {
@@ -50,7 +50,7 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       setFreeQuantity("1");
       setProductIds([]);
       setCode("");
-      setActive(true);
+      setIsActive(true);
       setStartsAt("");
       setEndsAt("");
     }
@@ -78,7 +78,7 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       freeQuantity: Number(freeQuantity) || 0,
       productIds: scope === "selected" ? productIds : [],
       code: code.trim(),
-      active,
+      isActive,
       startsAt: startsAt ? new Date(startsAt).toISOString() : null,
       endsAt: endsAt ? new Date(endsAt).toISOString() : null,
     };
@@ -254,7 +254,7 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       </div>
 
       <label className="flex items-center gap-3 cursor-pointer text-xs font-semibold">
-        <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="accent-primary" />
+        <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-primary" />
         Active (live on storefront when within date range)
       </label>
 

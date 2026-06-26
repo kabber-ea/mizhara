@@ -36,7 +36,7 @@ export default function OffersPage() {
   }, []);
 
   const safeOffers = offers ?? [];
-  const activeCount = safeOffers.filter((o) => o.active).length;
+  const activeCount = safeOffers.filter((o) => o.isActive).length;
 
   if (loading) return <PageSkeleton />;
 

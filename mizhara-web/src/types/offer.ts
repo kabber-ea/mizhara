@@ -12,7 +12,7 @@ export type Offer = {
   freeQuantity?: number;
   productIds?: string[];
   code?: string;
-  active: boolean;
+  isActive: boolean;
   startsAt?: string;
   endsAt?: string;
   createdAt: string;
@@ -30,7 +30,7 @@ export type OfferInput = {
   freeQuantity: number;
   productIds: string[];
   code: string;
-  active: boolean;
+  isActive: boolean;
   startsAt?: string | null;
   endsAt?: string | null;
 };

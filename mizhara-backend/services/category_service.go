@@ -12,22 +12,36 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+func boolPtr(v bool) *bool {
+	return &v
+}
+
 type SerializedCategory struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Slug  string `json:"slug"`
-	Image string `json:"image,omitempty"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Slug     string `json:"slug"`
+	Image    string `json:"image,omitempty"`
+	IsActive bool   `json:"isActive"`
 }
 
 type CategoryInput struct {
-	ID    string `json:"id,omitempty"`
-	Name  string `json:"name"`
-	Image string `json:"image"`
+	ID       string `json:"id,omitempty"`
+	Name     string `json:"name"`
+	Image    string `json:"image"`
+	IsActive *bool  `json:"isActive,omitempty"`
+}
+
+func categoryIsActive(c models.Category) bool {
+	if c.IsActive == nil {
+		return true
+	}
+	return *c.IsActive
 }
 
 func serializeCategory(c models.Category) SerializedCategory {
 	return SerializedCategory{
 		ID: c.ID.Hex(), Name: c.Name, Slug: c.Slug, Image: c.Image,
+		IsActive: categoryIsActive(c),
 	}
 }
 
@@ -61,9 +75,11 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	}
 	slug := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 	now := time.Now()
-	res, err := lib.Categories().UpdateOne(ctx, bson.M{"_id": id}, bson.M{
-		"$set": bson.M{"name": name, "slug": slug, "image": image, "updatedAt": now},
-	})
+	set := bson.M{"name": name, "slug": slug, "image": image, "updatedAt": now}
+	if input.IsActive != nil {
+		set["isActive"] = *input.IsActive
+	}
+	res, err := lib.Categories().UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": set})
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +92,13 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	}
 	out := serializeCategory(c)
 	return &out, nil
+}
+
+func ListCategoriesForViewer(ctx context.Context, session *lib.SessionPayload) ([]SerializedCategory, error) {
+	if session != nil && session.Role == lib.RoleAdmin {
+		return ListCategories(ctx)
+	}
+	return ListActiveCategories(ctx)
 }
 
 func ListCategories(ctx context.Context) ([]SerializedCategory, error) {
@@ -94,6 +117,38 @@ func ListCategories(ctx context.Context) ([]SerializedCategory, error) {
 		out = []SerializedCategory{}
 	}
 	return out, nil
+}
+
+func ListActiveCategories(ctx context.Context) ([]SerializedCategory, error) {
+	cur, err := lib.Categories().Find(ctx, bson.M{
+		"isActive": bson.M{"$ne": false},
+	}, options.Find().SetSort(bson.D{{Key: "name", Value: 1}}))
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	var out []SerializedCategory
+	for cur.Next(ctx) {
+		var c models.Category
+		_ = cur.Decode(&c)
+		out = append(out, serializeCategory(c))
+	}
+	if out == nil {
+		out = []SerializedCategory{}
+	}
+	return out, nil
+}
+
+func ListActiveCategoryNames(ctx context.Context) ([]string, error) {
+	items, err := ListActiveCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, len(items))
+	for i, item := range items {
+		names[i] = item.Name
+	}
+	return names, nil
 }
 
 func ListCategoryNames(ctx context.Context) ([]string, error) {
@@ -121,6 +176,7 @@ func createCategory(ctx context.Context, name, image string) (*models.Category, 
 	now := time.Now()
 	doc := models.Category{
 		ID: primitive.NewObjectID(), Name: trimmed, Slug: slug, Image: image,
+		IsActive: boolPtr(true),
 		CreatedAt: now, UpdatedAt: now,
 	}
 	if _, err := lib.Categories().InsertOne(ctx, doc); err != nil {

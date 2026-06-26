@@ -38,6 +38,25 @@ export default function CategoryManager({ categories, onRefresh }: CategoryManag
     }
   };
 
+  const handleToggleActive = async (category: Category) => {
+    if (!category.image) return;
+    setUpdatingId(category.id);
+    setError("");
+    try {
+      await api.put("/api/categories", {
+        id: category.id,
+        name: category.name,
+        image: category.image,
+        isActive: !category.isActive,
+      });
+      onRefresh();
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, "Failed to update category status."));
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const handleReplaceImage = async (category: Category, file: File) => {
     setUpdatingId(category.id);
     setError("");
@@ -90,7 +109,7 @@ export default function CategoryManager({ categories, onRefresh }: CategoryManag
   return (
     <div className="space-y-8">
       <div className="bg-white border border-border-custom rounded-2xl p-6 shadow-xs">
-        <h3 className="font-serif text-base font-bold text-primary-dark mb-1">Active Categories</h3>
+        <h3 className="font-serif text-base font-bold text-primary-dark mb-1">Categories</h3>
         <p className="text-xs text-muted-custom mb-6">
           Images appear on the home page shop-by-category section and in catalog filters.
         </p>
@@ -100,7 +119,7 @@ export default function CategoryManager({ categories, onRefresh }: CategoryManag
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {categories.map((cat) => (
-              <div key={cat.id} className="category-admin-card">
+              <div key={cat.id} className={`category-admin-card ${!cat.isActive ? "opacity-60" : ""}`}>
                 <div className="category-admin-card-image">
                   {cat.image ? (
                     <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
@@ -114,6 +133,16 @@ export default function CategoryManager({ categories, onRefresh }: CategoryManag
                   <p className="text-[10px] font-bold uppercase tracking-wider text-primary-dark truncate">
                     {cat.name}
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleActive(cat)}
+                    disabled={updatingId === cat.id}
+                    className={`mt-2 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                      cat.isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {cat.isActive ? "Active" : "Inactive"}
+                  </button>
                   <label className="mt-2 block text-[9px] font-semibold uppercase tracking-wide text-primary cursor-pointer hover:underline">
                     {updatingId === cat.id ? "Uploading..." : "Change image"}
                     <input

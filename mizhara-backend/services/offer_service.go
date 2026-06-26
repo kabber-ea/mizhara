@@ -28,7 +28,7 @@ type SerializedOffer struct {
 	FreeQuantity int      `json:"freeQuantity,omitempty"`
 	ProductIDs   []string `json:"productIds,omitempty"`
 	Code         string   `json:"code,omitempty"`
-	Active       bool     `json:"active"`
+	IsActive     bool     `json:"isActive"`
 	StartsAt     *time.Time `json:"startsAt,omitempty"`
 	EndsAt       *time.Time `json:"endsAt,omitempty"`
 	CreatedAt    time.Time  `json:"createdAt"`
@@ -46,7 +46,7 @@ type OfferInput struct {
 	FreeQuantity int      `json:"freeQuantity"`
 	ProductIDs   []string `json:"productIds"`
 	Code         string   `json:"code"`
-	Active       bool     `json:"active"`
+	IsActive     bool     `json:"isActive"`
 	StartsAt     *time.Time `json:"startsAt,omitempty"`
 	EndsAt       *time.Time `json:"endsAt,omitempty"`
 }
@@ -81,6 +81,13 @@ type resolvedLine struct {
 	category  string
 }
 
+func offerIsActive(o models.Offer) bool {
+	if o.IsActive == nil {
+		return true
+	}
+	return *o.IsActive
+}
+
 func serializeOffer(o models.Offer) SerializedOffer {
 	productIDs := o.ProductIDs
 	if productIDs == nil {
@@ -90,14 +97,14 @@ func serializeOffer(o models.Offer) SerializedOffer {
 		ID: o.ID.Hex(), Name: o.Name, Description: o.Description,
 		Type: string(o.Type), Scope: string(o.Scope),
 		Percentage: o.Percentage, BuyQuantity: o.BuyQuantity, FreeQuantity: o.FreeQuantity,
-		ProductIDs: productIDs, Code: o.Code, Active: o.Active,
+		ProductIDs: productIDs, Code: o.Code, IsActive: offerIsActive(o),
 		StartsAt: o.StartsAt, EndsAt: o.EndsAt,
 		CreatedAt: o.CreatedAt, UpdatedAt: o.UpdatedAt,
 	}
 }
 
 func offerIsLive(o models.Offer, now time.Time) bool {
-	if !o.Active {
+	if !offerIsActive(o) {
 		return false
 	}
 	if o.StartsAt != nil && now.Before(*o.StartsAt) {
@@ -175,7 +182,7 @@ func CreateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 		Type: models.OfferType(input.Type), Scope: models.OfferScope(input.Scope),
 		Percentage: input.Percentage, BuyQuantity: input.BuyQuantity, FreeQuantity: input.FreeQuantity,
 		ProductIDs: input.ProductIDs, Code: strings.ToUpper(strings.TrimSpace(input.Code)),
-		Active: input.Active, StartsAt: input.StartsAt, EndsAt: input.EndsAt,
+		IsActive: boolPtr(input.IsActive), StartsAt: input.StartsAt, EndsAt: input.EndsAt,
 		CreatedAt: now, UpdatedAt: now,
 	}
 	if _, err := lib.Offers().InsertOne(ctx, o); err != nil {
@@ -201,7 +208,7 @@ func UpdateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 		"type": input.Type, "scope": input.Scope,
 		"percentage": input.Percentage, "buyQuantity": input.BuyQuantity, "freeQuantity": input.FreeQuantity,
 		"productIds": input.ProductIDs, "code": strings.ToUpper(strings.TrimSpace(input.Code)),
-		"active": input.Active, "startsAt": input.StartsAt, "endsAt": input.EndsAt,
+		"isActive": input.IsActive, "startsAt": input.StartsAt, "endsAt": input.EndsAt,
 		"updatedAt": time.Now(),
 	}
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
@@ -237,7 +244,7 @@ func DeleteOfferForAdmin(ctx context.Context, session *lib.SessionPayload, id st
 
 func ListActiveOffers(ctx context.Context) ([]SerializedOffer, error) {
 	now := time.Now()
-	cur, err := lib.Offers().Find(ctx, bson.M{"active": true}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+	cur, err := lib.Offers().Find(ctx, bson.M{"isActive": bson.M{"$ne": false}}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
 	if err != nil {
 		return []SerializedOffer{}, nil
 	}
@@ -357,7 +364,7 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 			return nil, lib.BadRequest("apply either a coupon code or an auto offer, not both")
 		}
 		var o models.Offer
-		err := lib.Offers().FindOne(ctx, bson.M{"code": code, "active": true}).Decode(&o)
+		err := lib.Offers().FindOne(ctx, bson.M{"code": code, "isActive": bson.M{"$ne": false}}).Decode(&o)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, lib.BadRequest("invalid or expired offer code")
 		}
@@ -376,7 +383,7 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 			return nil, lib.BadRequest("invalid offer")
 		}
 		var o models.Offer
-		err = lib.Offers().FindOne(ctx, bson.M{"_id": oid, "active": true}).Decode(&o)
+		err = lib.Offers().FindOne(ctx, bson.M{"_id": oid, "isActive": bson.M{"$ne": false}}).Decode(&o)
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, lib.BadRequest("offer is no longer available")
 		}
@@ -389,7 +396,7 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 		return &o, nil
 	}
 
-	cur, err := lib.Offers().Find(ctx, bson.M{"active": true, "$or": []bson.M{
+	cur, err := lib.Offers().Find(ctx, bson.M{"isActive": bson.M{"$ne": false}, "$or": []bson.M{
 		{"code": ""}, {"code": bson.M{"$exists": false}},
 	}})
 	if err != nil {

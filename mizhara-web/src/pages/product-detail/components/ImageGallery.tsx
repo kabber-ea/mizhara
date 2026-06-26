@@ -15,7 +15,6 @@ export default function ImageGallery({ images, name }: ImageGalleryProps) {
     <div className="space-y-4">
       <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-border-custom bg-accent-pink/10">
         <img src={current} alt={name} className="object-cover w-full h-full" />
-        <div className="absolute top-4 right-4 animate-sparkle-pulse text-accent-gold text-xl">✦</div>
       </div>
       {gallery.length > 1 && (
         <div className="flex gap-4">

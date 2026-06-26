@@ -27,7 +27,7 @@ type Offer struct {
 	FreeQuantity int                `bson:"freeQuantity,omitempty" json:"freeQuantity,omitempty"`
 	ProductIDs   []string           `bson:"productIds,omitempty" json:"productIds,omitempty"`
 	Code         string             `bson:"code,omitempty" json:"code,omitempty"`
-	Active       bool               `bson:"active" json:"active"`
+	IsActive     *bool              `bson:"isActive,omitempty" json:"isActive"`
 	StartsAt     *time.Time         `bson:"startsAt,omitempty" json:"startsAt,omitempty"`
 	EndsAt       *time.Time         `bson:"endsAt,omitempty" json:"endsAt,omitempty"`
 	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`

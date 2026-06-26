@@ -259,34 +259,35 @@ func GenerateOffers(now time.Time, productByID map[primitive.ObjectID]models.Pro
 	ringIDs := productIDsByCategories(productByID, []string{"Rings"}, 5)
 	selectedIDs := productIDsByCategories(productByID, []string{"Anklets", "Earrings"}, 3)
 	bangleIDs := productIDsByCategories(productByID, []string{"Bangles"}, 0)
+	isActive := true
 
 	return []models.Offer{
 		{
 			ID: primitive.NewObjectID(), Name: "Festive Edit Sale",
 			Description: "20% off every piece — applied automatically at checkout.",
 			Type: models.OfferTypePercentage, Scope: models.OfferScopeAll, Percentage: 20,
-			Active: true, CreatedAt: now, UpdatedAt: now,
+			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			ID: primitive.NewObjectID(), Name: "Welcome to Mizhara",
 			Description: "15% off anklets and earrings with code MIZHARA15.",
 			Type: models.OfferTypePercentage, Scope: models.OfferScopeSelected, Percentage: 15,
 			ProductIDs: selectedIDs, Code: "MIZHARA15",
-			Active: true, CreatedAt: now, UpdatedAt: now,
+			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			ID: primitive.NewObjectID(), Name: "Ring Duo Deal",
 			Description: "Buy 2 rings, get 1 free on selected styles.",
 			Type: models.OfferTypeBogo, Scope: models.OfferScopeSelected,
 			BuyQuantity: 2, FreeQuantity: 1, ProductIDs: ringIDs,
-			Active: true, CreatedAt: now, UpdatedAt: now,
+			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			ID: primitive.NewObjectID(), Name: "Bangle Bundle",
 			Description: "Buy 3 bangles, get 1 free — stack your wrist stack.",
 			Type: models.OfferTypeBogo, Scope: models.OfferScopeSelected,
 			BuyQuantity: 3, FreeQuantity: 1, ProductIDs: bangleIDs,
-			Active: true, CreatedAt: now, UpdatedAt: now,
+			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
 		},
 	}
 }

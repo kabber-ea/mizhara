@@ -58,14 +58,14 @@ func Setup() *gin.Engine {
 		api.GET("/products/featured", products.Featured)
 		api.GET("/products/new", products.New)
 		api.GET("/products/trending", products.Trending)
-		api.GET("/products/:id", products.GetByID)
+		api.GET("/products/:id", middleware.OptionalAuth(), products.GetByID)
 		api.GET("/products/:id/related", products.Related)
 		api.POST("/products", middleware.AuthRequired(), products.Create)
 		api.PUT("/products", middleware.AuthRequired(), products.Update)
 		api.DELETE("/products", middleware.AuthRequired(), products.Delete)
 
 		// Categories
-		api.GET("/categories", categories.List)
+		api.GET("/categories", middleware.OptionalAuth(), categories.List)
 		api.POST("/categories", middleware.AuthRequired(), categories.Create)
 		api.PUT("/categories", middleware.AuthRequired(), categories.Update)
 
