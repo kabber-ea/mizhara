@@ -15,6 +15,8 @@ export type SerializedProduct = {
   rating: number;
   reviewsCount: number;
   images: string[];
+  bannerImage?: string;
+  bannerImageMobile?: string;
   materials: string[];
   sizes: string[];
   isFeatured: boolean;
@@ -33,6 +35,8 @@ export type ProductInput = {
   materials?: string[];
   sizes?: string[];
   images?: string[];
+  bannerImage?: string;
+  bannerImageMobile?: string;
   isFeatured?: boolean;
   isActive?: boolean;
   stockQuantity?: number;

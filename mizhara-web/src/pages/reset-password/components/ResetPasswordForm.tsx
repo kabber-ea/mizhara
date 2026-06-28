@@ -1,7 +1,13 @@
 import { useState, Suspense } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import FieldError from "@/components/FieldError";
+import FieldLabel from "@/components/FieldLabel";
+import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
+import { fieldInputClass } from "@/lib/form-styles";
 import { forgotPasswordUrl, loginUrl } from "@/lib/auth-url";
+
+type ResetField = "password" | "confirmPassword" | "submit";
 
 function ResetPasswordContent() {
   const navigate = useNavigate();
@@ -10,30 +16,31 @@ function ResetPasswordContent() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const { fieldErrors, setFieldErrors, clearFieldError } = useFieldErrors<ResetField>();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setMessage("");
 
     if (!token) {
-      setError("Invalid reset link. Request a new one.");
+      setFieldErrors({ submit: "Invalid reset link. Request a new one." });
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    const errors: Partial<Record<ResetField, string>> = {};
+    if (!password) errors.password = "Password is required.";
+    else if (password.length < 6) errors.password = "Password must be at least 6 characters.";
+    if (!confirmPassword) errors.confirmPassword = "Confirm your password.";
+    else if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match.";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
+    setFieldErrors({});
     setLoading(true);
 
     try {
@@ -46,7 +53,7 @@ function ResetPasswordContent() {
         navigate(loginUrl());
       }, 2000);
     } catch (err) {
-      setError(apiErrorMessage(err, "Failed to reset password"));
+      setFieldErrors({ submit: apiErrorMessage(err, "Failed to reset password.") });
     } finally {
       setLoading(false);
     }
@@ -70,18 +77,37 @@ function ResetPasswordContent() {
         <p className="text-xs text-muted-custom">Choose a new password for your account</p>
       </div>
 
-      {error && <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">{error}</div>}
       {message && <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl">{message}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
-          <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">New Password</label>
-          <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+          <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">New Password</FieldLabel>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError("password");
+              if (confirmPassword) clearFieldError("confirmPassword");
+            }}
+            className={fieldInputClass(!!fieldErrors.password)}
+          />
+          <FieldError message={fieldErrors.password} />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Confirm Password</label>
-          <input type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+          <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Confirm Password</FieldLabel>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              clearFieldError("confirmPassword");
+            }}
+            className={fieldInputClass(!!fieldErrors.confirmPassword)}
+          />
+          <FieldError message={fieldErrors.confirmPassword} />
         </div>
+        <FieldError message={fieldErrors.submit} />
         <button type="submit" disabled={loading || !!message} className="w-full py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl disabled:opacity-60 cursor-pointer">
           {loading ? "Saving..." : "Update Password"}
         </button>

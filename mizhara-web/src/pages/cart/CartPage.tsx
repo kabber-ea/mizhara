@@ -5,8 +5,15 @@ import { loginUrl } from "@/lib/auth-url";
 import { useCart } from "@/providers/CartProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import FieldError from "@/components/FieldError";
+import FieldLabel from "@/components/FieldLabel";
+import { useFieldErrors } from "@/hooks/use-field-errors";
 import { formatINR } from "@/lib/format";
 import { api, apiErrorMessage } from "@/lib/api";
+import { fieldInputClass } from "@/lib/form-styles";
+import { isValidEmail, isValidPhone, isValidPincode } from "@/lib/form-validation";
+import type { CustomerProfile, SavedAddress } from "@/types/account";
+import { getDefaultSavedAddress } from "@/types/account";
 import type { OfferPreview } from "@/types/offer";
 
 declare global {
@@ -40,6 +47,10 @@ export default function CartPage() {
     pincode: "",
     phone: "",
   });
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const { fieldErrors: shippingErrors, setFieldErrors: setShippingErrors, clearFieldError: clearShippingError } =
+    useFieldErrors<"name" | "email" | "address" | "city" | "state" | "pincode" | "phone">();
 
   useEffect(() => {
     if (urlCode) {
@@ -58,16 +69,22 @@ export default function CartPage() {
     if (!user || user.role !== "customer") return;
 
     api
-      .get("/api/account/profile")
+      .get<CustomerProfile>("/api/account/profile")
       .then(({ data: profile }) => {
+        const addresses = profile.savedAddresses ?? [];
+        setSavedAddresses(addresses);
+        const defaultAddr = getDefaultSavedAddress(addresses);
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id);
+        }
         setShippingForm((prev) => ({
           name: profile.name ?? prev.name,
           email: profile.email ?? prev.email,
           phone: profile.phone ?? prev.phone,
-          address: profile.savedAddress?.address ?? prev.address,
-          city: profile.savedAddress?.city ?? prev.city,
-          state: profile.savedAddress?.state ?? prev.state,
-          pincode: profile.savedAddress?.pincode ?? prev.pincode,
+          address: defaultAddr?.address ?? profile.savedAddress?.address ?? prev.address,
+          city: defaultAddr?.city ?? profile.savedAddress?.city ?? prev.city,
+          state: defaultAddr?.state ?? profile.savedAddress?.state ?? prev.state,
+          pincode: defaultAddr?.pincode ?? profile.savedAddress?.pincode ?? prev.pincode,
         }));
       })
       .catch(() => undefined);
@@ -118,6 +135,22 @@ export default function CartPage() {
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setShippingForm((prev) => ({ ...prev, [name]: value }));
+    clearShippingError(name as keyof typeof shippingForm);
+    if (name !== "name" && name !== "email" && name !== "phone") {
+      setSelectedAddressId("");
+    }
+  };
+
+  const applySavedAddress = (addr: SavedAddress) => {
+    setSelectedAddressId(addr.id);
+    setShippingForm((prev) => ({
+      ...prev,
+      address: addr.address,
+      city: addr.city,
+      state: addr.state,
+      pincode: addr.pincode,
+    }));
+    setShippingErrors({});
   };
 
   const handleProceedToCheckout = () => {
@@ -134,6 +167,28 @@ export default function CartPage() {
       navigate(loginUrl("/cart"));
       return;
     }
+
+    const errors: Partial<Record<keyof typeof shippingForm, string>> = {};
+    if (!shippingForm.name.trim()) errors.name = "Full name is required.";
+    if (!shippingForm.email.trim() || !isValidEmail(shippingForm.email)) {
+      errors.email = "Enter a valid email address.";
+    }
+    if (!shippingForm.address.trim()) errors.address = "Address is required.";
+    if (!shippingForm.city.trim()) errors.city = "City is required.";
+    if (!shippingForm.state.trim()) errors.state = "State is required.";
+    if (!shippingForm.pincode.trim() || !isValidPincode(shippingForm.pincode)) {
+      errors.pincode = "Enter a valid 6-digit pincode.";
+    }
+    if (!shippingForm.phone.trim() || !isValidPhone(shippingForm.phone)) {
+      errors.phone = "Enter a valid phone number.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setShippingErrors(errors);
+      return;
+    }
+
+    setShippingErrors({});
     setStep("payment");
   };
 
@@ -351,39 +406,73 @@ export default function CartPage() {
         {step === "shipping" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              <form onSubmit={handleShippingSubmit} className="p-6 bg-white border border-border-custom rounded-2xl space-y-4">
+              <form onSubmit={handleShippingSubmit} noValidate className="p-6 bg-white border border-border-custom rounded-2xl space-y-4">
                 <h3 className="font-serif text-base font-bold text-primary-dark border-b pb-3">Shipping Details (India)</h3>
+
+                {savedAddresses.length > 0 && (
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase mb-2">Saved Addresses</label>
+                    <div className="flex flex-wrap gap-2">
+                      {savedAddresses.map((addr) => (
+                        <button
+                          key={addr.id}
+                          type="button"
+                          onClick={() => applySavedAddress(addr)}
+                          className={`px-3 py-2 rounded-xl border text-left text-[10px] font-semibold transition-colors ${
+                            selectedAddressId === addr.id
+                              ? "border-primary bg-accent-pink/20 text-primary-dark"
+                              : "border-border-custom text-muted-custom hover:border-primary/40"
+                          }`}
+                        >
+                          {addr.label?.trim() || "Address"}
+                          {addr.isDefault && <span className="ml-1 text-primary">· Default</span>}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-custom mt-2">
+                      Pick a saved address or edit the fields below.
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase mb-1">Full Name</label>
-                    <input type="text" name="name" required value={shippingForm.name} onChange={handleFormChange} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+                    <FieldLabel required>Full Name</FieldLabel>
+                    <input type="text" name="name" value={shippingForm.name} onChange={handleFormChange} className={fieldInputClass(!!shippingErrors.name)} />
+                    <FieldError message={shippingErrors.name} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase mb-1">Email</label>
-                    <input type="email" name="email" required value={shippingForm.email} onChange={handleFormChange} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+                    <FieldLabel required>Email</FieldLabel>
+                    <input type="email" name="email" value={shippingForm.email} onChange={handleFormChange} className={fieldInputClass(!!shippingErrors.email)} />
+                    <FieldError message={shippingErrors.email} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase mb-1">Address</label>
-                  <input type="text" name="address" required value={shippingForm.address} onChange={handleFormChange} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+                  <FieldLabel required>Address</FieldLabel>
+                  <input type="text" name="address" value={shippingForm.address} onChange={handleFormChange} className={fieldInputClass(!!shippingErrors.address)} />
+                  <FieldError message={shippingErrors.address} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase mb-1">City</label>
-                    <input type="text" name="city" required value={shippingForm.city} onChange={handleFormChange} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+                    <FieldLabel required>City</FieldLabel>
+                    <input type="text" name="city" value={shippingForm.city} onChange={handleFormChange} className={fieldInputClass(!!shippingErrors.city)} />
+                    <FieldError message={shippingErrors.city} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase mb-1">State</label>
-                    <input type="text" name="state" required value={shippingForm.state} onChange={handleFormChange} placeholder="Maharashtra" className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+                    <FieldLabel required>State</FieldLabel>
+                    <input type="text" name="state" value={shippingForm.state} onChange={handleFormChange} placeholder="Maharashtra" className={fieldInputClass(!!shippingErrors.state)} />
+                    <FieldError message={shippingErrors.state} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase mb-1">PIN Code</label>
-                    <input type="text" name="pincode" required pattern="[0-9]{6}" value={shippingForm.pincode} onChange={handleFormChange} placeholder="400001" className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+                    <FieldLabel required>PIN Code</FieldLabel>
+                    <input type="text" name="pincode" inputMode="numeric" value={shippingForm.pincode} onChange={handleFormChange} placeholder="400001" className={fieldInputClass(!!shippingErrors.pincode)} />
+                    <FieldError message={shippingErrors.pincode} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase mb-1">Phone</label>
-                  <input type="tel" name="phone" required value={shippingForm.phone} onChange={handleFormChange} placeholder="+91 98765 43210" className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+                  <FieldLabel required>Phone</FieldLabel>
+                  <input type="tel" name="phone" value={shippingForm.phone} onChange={handleFormChange} placeholder="+91 98765 43210" className={fieldInputClass(!!shippingErrors.phone)} />
+                  <FieldError message={shippingErrors.phone} />
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setStep("cart")} className="px-6 py-2.5 border border-border-custom text-xs font-semibold rounded-xl">Back</button>

@@ -87,9 +87,16 @@ export default function PromoBannerCarousel({ products, offers = [] }: PromoBann
               aria-hidden={i !== active}
             >
               <img
-                src={item.images[0]}
+                src={item.bannerImageMobile || item.bannerImage || item.images[0]}
                 alt={item.name}
-                className={`promo-banner-image w-full h-full object-cover ${
+                className={`promo-banner-image w-full h-full object-cover sm:hidden ${
+                  i === active ? "promo-banner-image-active" : ""
+                }`}
+              />
+              <img
+                src={item.bannerImage || item.images[0]}
+                alt={item.name}
+                className={`promo-banner-image w-full h-full object-cover hidden sm:block ${
                   i === active ? "promo-banner-image-active" : ""
                 }`}
               />

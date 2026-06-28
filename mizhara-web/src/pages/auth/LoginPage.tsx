@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "@/components/layout/AuthLayout";
+import FieldError from "@/components/FieldError";
+import FieldLabel from "@/components/FieldLabel";
 import { useAuth } from "@/providers/AuthProvider";
+import { useFieldErrors } from "@/hooks/use-field-errors";
 import { DEMO_ACCOUNTS, maskPassword } from "@/lib/demo-credentials";
 import { api, apiErrorMessage } from "@/lib/api";
+import { fieldInputClass } from "@/lib/form-styles";
+import { isValidEmail } from "@/lib/form-validation";
 import { forgotPasswordUrl, resolveAuthRedirect, signupUrl } from "@/lib/auth-url";
+
+type LoginField = "identifier" | "password" | "submit";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,8 +21,8 @@ export default function LoginPage() {
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { fieldErrors, setFieldErrors, clearFieldError } = useFieldErrors<LoginField>();
 
   useEffect(() => {
     if (loading) return;
@@ -41,12 +48,20 @@ export default function LoginPage() {
   const fillDemo = (email: string, pwd: string) => {
     setIdentifier(email);
     setPassword(pwd);
-    setError("");
+    setFieldErrors({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    const errors: Partial<Record<LoginField, string>> = {};
+    if (!identifier.trim() || !isValidEmail(identifier)) errors.identifier = "Enter a valid email address.";
+    if (!password) errors.password = "Password is required.";
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const { data } = await api.post<{ user?: { role?: string } }>("/api/auth/login", {
@@ -55,7 +70,7 @@ export default function LoginPage() {
       });
       await finishLogin(data.user?.role);
     } catch (err) {
-      setError(apiErrorMessage(err, "Invalid credentials. Try a demo account below."));
+      setFieldErrors({ submit: apiErrorMessage(err, "Invalid credentials. Try a demo account below.") });
     } finally {
       setSubmitting(false);
     }
@@ -67,26 +82,29 @@ export default function LoginPage() {
 
   return (
     <AuthLayout title="Sign In" subtitle="Welcome back to Mizhara">
-      {error && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">{error}</div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
-          <label htmlFor="login-email" className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Email</label>
+          <FieldLabel htmlFor="login-email" required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">
+            Email
+          </FieldLabel>
           <input
             id="login-email"
             type="email"
-            required
             autoComplete="email"
             value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs"
+            onChange={(e) => {
+              setIdentifier(e.target.value);
+              clearFieldError("identifier");
+            }}
+            className={fieldInputClass(!!fieldErrors.identifier)}
           />
+          <FieldError message={fieldErrors.identifier} />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label htmlFor="login-password" className="block text-[10px] font-bold text-primary-dark uppercase">Password</label>
+            <FieldLabel htmlFor="login-password" required className="block text-[10px] font-bold text-primary-dark uppercase">
+              Password
+            </FieldLabel>
             <Link to={forgotPasswordUrl()} className="text-[10px] text-primary font-semibold hover:underline">
               Forgot password?
             </Link>
@@ -94,13 +112,17 @@ export default function LoginPage() {
           <input
             id="login-password"
             type="password"
-            required
             autoComplete="current-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs"
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError("password");
+            }}
+            className={fieldInputClass(!!fieldErrors.password)}
           />
+          <FieldError message={fieldErrors.password} />
         </div>
+        <FieldError message={fieldErrors.submit} />
         <button
           type="submit"
           disabled={submitting}

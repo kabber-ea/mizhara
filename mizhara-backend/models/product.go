@@ -16,6 +16,8 @@ type Product struct {
 	Rating       float64            `bson:"rating" json:"rating"`
 	ReviewsCount int                `bson:"reviewsCount" json:"reviewsCount"`
 	Images       []string           `bson:"images" json:"images"`
+	BannerImage       string             `bson:"bannerImage,omitempty" json:"bannerImage,omitempty"`
+	BannerImageMobile string             `bson:"bannerImageMobile,omitempty" json:"bannerImageMobile,omitempty"`
 	Materials    []string           `bson:"materials" json:"materials"`
 	Sizes        []string           `bson:"sizes" json:"sizes"`
 	IsFeatured    bool `bson:"isFeatured" json:"isFeatured"`

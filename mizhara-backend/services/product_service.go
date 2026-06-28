@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"mizhara-backend/lib"
@@ -22,6 +23,8 @@ type SerializedProduct struct {
 	Rating       float64  `json:"rating"`
 	ReviewsCount int      `json:"reviewsCount"`
 	Images       []string `json:"images"`
+	BannerImage       string   `json:"bannerImage,omitempty"`
+	BannerImageMobile string   `json:"bannerImageMobile,omitempty"`
 	Materials    []string `json:"materials"`
 	Sizes        []string `json:"sizes"`
 	IsFeatured    bool     `json:"isFeatured"`
@@ -45,6 +48,8 @@ type ProductInput struct {
 	Rating       float64  `json:"rating"`
 	ReviewsCount int      `json:"reviewsCount"`
 	Images       []string `json:"images"`
+	BannerImage       string   `json:"bannerImage,omitempty"`
+	BannerImageMobile string   `json:"bannerImageMobile,omitempty"`
 	Materials    []string `json:"materials"`
 	Sizes        []string `json:"sizes"`
 	IsFeatured    bool     `json:"isFeatured"`
@@ -96,7 +101,7 @@ func serializeProduct(p models.Product) SerializedProduct {
 	return SerializedProduct{
 		ID: p.ID.Hex(), Name: p.Name, Description: p.Description, Category: p.Category,
 		Price: p.Price, Rating: p.Rating, ReviewsCount: p.ReviewsCount,
-		Images: p.Images, Materials: p.Materials, Sizes: p.Sizes,
+		Images: p.Images, BannerImage: p.BannerImage, BannerImageMobile: p.BannerImageMobile, Materials: p.Materials, Sizes: p.Sizes,
 		IsFeatured: p.IsFeatured, IsActive: productIsActive(p), StockQuantity: stock, InStock: syncInStock(stock),
 	}
 }
@@ -185,12 +190,24 @@ func ListAdminProducts(ctx context.Context) ([]AdminProduct, error) {
 	return out, nil
 }
 
+func prepareProductInput(input ProductInput) ProductInput {
+	input.BannerImage = strings.TrimSpace(input.BannerImage)
+	input.BannerImageMobile = strings.TrimSpace(input.BannerImageMobile)
+	if input.BannerImage == "" || input.BannerImageMobile == "" {
+		input.IsFeatured = false
+	}
+	return input
+}
+
 func validateProductInput(input ProductInput) error {
 	if input.Name == "" || input.Category == "" || input.Price <= 0 {
 		return lib.BadRequest("name, category, and price are required")
 	}
 	if len(input.Images) == 0 || input.Images[0] == "" {
 		return lib.BadRequest("at least one product image is required")
+	}
+	if input.IsFeatured && (input.BannerImage == "" || input.BannerImageMobile == "") {
+		return lib.BadRequest("desktop and mobile banner images are required for featured products")
 	}
 	return nil
 }
@@ -357,6 +374,7 @@ func GetRelatedProducts(ctx context.Context, category, excludeID string, limit i
 }
 
 func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, error) {
+	input = prepareProductInput(input)
 	if err := validateProductInput(input); err != nil {
 		return nil, err
 	}
@@ -377,7 +395,7 @@ func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 		ID: primitive.NewObjectID(), Name: input.Name, Description: input.Description,
 		Category: input.Category, CostPrice: input.CostPrice, Price: input.Price,
 		Rating: input.Rating, ReviewsCount: input.ReviewsCount,
-		Images: input.Images, Materials: input.Materials, Sizes: sizes,
+		Images: input.Images, BannerImage: input.BannerImage, BannerImageMobile: input.BannerImageMobile, Materials: input.Materials, Sizes: sizes,
 		IsFeatured: input.IsFeatured, IsActive: boolPtr(isActive), StockQuantity: stock, InStock: syncInStock(stock),
 		CreatedAt: now, UpdatedAt: now,
 	}
@@ -393,6 +411,7 @@ func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 }
 
 func UpdateProduct(ctx context.Context, input ProductInput) (*AdminProduct, error) {
+	input = prepareProductInput(input)
 	if err := validateProductInput(input); err != nil {
 		return nil, err
 	}
@@ -407,7 +426,7 @@ func UpdateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 	update := bson.M{
 		"name": input.Name, "description": input.Description, "category": input.Category,
 		"costPrice": input.CostPrice, "price": input.Price, "materials": input.Materials,
-		"sizes": input.Sizes, "images": input.Images, "isFeatured": input.IsFeatured,
+		"sizes": input.Sizes, "images": input.Images, "bannerImage": input.BannerImage, "bannerImageMobile": input.BannerImageMobile, "isFeatured": input.IsFeatured,
 		"stockQuantity": stock, "inStock": syncInStock(stock), "updatedAt": time.Now(),
 	}
 	if input.IsActive != nil {

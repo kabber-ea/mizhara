@@ -1,7 +1,12 @@
 import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import FieldError from "@/components/FieldError";
+import FieldLabel from "@/components/FieldLabel";
+import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
+import { fieldInputClass } from "@/lib/form-styles";
+import { isValidEmail } from "@/lib/form-validation";
 
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "919876543210";
 const INSTAGRAM_URL = import.meta.env.VITE_INSTAGRAM_URL || "https://www.instagram.com/mizhara";
@@ -18,6 +23,8 @@ function whatsappChatUrl(text?: string) {
   return text ? `${base}?text=${encodeURIComponent(text)}` : base;
 }
 
+type ContactField = "name" | "email" | "message" | "submit";
+
 export default function ContactPage() {
   const [form, setForm] = useState({
     name: "",
@@ -26,25 +33,39 @@ export default function ContactPage() {
     message: "",
   });
   const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { fieldErrors, setFieldErrors, clearFieldError } = useFieldErrors<ContactField>();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "name" || name === "email" || name === "message") {
+      clearFieldError(name as ContactField);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setSuccess("");
+
+    const errors: Partial<Record<ContactField, string>> = {};
+    if (!form.name.trim()) errors.name = "Your name is required.";
+    if (!form.email.trim() || !isValidEmail(form.email)) errors.email = "Enter a valid email address.";
+    if (!form.message.trim()) errors.message = "Please enter a message.";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     setLoading(true);
     try {
       const { data } = await api.post<{ message: string }>("/api/contact", form);
       setSuccess(data.message);
       setForm({ name: "", email: "", subject: "Inquiry", message: "" });
     } catch (err: unknown) {
-      setError(apiErrorMessage(err, "Could not send your message. Try WhatsApp or Instagram instead."));
+      setFieldErrors({ submit: apiErrorMessage(err, "Could not send your message. Try WhatsApp or Instagram instead.") });
     } finally {
       setLoading(false);
     }
@@ -93,7 +114,7 @@ export default function ContactPage() {
           </a>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 bg-white border border-border-custom rounded-2xl space-y-4 shadow-xs">
+        <form onSubmit={handleSubmit} noValidate className="p-6 bg-white border border-border-custom rounded-2xl space-y-4 shadow-xs">
           <div className="text-center space-y-1">
             <h2 className="font-serif text-base font-bold text-primary-dark">Email support</h2>
             <p className="text-[10px] text-muted-custom">Messages are sent to {SUPPORT_EMAIL}</p>
@@ -105,41 +126,41 @@ export default function ContactPage() {
             </div>
           )}
 
-          {error && (
+          {fieldErrors.submit && (
             <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl text-center">
-              {error}
+              {fieldErrors.submit}
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Your Name</label>
+              <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Your Name</FieldLabel>
               <input
                 type="text"
-                required
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Your name"
-                className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs bg-background/30 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-white"
+                className={`${fieldInputClass(!!fieldErrors.name)} bg-background/30 focus:bg-white`}
               />
+              <FieldError message={fieldErrors.name} />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Your Email</label>
+              <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Your Email</FieldLabel>
               <input
                 type="email"
-                required
                 name="email"
                 value={form.email}
                 onChange={handleChange}
                 placeholder="you@email.com"
-                className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs bg-background/30 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-white"
+                className={`${fieldInputClass(!!fieldErrors.email)} bg-background/30 focus:bg-white`}
               />
+              <FieldError message={fieldErrors.email} />
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Subject</label>
+            <FieldLabel className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Subject</FieldLabel>
             <select
               name="subject"
               value={form.subject}
@@ -154,16 +175,16 @@ export default function ContactPage() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Message</label>
+            <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Message</FieldLabel>
             <textarea
-              required
               name="message"
               rows={4}
               value={form.message}
               onChange={handleChange}
               placeholder="How can we help?"
-              className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs bg-background/30 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-white"
+              className={`${fieldInputClass(!!fieldErrors.message)} bg-background/30 focus:bg-white`}
             />
+            <FieldError message={fieldErrors.message} />
           </div>
 
           <button

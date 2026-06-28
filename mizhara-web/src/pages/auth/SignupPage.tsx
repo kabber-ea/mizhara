@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthLayout from "@/components/layout/AuthLayout";
+import FieldError from "@/components/FieldError";
+import FieldLabel from "@/components/FieldLabel";
 import { useAuth } from "@/providers/AuthProvider";
+import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
+import { fieldInputClass } from "@/lib/form-styles";
+import { isValidEmail } from "@/lib/form-validation";
 import { loginUrl, resolveAuthRedirect } from "@/lib/auth-url";
+
+type SignupField = "name" | "email" | "password" | "confirmPassword" | "submit";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -15,8 +22,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { fieldErrors, setFieldErrors, clearFieldError } = useFieldErrors<SignupField>();
 
   useEffect(() => {
     if (loading) return;
@@ -31,17 +38,20 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    const errors: Partial<Record<SignupField, string>> = {};
+    if (!name.trim()) errors.name = "Full name is required.";
+    if (!email.trim() || !isValidEmail(email)) errors.email = "Enter a valid email address.";
+    if (!password) errors.password = "Password is required.";
+    else if (password.length < 6) errors.password = "Password must be at least 6 characters.";
+    if (!confirmPassword) errors.confirmPassword = "Confirm your password.";
+    else if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match.";
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
 
+    setFieldErrors({});
     setSubmitting(true);
     try {
       await api.post("/api/auth/register", { name, email, password });
@@ -49,7 +59,7 @@ export default function SignupPage() {
       await refresh();
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(apiErrorMessage(err, "Sign up failed"));
+      setFieldErrors({ submit: apiErrorMessage(err, "Sign up failed.") });
     } finally {
       setSubmitting(false);
     }
@@ -61,27 +71,61 @@ export default function SignupPage() {
 
   return (
     <AuthLayout title="Create Account" subtitle="Join Mizhara for a sparkly shopping experience">
-      {error && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">{error}</div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
-          <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Full Name</label>
-          <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+          <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Full Name</FieldLabel>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              clearFieldError("name");
+            }}
+            className={fieldInputClass(!!fieldErrors.name)}
+          />
+          <FieldError message={fieldErrors.name} />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+          <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Email</FieldLabel>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearFieldError("email");
+            }}
+            className={fieldInputClass(!!fieldErrors.email)}
+          />
+          <FieldError message={fieldErrors.email} />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Password</label>
-          <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+          <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Password</FieldLabel>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              clearFieldError("password");
+              if (confirmPassword) clearFieldError("confirmPassword");
+            }}
+            className={fieldInputClass(!!fieldErrors.password)}
+          />
+          <FieldError message={fieldErrors.password} />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Confirm Password</label>
-          <input type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs" />
+          <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Confirm Password</FieldLabel>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              clearFieldError("confirmPassword");
+            }}
+            className={fieldInputClass(!!fieldErrors.confirmPassword)}
+          />
+          <FieldError message={fieldErrors.confirmPassword} />
         </div>
+        <FieldError message={fieldErrors.submit} />
         <button type="submit" disabled={submitting} className="w-full py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl disabled:opacity-60 cursor-pointer">
           {submitting ? "Creating..." : "Sign Up"}
         </button>

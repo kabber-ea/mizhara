@@ -9,24 +9,31 @@ import (
 
 	"mizhara-backend/lib"
 	"mizhara-backend/models"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+const MaxSavedAddresses = 5
+
 type SavedAddress struct {
-	Address string `json:"address,omitempty"`
-	City    string `json:"city,omitempty"`
-	State   string `json:"state,omitempty"`
-	Pincode string `json:"pincode,omitempty"`
+	ID        string `json:"id,omitempty"`
+	Label     string `json:"label,omitempty"`
+	Address   string `json:"address,omitempty"`
+	City      string `json:"city,omitempty"`
+	State     string `json:"state,omitempty"`
+	Pincode   string `json:"pincode,omitempty"`
+	IsDefault bool   `json:"isDefault,omitempty"`
 }
 
 type CustomerProfile struct {
-	ID           string        `json:"id"`
-	Name         string        `json:"name"`
-	Email        string        `json:"email,omitempty"`
-	Phone        string        `json:"phone,omitempty"`
-	SavedAddress *SavedAddress `json:"savedAddress,omitempty"`
+	ID              string         `json:"id"`
+	Name            string         `json:"name"`
+	Email           string         `json:"email,omitempty"`
+	Phone           string         `json:"phone,omitempty"`
+	SavedAddress    *SavedAddress  `json:"savedAddress,omitempty"`
+	SavedAddresses  []SavedAddress `json:"savedAddresses,omitempty"`
 }
 
 type CustomerOrder struct {
@@ -44,9 +51,10 @@ type CustomerOrder struct {
 }
 
 type ProfileUpdate struct {
-	Name         string        `json:"name"`
-	Phone        string        `json:"phone"`
-	SavedAddress *SavedAddress `json:"savedAddress"`
+	Name           string          `json:"name"`
+	Phone          string          `json:"phone"`
+	SavedAddress   *SavedAddress   `json:"savedAddress"`
+	SavedAddresses *[]SavedAddress `json:"savedAddresses"`
 }
 
 type ProfileUpdateResult struct {
@@ -113,13 +121,104 @@ func GetCustomerProfile(ctx context.Context, userID string) (*CustomerProfile, e
 		return nil, err
 	}
 	profile := &CustomerProfile{ID: user.ID.Hex(), Name: user.Name, Email: user.Email, Phone: user.Phone}
-	if user.SavedAddress != nil {
-		profile.SavedAddress = &SavedAddress{
-			Address: user.SavedAddress.Address, City: user.SavedAddress.City,
-			State: user.SavedAddress.State, Pincode: user.SavedAddress.Pincode,
-		}
+	addrs := normalizeSavedAddresses(user)
+	profile.SavedAddresses = toAPISavedAddresses(addrs)
+	if defaultAddr := defaultSavedAddress(addrs); defaultAddr != nil {
+		profile.SavedAddress = toAPISavedAddress(*defaultAddr)
 	}
 	return profile, nil
+}
+
+func normalizeSavedAddresses(user models.User) []models.SavedAddress {
+	if len(user.SavedAddresses) > 0 {
+		return user.SavedAddresses
+	}
+	if user.SavedAddress == nil {
+		return nil
+	}
+	legacy := user.SavedAddress
+	if strings.TrimSpace(legacy.Address) == "" && strings.TrimSpace(legacy.City) == "" &&
+		strings.TrimSpace(legacy.State) == "" && strings.TrimSpace(legacy.Pincode) == "" {
+		return nil
+	}
+	id := strings.TrimSpace(legacy.ID)
+	if id == "" {
+		id = primitive.NewObjectID().Hex()
+	}
+	return []models.SavedAddress{{
+		ID: id, Label: legacy.Label, Address: legacy.Address, City: legacy.City,
+		State: legacy.State, Pincode: legacy.Pincode, IsDefault: true,
+	}}
+}
+
+func defaultSavedAddress(addrs []models.SavedAddress) *models.SavedAddress {
+	for i := range addrs {
+		if addrs[i].IsDefault {
+			return &addrs[i]
+		}
+	}
+	if len(addrs) > 0 {
+		return &addrs[0]
+	}
+	return nil
+}
+
+func toAPISavedAddress(addr models.SavedAddress) *SavedAddress {
+	return &SavedAddress{
+		ID: addr.ID, Label: addr.Label, Address: addr.Address, City: addr.City,
+		State: addr.State, Pincode: addr.Pincode, IsDefault: addr.IsDefault,
+	}
+}
+
+func toAPISavedAddresses(addrs []models.SavedAddress) []SavedAddress {
+	out := make([]SavedAddress, 0, len(addrs))
+	for _, addr := range addrs {
+		out = append(out, *toAPISavedAddress(addr))
+	}
+	return out
+}
+
+func normalizeSavedAddressInput(addrs []SavedAddress) ([]models.SavedAddress, error) {
+	if len(addrs) > MaxSavedAddresses {
+		return nil, lib.BadRequest("you can save up to 5 addresses")
+	}
+	out := make([]models.SavedAddress, 0, len(addrs))
+	defaultCount := 0
+	for _, item := range addrs {
+		addr := strings.TrimSpace(item.Address)
+		city := strings.TrimSpace(item.City)
+		state := strings.TrimSpace(item.State)
+		pincode := strings.TrimSpace(item.Pincode)
+		if addr == "" || city == "" || state == "" || pincode == "" {
+			return nil, lib.BadRequest("each saved address needs street, city, state, and pincode")
+		}
+		id := strings.TrimSpace(item.ID)
+		if id == "" {
+			id = primitive.NewObjectID().Hex()
+		}
+		if item.IsDefault {
+			defaultCount++
+		}
+		out = append(out, models.SavedAddress{
+			ID: id, Label: strings.TrimSpace(item.Label), Address: addr, City: city,
+			State: state, Pincode: pincode, IsDefault: item.IsDefault,
+		})
+	}
+	if len(out) > 0 && defaultCount == 0 {
+		out[0].IsDefault = true
+	}
+	if defaultCount > 1 {
+		seen := false
+		for i := range out {
+			if out[i].IsDefault {
+				if seen {
+					out[i].IsDefault = false
+				}
+				seen = true
+			}
+		}
+	}
+	return out, nil
 }
 
 func UpdateCustomerProfile(ctx context.Context, userID string, data ProfileUpdate) (*lib.SessionPayload, error) {
@@ -145,13 +244,20 @@ func UpdateCustomerProfile(ctx context.Context, userID string, data ProfileUpdat
 			user.Phone = normalized
 		}
 	}
-	if data.SavedAddress != nil {
-		user.SavedAddress = &models.SavedAddress{
-			Address: strings.TrimSpace(data.SavedAddress.Address),
-			City:    strings.TrimSpace(data.SavedAddress.City),
-			State:   strings.TrimSpace(data.SavedAddress.State),
-			Pincode: strings.TrimSpace(data.SavedAddress.Pincode),
+	if data.SavedAddresses != nil {
+		normalized, err := normalizeSavedAddressInput(*data.SavedAddresses)
+		if err != nil {
+			return nil, err
 		}
+		user.SavedAddresses = normalized
+		user.SavedAddress = nil
+	} else if data.SavedAddress != nil {
+		normalized, err := normalizeSavedAddressInput([]SavedAddress{*data.SavedAddress})
+		if err != nil {
+			return nil, err
+		}
+		user.SavedAddresses = normalized
+		user.SavedAddress = nil
 	}
 	user.UpdatedAt = time.Now()
 	_, err = lib.Users().ReplaceOne(ctx, bson.M{"_id": oid}, user)

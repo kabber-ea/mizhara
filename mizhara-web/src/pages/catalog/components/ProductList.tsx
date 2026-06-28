@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { formatINR } from "@/lib/format";
-import { api } from "@/lib/api";
+import { api, apiErrorMessage } from "@/lib/api";
 import Pagination from "@/components/Pagination";
 import ProductThumbnail from "@/components/ProductThumbnail";
 import type { AdminProduct } from "@/types/catalog";
@@ -17,6 +17,7 @@ interface ProductListProps {
 export default function ProductList({ products, onEdit, onRefresh }: ProductListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [featuredError, setFeaturedError] = useState("");
 
   const filtered = useMemo(
     () =>
@@ -48,14 +49,15 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
   }, [page, totalPages]);
 
   const handleToggleFeatured = async (product: AdminProduct) => {
+    setFeaturedError("");
     try {
       await api.put("/api/products", {
         ...product,
         isFeatured: !product.isFeatured,
       });
       onRefresh();
-    } catch (e) {
-      console.error("Failed to toggle featured state", e);
+    } catch (err: unknown) {
+      setFeaturedError(apiErrorMessage(err, "Failed to update featured status."));
     }
   };
 
@@ -93,6 +95,12 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
           className="w-full sm:w-64 px-4 py-2 border border-border-custom rounded-xl text-xs bg-background/50 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-white"
         />
       </div>
+
+      {featuredError && (
+        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">
+          {featuredError}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="text-center py-10 text-xs text-muted-custom">

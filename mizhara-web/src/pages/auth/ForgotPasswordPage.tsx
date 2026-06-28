@@ -1,21 +1,36 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthLayout from "@/components/layout/AuthLayout";
+import FieldError from "@/components/FieldError";
+import FieldLabel from "@/components/FieldLabel";
+import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
+import { fieldInputClass } from "@/lib/form-styles";
+import { isValidEmail } from "@/lib/form-validation";
 import { loginUrl } from "@/lib/auth-url";
+
+type ForgotField = "email" | "submit";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [devResetUrl, setDevResetUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const { fieldErrors, setFieldErrors, clearFieldError } = useFieldErrors<ForgotField>();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setMessage("");
     setDevResetUrl("");
+
+    const errors: Partial<Record<ForgotField, string>> = {};
+    if (!email.trim() || !isValidEmail(email)) errors.email = "Enter a valid email address.";
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     setLoading(true);
 
     try {
@@ -25,7 +40,7 @@ export default function ForgotPasswordPage() {
       setMessage(data.message);
       if (data.devResetUrl) setDevResetUrl(data.devResetUrl);
     } catch (err) {
-      setError(apiErrorMessage(err, "Something went wrong"));
+      setFieldErrors({ submit: apiErrorMessage(err, "Something went wrong.") });
     } finally {
       setLoading(false);
     }
@@ -33,9 +48,6 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout title="Forgot Password" subtitle="We'll email you a link to reset your password">
-      {error && (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl">{error}</div>
-      )}
       {message && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl">{message}</div>
       )}
@@ -46,18 +58,22 @@ export default function ForgotPasswordPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <div>
-          <label className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Email</label>
+          <FieldLabel required className="block text-[10px] font-bold text-primary-dark uppercase mb-1">Email</FieldLabel>
           <input
             type="email"
-            required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearFieldError("email");
+            }}
             placeholder="you@example.com"
-            className="w-full px-4 py-2.5 border border-border-custom rounded-xl text-xs"
+            className={fieldInputClass(!!fieldErrors.email)}
           />
+          <FieldError message={fieldErrors.email} />
         </div>
+        <FieldError message={fieldErrors.submit} />
         <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl disabled:opacity-60 cursor-pointer">
           {loading ? "Sending..." : "Send Reset Link"}
         </button>

@@ -14,10 +14,13 @@ const (
 )
 
 type SavedAddress struct {
-	Address string `bson:"address,omitempty" json:"address,omitempty"`
-	City    string `bson:"city,omitempty" json:"city,omitempty"`
-	State   string `bson:"state,omitempty" json:"state,omitempty"`
-	Pincode string `bson:"pincode,omitempty" json:"pincode,omitempty"`
+	ID        string `bson:"id,omitempty" json:"id,omitempty"`
+	Label     string `bson:"label,omitempty" json:"label,omitempty"`
+	Address   string `bson:"address,omitempty" json:"address,omitempty"`
+	City      string `bson:"city,omitempty" json:"city,omitempty"`
+	State     string `bson:"state,omitempty" json:"state,omitempty"`
+	Pincode   string `bson:"pincode,omitempty" json:"pincode,omitempty"`
+	IsDefault bool   `bson:"isDefault,omitempty" json:"isDefault,omitempty"`
 }
 
 type User struct {
@@ -27,7 +30,8 @@ type User struct {
 	Phone                string             `bson:"phone,omitempty" json:"phone,omitempty"`
 	Password             string             `bson:"password" json:"-"`
 	Role                 UserRole           `bson:"role" json:"role"`
-	SavedAddress         *SavedAddress      `bson:"savedAddress,omitempty" json:"savedAddress,omitempty"`
+	SavedAddress         *SavedAddress      `bson:"savedAddress,omitempty" json:"-"`
+	SavedAddresses       []SavedAddress     `bson:"savedAddresses,omitempty" json:"savedAddresses,omitempty"`
 	ResetPasswordToken   string             `bson:"resetPasswordToken,omitempty" json:"-"`
 	ResetPasswordExpires *time.Time         `bson:"resetPasswordExpires,omitempty" json:"-"`
 	CreatedAt            time.Time          `bson:"createdAt" json:"createdAt"`
