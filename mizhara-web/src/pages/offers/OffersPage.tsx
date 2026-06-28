@@ -5,7 +5,6 @@ import OfferList from "./components/OfferList";
 import PageSkeleton from "@/components/PageSkeleton";
 import type { Offer } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
-
 export default function OffersPage() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [products, setProducts] = useState<AdminProduct[]>([]);

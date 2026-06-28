@@ -4,6 +4,14 @@ import type { SerializedProduct } from "@/types/catalog";
 
 import type { Offer } from "@/types/offer";
 
+const carouselNavBtn =
+  "flex items-center justify-center w-10 h-10 bg-white/95 border border-border-custom text-primary-dark text-2xl leading-none shadow-[0_4px_16px_rgba(60,52,46,0.12)] transition-colors hover:bg-primary-dark hover:text-white hover:border-primary-dark disabled:opacity-30";
+
+const carouselDot =
+  "w-2 h-2 rounded-full bg-border-custom transition-all duration-300 p-0 border-none";
+
+const carouselDotActive = "w-6 bg-primary";
+
 interface ProductCarouselProps {
   products: SerializedProduct[];
   offers?: Offer[];
@@ -76,7 +84,7 @@ export default function ProductCarousel({ products, offers = [] }: ProductCarous
             onClick={() => goTo(page - 1)}
             disabled={page === 0}
             aria-label="Previous products"
-            className="carousel-nav-btn absolute left-0 top-[38%] -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-10 opacity-100 sm:opacity-0 sm:group-hover/carousel:opacity-100 disabled:opacity-30 transition-opacity"
+            className={`${carouselNavBtn} absolute left-0 top-[38%] -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-10 opacity-100 sm:opacity-0 sm:group-hover/carousel:opacity-100 disabled:opacity-30 transition-opacity`}
           >
             ‹
           </button>
@@ -85,7 +93,7 @@ export default function ProductCarousel({ products, offers = [] }: ProductCarous
             onClick={() => goTo(page + 1)}
             disabled={page >= maxPage}
             aria-label="Next products"
-            className="carousel-nav-btn absolute right-0 top-[38%] -translate-y-1/2 translate-x-2 sm:translate-x-4 z-10 opacity-100 sm:opacity-0 sm:group-hover/carousel:opacity-100 disabled:opacity-30 transition-opacity"
+            className={`${carouselNavBtn} absolute right-0 top-[38%] -translate-y-1/2 translate-x-2 sm:translate-x-4 z-10 opacity-100 sm:opacity-0 sm:group-hover/carousel:opacity-100 disabled:opacity-30 transition-opacity`}
           >
             ›
           </button>
@@ -96,7 +104,7 @@ export default function ProductCarousel({ products, offers = [] }: ProductCarous
                 type="button"
                 onClick={() => goTo(i)}
                 aria-label={`Page ${i + 1}`}
-                className={`carousel-dot ${i === page ? "carousel-dot-active" : ""}`}
+                className={`${carouselDot} ${i === page ? carouselDotActive : ""}`}
               />
             ))}
           </div>

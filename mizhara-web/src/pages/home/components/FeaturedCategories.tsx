@@ -27,7 +27,7 @@ export default function FeaturedCategories() {
             <Link
               key={cat.name}
               to={`/products?category=${encodeURIComponent(cat.query)}`}
-              className="home-category-card group relative overflow-hidden aspect-[3/4] flex flex-col justify-end p-4 sm:p-5"
+              className="group relative overflow-hidden aspect-[3/4] flex flex-col justify-end p-4 sm:p-5 bg-card-bg"
             >
               <div className={`absolute inset-0 bg-gradient-to-b ${cat.tone} transition-transform duration-500 group-hover:scale-105`} />
               <div className="absolute inset-0 border border-border-custom/80 group-hover:border-accent-gold/40 transition-colors" />

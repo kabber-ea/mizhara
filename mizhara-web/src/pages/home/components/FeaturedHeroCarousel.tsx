@@ -10,6 +10,9 @@ interface FeaturedHeroCarouselProps {
   offers?: Offer[];
 }
 
+const spotlightNavBtn =
+  "absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-9 h-9 bg-white/92 border border-primary-dark/10 text-primary-dark text-xl leading-none transition-colors hover:bg-primary-dark hover:text-white hover:border-primary-dark";
+
 export default function FeaturedHeroCarousel({ products, offers = [] }: FeaturedHeroCarouselProps) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -35,8 +38,8 @@ export default function FeaturedHeroCarousel({ products, offers = [] }: Featured
 
   if (count === 0) {
     return (
-      <div className="hero-spotlight-empty aspect-[4/5] w-full flex items-center justify-center">
-        <p className="section-label text-muted-custom">Featured collection coming soon</p>
+      <div className="aspect-[4/5] w-full flex items-center justify-center border border-dashed border-accent-gold/35 bg-accent-pink/35">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom">Featured collection coming soon</p>
       </div>
     );
   }
@@ -44,13 +47,9 @@ export default function FeaturedHeroCarousel({ products, offers = [] }: Featured
   const offerTag = product ? getProductOfferTag(product.id, offers) : null;
 
   return (
-    <div
-      className="hero-spotlight"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div className="relative">
-        <div className="hero-spotlight-image aspect-[4/5] w-full overflow-hidden bg-white">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-white border border-accent-gold/20 shadow-[0_12px_40px_rgba(60,52,46,0.06)]">
           {products.map((item, i) => (
             <img
               key={item.id}
@@ -62,9 +61,7 @@ export default function FeaturedHeroCarousel({ products, offers = [] }: Featured
             />
           ))}
 
-          {offerTag && (
-            <span className="offer-badge absolute top-4 right-4 z-10">{offerTag}</span>
-          )}
+          {offerTag && <span className="inline-block px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary-dark border border-accent-gold/55 absolute top-4 right-4 z-10">{offerTag}</span>}
           <span className="absolute top-4 left-4 z-10 px-2 py-0.5 bg-white/95 text-primary-dark text-[8px] font-bold uppercase tracking-widest">
             Featured
           </span>
@@ -72,30 +69,20 @@ export default function FeaturedHeroCarousel({ products, offers = [] }: Featured
 
         {count > 1 && (
           <>
-            <button
-              type="button"
-              onClick={prev}
-              aria-label="Previous"
-              className="hero-spotlight-nav hero-spotlight-nav-prev"
-            >
+            <button type="button" onClick={prev} aria-label="Previous" className={`${spotlightNavBtn} left-3`}>
               ‹
             </button>
-            <button
-              type="button"
-              onClick={next}
-              aria-label="Next"
-              className="hero-spotlight-nav hero-spotlight-nav-next"
-            >
+            <button type="button" onClick={next} aria-label="Next" className={`${spotlightNavBtn} right-3`}>
               ›
             </button>
           </>
         )}
       </div>
 
-      <div className="hero-spotlight-caption">
+      <div className="pt-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="section-label text-[9px] mb-1.5">{product.category}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom text-[9px] mb-1.5">{product.category}</p>
             <Link
               to={`/products/${product.id}`}
               className="font-serif text-xl sm:text-2xl text-primary-dark font-light leading-snug hover:text-primary transition-colors line-clamp-2"
@@ -119,9 +106,9 @@ export default function FeaturedHeroCarousel({ products, offers = [] }: Featured
         </Link>
 
         {count > 1 && (
-          <div className="hero-spotlight-progress mt-5">
+          <div className="h-0.5 bg-accent-gold/20 overflow-hidden mt-5">
             <div
-              className="hero-spotlight-progress-fill"
+              className="h-full bg-accent-gold transition-[width] duration-500 ease-out"
               style={{ width: `${((active + 1) / count) * 100}%` }}
             />
           </div>

@@ -28,16 +28,16 @@ export default function StorySection({ spotlightProduct }: StorySectionProps) {
             </div>
           ) : (
             <div className="order-2 lg:order-1 aspect-[4/5] max-w-md mx-auto lg:max-w-none w-full bg-accent-pink/20 flex items-center justify-center">
-              <span className="section-label">Mizhara</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom">Mizhara</span>
             </div>
           )}
 
           <div className="order-1 lg:order-2 space-y-6">
-            <p className="section-label">Our Story</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom">Our Story</p>
             <h2 className="font-serif text-3xl sm:text-4xl font-light text-primary-dark leading-snug tracking-tight">
               Crafted for women who shine in the details
             </h2>
-            <div className="gold-divider w-14" />
+            <div className="h-px bg-gradient-to-r from-transparent via-accent-gold to-transparent w-14" />
             <p className="text-sm text-muted-custom leading-relaxed font-light">
               Mizhara was born from a love of dainty, fancy ornaments that feel personal — not mass-produced.
               Every piece uses a sterling silver foundation, triple-plated for lasting radiance, and finishes
@@ -62,7 +62,7 @@ export default function StorySection({ spotlightProduct }: StorySectionProps) {
               <footer className="text-[10px] text-muted-custom mt-2 uppercase tracking-wider">— Alisha R., Verified Customer</footer>
             </blockquote>
 
-            <Link to="/contact" className="home-link-arrow inline-block pt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+            <Link to="/contact" className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→'] inline-block pt-2">
               Get in touch
             </Link>
           </div>

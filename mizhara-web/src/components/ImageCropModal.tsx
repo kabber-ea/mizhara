@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { getCroppedImageFile } from "@/lib/crop-image";
 import { CROP_PRESETS, type CropPreset } from "@/lib/image-upload";
-
 type ImageCropModalProps = {
   file: File;
   preset?: CropPreset["id"];

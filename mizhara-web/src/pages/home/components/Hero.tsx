@@ -20,7 +20,7 @@ interface HeroProps {
 
 export default function Hero({ featuredProducts, offers = [] }: HeroProps) {
   return (
-    <section className="hero-promo bg-background">
+    <section className="bg-background">
       <nav
         aria-label="Shop by category"
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6 pb-4 sm:pb-5 overflow-x-auto scrollbar-hide"

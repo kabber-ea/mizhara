@@ -34,12 +34,12 @@ export default function SectionHeader({
               {index}
             </span>
           )}
-          {label && <p className="section-label">{label}</p>}
+          {label && <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom">{label}</p>}
         </div>
         <h2 className="font-serif text-3xl sm:text-[2.35rem] font-light text-primary-dark tracking-tight leading-tight">
           {title}
         </h2>
-        <div className={`gold-divider w-14 ${centered ? "mx-auto" : ""}`} />
+        <div className={`h-px bg-gradient-to-r from-transparent via-accent-gold to-transparent w-14 ${centered ? "mx-auto" : ""}`} />
         {subtitle && (
           <p className={`text-sm text-muted-custom font-light leading-relaxed ${centered ? "max-w-lg" : ""}`}>
             {subtitle}
@@ -49,13 +49,13 @@ export default function SectionHeader({
       {viewAllHref && viewAllLabel && !centered && (
         <Link
           to={viewAllHref}
-          className="home-link-arrow shrink-0 text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover"
+          className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→'] shrink-0"
         >
           {viewAllLabel}
         </Link>
       )}
       {viewAllHref && viewAllLabel && centered && (
-        <Link to={viewAllHref} className="home-link-arrow text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+        <Link to={viewAllHref} className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→']">
           {viewAllLabel}
         </Link>
       )}

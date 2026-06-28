@@ -16,7 +16,7 @@ export default function BudgetSection() {
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {tiers.map((tier) => (
-            <Link key={tier.label} to={tier.href} className="budget-tile group">
+            <Link key={tier.label} to={tier.href} className="group flex flex-col items-center justify-center text-center p-7 bg-accent-pink border border-border-custom rounded-2xl transition-all hover:border-accent-gold hover:shadow-[0_8px_24px_-12px_rgba(60,52,46,0.12)]">
               <span className="font-serif text-lg sm:text-xl text-primary-dark group-hover:text-primary transition-colors">
                 {tier.label}
               </span>

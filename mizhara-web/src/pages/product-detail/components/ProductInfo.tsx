@@ -46,7 +46,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <span className="section-label bg-accent-pink/40 px-3 py-1">{product.category}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom bg-accent-pink/40 px-3 py-1">{product.category}</span>
         <span className={`text-[10px] font-bold uppercase tracking-widest ${inStock ? "text-primary" : "text-rose-600"}`}>
           {inStock ? "Available" : "Out of Stock"}
         </span>

@@ -27,7 +27,7 @@ export default function CategoryStrip() {
             <Link
               key={name}
               to={`/products?category=${encodeURIComponent(name)}`}
-              className="category-pill shrink-0"
+              className="shrink-0 px-3.5 py-1.5 border border-primary-dark/10 rounded-full text-[10px] font-semibold uppercase tracking-wider text-primary-dark bg-white transition-colors hover:border-accent-gold hover:text-primary hover:bg-accent-pink/60"
             >
               {name}
             </Link>

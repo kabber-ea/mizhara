@@ -60,7 +60,7 @@ export default function ProductSection({
         {safeProducts.length === 0 ? (
           <p className="text-sm text-muted-custom text-center py-16 font-light">{emptyMessage}</p>
         ) : layout === "rail" ? (
-          <div className="product-rail -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide [&>*]:snap-start [&>*]:shrink-0 [&>*]:w-[260px] sm:[&>*]:w-[280px]">
             {safeProducts.map((product) => (
               <ProductCard key={product.id} product={product} offers={offers} />
             ))}

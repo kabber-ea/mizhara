@@ -24,10 +24,10 @@ export default function CollectionBanner({
   return (
     <section className="py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="collection-banner rounded-2xl sm:rounded-3xl overflow-hidden">
+        <div className="rounded-2xl sm:rounded-3xl overflow-hidden border border-border-custom bg-gradient-to-br from-[#faf0ea] via-[#f3ebe3] to-[#fffbf8]">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-            <div className="collection-banner-copy p-8 sm:p-10 lg:p-14 flex flex-col justify-center">
-              <p className="section-label text-[9px] mb-3">{eyebrow}</p>
+            <div className="p-8 sm:p-10 lg:p-14 flex flex-col justify-center">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom text-[9px] mb-3">{eyebrow}</p>
               <h2 className="font-serif text-3xl sm:text-4xl font-light text-primary-dark leading-tight">
                 {title}
               </h2>
@@ -47,7 +47,7 @@ export default function CollectionBanner({
                 <Link
                   key={product.id}
                   to={`/products/${product.id}`}
-                  className="collection-banner-item group overflow-hidden rounded-xl"
+                  className="group aspect-square overflow-hidden rounded-xl bg-white"
                 >
                   <img
                     src={product.images[0]}

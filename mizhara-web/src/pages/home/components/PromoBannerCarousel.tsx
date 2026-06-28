@@ -10,6 +10,9 @@ interface PromoBannerCarouselProps {
   offers?: Offer[];
 }
 
+const promoNavBtn =
+  "absolute top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/10 border border-white/25 text-white opacity-65 sm:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all hover:bg-white/15 hover:border-white/45";
+
 function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   return (
     <svg
@@ -57,9 +60,9 @@ export default function PromoBannerCarousel({ products, offers = [] }: PromoBann
 
   if (count === 0) {
     return (
-      <div className="promo-banner promo-banner-empty">
+      <div className="mx-4 sm:mx-6 border border-border-custom bg-secondary">
         <div className="flex items-center justify-center h-full min-h-[320px] sm:min-h-[420px] lg:min-h-[520px]">
-          <p className="section-label text-muted-custom">New collection arriving soon</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-custom">New collection arriving soon</p>
         </div>
       </div>
     );
@@ -70,11 +73,7 @@ export default function PromoBannerCarousel({ products, offers = [] }: PromoBann
     : `/products/${product.id}`;
 
   return (
-    <div
-      className="promo-banner group"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <div className="group bg-background" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div className="relative overflow-hidden">
         <div className="relative aspect-[5/6] sm:aspect-[21/9] min-h-[320px] sm:min-h-[380px] lg:min-h-[520px]">
           {products.map((item, i) => (
@@ -89,18 +88,18 @@ export default function PromoBannerCarousel({ products, offers = [] }: PromoBann
               <img
                 src={item.bannerImageMobile || item.bannerImage || item.images[0]}
                 alt={item.name}
-                className={`promo-banner-image w-full h-full object-cover sm:hidden ${
-                  i === active ? "promo-banner-image-active" : ""
+                className={`w-full h-full object-cover sm:hidden transition-transform duration-[10s] ease-out ${
+                  i === active ? "scale-[1.06]" : "scale-100"
                 }`}
               />
               <img
                 src={item.bannerImage || item.images[0]}
                 alt={item.name}
-                className={`promo-banner-image w-full h-full object-cover hidden sm:block ${
-                  i === active ? "promo-banner-image-active" : ""
+                className={`w-full h-full object-cover hidden sm:block transition-transform duration-[10s] ease-out ${
+                  i === active ? "scale-[1.06]" : "scale-100"
                 }`}
               />
-              <div className="promo-banner-overlay absolute inset-0" />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary-dark/72 via-primary-dark/45 to-primary-dark/8 sm:bg-gradient-to-r sm:from-primary-dark/62 sm:via-primary-dark/28 sm:to-transparent" />
             </Link>
           ))}
 
@@ -117,14 +116,16 @@ export default function PromoBannerCarousel({ products, offers = [] }: PromoBann
                   {formatINR(product.price)}
                 </p>
                 {offerTag && (
-                  <span className="promo-banner-offer-tag">{offerTag}</span>
+                  <span className="inline-block px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white/90 border border-white/35">
+                    {offerTag}
+                  </span>
                 )}
               </div>
             </div>
 
             <Link
               to={ctaHref}
-              className="promo-banner-cta pointer-events-auto self-start mt-7 sm:mt-9"
+              className="pointer-events-auto self-start mt-7 sm:mt-9 inline-flex py-3 text-[11px] font-medium uppercase tracking-[0.18em] text-white border-b border-white/55 hover:text-accent-gold hover:border-accent-gold transition-colors"
             >
               {productOffer ? "Shop offer" : "Discover piece"}
             </Link>
@@ -139,7 +140,7 @@ export default function PromoBannerCarousel({ products, offers = [] }: PromoBann
                   prev();
                 }}
                 aria-label="Previous slide"
-                className="promo-banner-nav promo-banner-nav-prev"
+                className={`${promoNavBtn} left-3 sm:left-5`}
               >
                 <ChevronIcon direction="left" />
               </button>
@@ -150,18 +151,18 @@ export default function PromoBannerCarousel({ products, offers = [] }: PromoBann
                   next();
                 }}
                 aria-label="Next slide"
-                className="promo-banner-nav promo-banner-nav-next"
+                className={`${promoNavBtn} right-3 sm:right-5`}
               >
                 <ChevronIcon direction="right" />
               </button>
               <div className="absolute bottom-0 left-0 right-0 z-30">
-                <div className="promo-banner-progress">
+                <div className="h-px bg-white/20">
                   <div
-                    className="promo-banner-progress-fill"
+                    className="h-full bg-accent-gold transition-[width] duration-700 ease-out"
                     style={{ width: `${((active + 1) / count) * 100}%` }}
                   />
                 </div>
-                <p className="promo-banner-counter">
+                <p className="hidden sm:block absolute right-5 bottom-5 text-[10px] font-medium tracking-[0.15em] text-white/55 tabular-nums">
                   {String(active + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
                 </p>
               </div>

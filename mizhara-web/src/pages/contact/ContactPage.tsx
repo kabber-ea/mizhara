@@ -7,7 +7,6 @@ import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
 import { fieldInputClass } from "@/lib/form-styles";
 import { isValidEmail } from "@/lib/form-validation";
-
 const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || "919876543210";
 const INSTAGRAM_URL = import.meta.env.VITE_INSTAGRAM_URL || "https://www.instagram.com/mizhara";
 const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || "support@mizhara.in";

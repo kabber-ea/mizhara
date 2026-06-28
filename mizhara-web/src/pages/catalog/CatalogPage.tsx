@@ -4,7 +4,6 @@ import ProductList from "@/pages/catalog/components/ProductList";
 import CategoryManager from "@/pages/catalog/components/CategoryManager";
 import PageSkeleton from "@/components/PageSkeleton";
 import { api } from "@/lib/api";
-
 import type { AdminProduct, Category } from "@/types/catalog";
 
 export default function AdminCatalogPage() {

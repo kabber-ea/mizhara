@@ -38,7 +38,7 @@ export default function ProductCard({ product, offers = [] }: ProductCardProps) 
   };
 
   return (
-    <article className="group product-card flex flex-col overflow-hidden h-full rounded-2xl">
+    <article className="group flex flex-col overflow-hidden h-full rounded-2xl bg-card-bg border border-border-custom transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-18px_rgba(60,52,46,0.14)]">
       <Link to={`/products/${product.id}`} className="relative block shrink-0">
         <div className="relative aspect-square w-full overflow-hidden rounded-t-2xl bg-accent-pink/30">
           {product.isFeatured && (
@@ -47,7 +47,7 @@ export default function ProductCard({ product, offers = [] }: ProductCardProps) 
             </span>
           )}
           {bogoBadge && (
-            <span className="offer-badge absolute top-3 right-3 z-10 rounded-full">
+            <span className="inline-block px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary-dark border border-accent-gold/55 absolute top-3 right-3 z-10 rounded-full">
               {bogoBadge}
             </span>
           )}
@@ -78,7 +78,9 @@ export default function ProductCard({ product, offers = [] }: ProductCardProps) 
             <>
               <p className="text-sm font-bold text-primary-dark">{formatINR(percentageOffer.salePrice)}</p>
               <p className="text-xs text-muted-custom line-through">{formatINR(product.price)}</p>
-              <span className="offer-price-tag">{percentageOffer.shortTag}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-accent-gold bg-accent-gold/10 px-1.5 py-0.5 rounded">
+                {percentageOffer.shortTag}
+              </span>
             </>
           ) : (
             <p className="text-sm font-bold text-primary-dark">{formatINR(product.price)}</p>
@@ -98,7 +100,7 @@ export default function ProductCard({ product, offers = [] }: ProductCardProps) 
           type="button"
           onClick={handleAddToBag}
           disabled={!inStock}
-          className="product-card-add-btn mt-3 w-full py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+          className="mt-3 w-full py-2.5 text-[10px] font-bold uppercase tracking-[0.12em] rounded-full border border-primary-dark text-primary-dark bg-transparent transition-colors hover:bg-primary-dark hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {inStock ? "Add to Bag" : "Sold Out"}
         </button>

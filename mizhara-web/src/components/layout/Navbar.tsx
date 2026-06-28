@@ -5,6 +5,9 @@ import { loginUrl } from "@/lib/auth-url";
 import { useCart } from "@/providers/CartProvider";
 import { formatINR } from "@/lib/format";
 
+const glassNav =
+  "bg-white/80 backdrop-blur-md border-b border-border-custom/60 shadow-[0_1px_12px_rgba(60,52,46,0.06)]";
+
 export default function Navbar() {
   const { cartItems, cartCount, cartTotal, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart } = useCart();
   const { user, loading, logout } = useAuth();
@@ -23,7 +26,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full glass-nav">
+      <header className={`sticky top-0 z-40 w-full ${glassNav}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link

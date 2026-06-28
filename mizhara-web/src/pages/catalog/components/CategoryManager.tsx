@@ -176,8 +176,8 @@ export default function CategoryManager({ categories, onRefresh }: CategoryManag
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {categories.map((cat) => (
-              <div key={cat.id} className={`category-admin-card ${!cat.isActive ? "opacity-60" : ""}`}>
-                <div className="category-admin-card-image">
+              <div key={cat.id} className={`rounded-2xl border border-border-custom overflow-hidden bg-white ${!cat.isActive ? "opacity-60" : ""}`}>
+                <div className="aspect-square overflow-hidden bg-accent-pink">
                   {cat.image ? (
                     <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
                   ) : (
@@ -186,7 +186,7 @@ export default function CategoryManager({ categories, onRefresh }: CategoryManag
                     </div>
                   )}
                 </div>
-                <div className="category-admin-card-footer">
+                <div className="p-3 border-t border-border-custom">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-primary-dark truncate">
                     {cat.name}
                   </p>

@@ -2,6 +2,13 @@ import { Link } from "react-router-dom";
 import type { Offer } from "@/types/offer";
 import { getOfferHeadline, getOfferLabel } from "@/lib/offer-label";
 
+const OFFER_CARD_TONES = [
+  "bg-gradient-to-br from-[#3a332e] to-[#524840]",
+  "bg-gradient-to-br from-[#2a2420] to-[#3d3530]",
+  "bg-gradient-to-br from-[#5c4f44] to-[#7a6a5c]",
+  "bg-gradient-to-br from-[#1a1614] to-[#2e2824]",
+] as const;
+
 interface ActiveOffersSectionProps {
   offers: Offer[];
 }
@@ -16,14 +23,14 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
           Curated Offers
         </h2>
 
-        <div className="offer-collection-scroll -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
           {offers.map((offer, i) => (
             <Link
               key={offer.id}
               to={offer.code ? `/cart?code=${encodeURIComponent(offer.code)}` : "/products"}
-              className={`offer-collection-card group shrink-0 offer-collection-tone-${i % 4}`}
+              className={`group shrink-0 snap-start w-56 sm:w-64 aspect-[3/4] rounded-2xl overflow-hidden transition-transform hover:-translate-y-1 ${OFFER_CARD_TONES[i % OFFER_CARD_TONES.length]}`}
             >
-              <div className="offer-collection-card-inner">
+              <div className="flex flex-col h-full p-6">
                 <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/70">
                   {offer.code ? `Code ${offer.code}` : "Auto Applied"}
                 </p>
@@ -34,7 +41,9 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
                 <p className="text-xs text-white/65 mt-3 line-clamp-2 font-light leading-relaxed">
                   {offer.description || getOfferLabel(offer)}
                 </p>
-                <span className="offer-collection-btn mt-auto">Shop Now</span>
+                <span className="mt-auto inline-flex self-start py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-white/90 border-b border-white/40 group-hover:text-white group-hover:border-accent-gold transition-colors">
+                  Shop Now
+                </span>
               </div>
             </Link>
           ))}
