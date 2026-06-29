@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-
-const INSTAGRAM_URL = import.meta.env.VITE_INSTAGRAM_URL || "https://www.instagram.com/";
+import { INSTAGRAM_URL } from "@/lib/contact-links";
 
 export default function Footer() {
   return (

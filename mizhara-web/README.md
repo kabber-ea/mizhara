@@ -14,7 +14,6 @@ mizhara-web/src/
 │   ├── product-detail/
 │   ├── cart/
 │   ├── account/
-│   ├── contact/
 │   ├── reset-password/
 │   ├── dashboard/       # Admin dashboard + dashboard/components
 │   ├── catalog/         # Admin product CRUD + catalog/components

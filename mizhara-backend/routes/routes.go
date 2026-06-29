@@ -37,7 +37,6 @@ func Setup() *gin.Engine {
 	users := controllers.UsersController{}
 	dashboard := controllers.DashboardController{}
 	upload := controllers.UploadController{}
-	contact := controllers.ContactController{}
 	offers := controllers.OffersController{}
 
 	api := r.Group("/api")
@@ -49,9 +48,6 @@ func Setup() *gin.Engine {
 		api.GET("/auth/me", auth.Me)
 		api.POST("/auth/forgot-password", auth.ForgotPassword)
 		api.POST("/auth/reset-password", auth.ResetPassword)
-
-		// Contact — public
-		api.POST("/contact", contact.Submit)
 
 		// Products — role decided in service from session token
 		api.GET("/products", middleware.OptionalAuth(), products.List)

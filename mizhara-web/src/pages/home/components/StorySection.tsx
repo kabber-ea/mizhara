@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { INSTAGRAM_URL, whatsappUrl } from "@/lib/contact-links";
 import type { SerializedProduct } from "@/types/catalog";
 
 interface StorySectionProps {
@@ -62,9 +62,26 @@ export default function StorySection({ spotlightProduct }: StorySectionProps) {
               <footer className="text-[10px] text-muted-custom mt-2 uppercase tracking-wider">— Alisha R., Verified Customer</footer>
             </blockquote>
 
-            <Link to="/contact" className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→'] inline-block pt-2">
-              Get in touch
-            </Link>
+            <div className="flex flex-wrap gap-4 pt-2">
+              {whatsappUrl() && (
+                <a
+                  href={whatsappUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→']"
+                >
+                  WhatsApp
+                </a>
+              )}
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→']"
+              >
+                Instagram
+              </a>
+            </div>
           </div>
         </div>
       </div>

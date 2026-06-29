@@ -20,12 +20,6 @@ export default function ShopCTA() {
           >
             Shop Collection
           </Link>
-          <Link
-            to="/contact"
-            className="w-full sm:w-auto min-w-[200px] px-10 py-3.5 border border-primary-dark/30 text-primary-dark text-[10px] font-bold uppercase tracking-[0.18em] hover:bg-white transition-colors"
-          >
-            Contact Us
-          </Link>
         </div>
       </div>
     </section>

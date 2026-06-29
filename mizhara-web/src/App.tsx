@@ -8,7 +8,6 @@ import ShopPage from "@/pages/shop/ShopPage";
 import ProductDetailPage from "@/pages/product-detail/ProductDetailPage";
 import CartPage from "@/pages/cart/CartPage";
 import AccountPage from "@/pages/account/AccountPage";
-import ContactPage from "@/pages/contact/ContactPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import SignupPage from "@/pages/auth/SignupPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
@@ -34,8 +33,6 @@ export default function App() {
             <Route path="/products" element={<GuestOnlyStore><ShopPage /></GuestOnlyStore>} />
             <Route path="/products/:id" element={<GuestOnlyStore><ProductDetailPage /></GuestOnlyStore>} />
             <Route path="/cart" element={<GuestOnlyStore><CartPage /></GuestOnlyStore>} />
-            <Route path="/contact" element={<GuestOnlyStore><ContactPage /></GuestOnlyStore>} />
-            <Route path="/about" element={<Navigate to="/contact" replace />} />
             <Route path="/account" element={<CustomerRoute><AccountPage /></CustomerRoute>} />
 
             <Route path="/admin" element={<AdminLayout />}>
