@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import ImageCropModal from "@/components/ImageCropModal";
-import ImageFileInput from "@/components/ImageFileInput";
-import ImagePreviewThumb from "@/components/ImagePreviewThumb";
 import FieldError from "@/components/FieldError";
 import FieldLabel, { fieldLabelClassLg } from "@/components/FieldLabel";
 import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
 import { fieldInputClass, fieldSectionClass } from "@/lib/form-styles";
 import { isNonNegativeInt, isPositiveNumber } from "@/lib/form-validation";
-import { uploadImageFile } from "@/lib/upload-file";
 import type { Offer, OfferInput, OfferType } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 
@@ -35,7 +31,6 @@ interface OfferFormProps {
 export default function OfferForm({ products, editingOffer, onSuccess, onCancel }: OfferFormProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState("");
   const [type, setType] = useState<OfferType>("percentage");
   const [scope, setScope] = useState<"all" | "selected">("all");
   const [percentage, setPercentage] = useState("20");
@@ -50,14 +45,12 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [loading, setLoading] = useState(false);
-  const [cropFile, setCropFile] = useState<File | null>(null);
   const { fieldErrors, setFieldErrors, clearFieldError } = useFieldErrors<OfferField>();
 
   useEffect(() => {
     if (editingOffer) {
       setName(editingOffer.name);
       setDescription(editingOffer.description || "");
-      setImage(editingOffer.image || "");
       setType(editingOffer.type);
       setScope(editingOffer.scope);
       setPercentage(String(editingOffer.percentage ?? 20));
@@ -74,7 +67,6 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
     } else {
       setName("");
       setDescription("");
-      setImage("");
       setType("percentage");
       setScope("all");
       setPercentage("20");
@@ -154,7 +146,6 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       id: editingOffer?.id,
       name: name.trim(),
       description,
-      image: image.trim(),
       type,
       scope,
       percentage: Number(percentage) || 0,
@@ -179,19 +170,6 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       onSuccess();
     } catch (err: unknown) {
       setFieldErrors({ submit: apiErrorMessage(err, "Failed to save offer.") });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCropComplete = async (croppedFile: File) => {
-    setCropFile(null);
-    setLoading(true);
-    try {
-      const url = await uploadImageFile(croppedFile);
-      setImage(url);
-    } catch (err: unknown) {
-      setFieldErrors({ submit: apiErrorMessage(err, "Failed to upload banner image.") });
     } finally {
       setLoading(false);
     }
@@ -242,21 +220,6 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
           onChange={(e) => setDescription(e.target.value)}
           className="w-full px-4 py-2 border border-border-custom rounded-xl text-xs"
         />
-      </div>
-
-      <div className={fieldSectionClass()}>
-        <FieldLabel className={fieldLabelClassLg}>Banner Image (optional)</FieldLabel>
-        <p className="text-[10px] text-muted-custom mb-3">Shown on the home page offers carousel. 16:9 recommended.</p>
-        <div className="flex flex-wrap items-start gap-4">
-          {image && (
-            <ImagePreviewThumb src={image} alt="Offer banner" variant="wide" onRemove={() => setImage("")} />
-          )}
-          <ImageFileInput
-            preset="bannerDesktop"
-            disabled={loading}
-            onSelect={(file) => setCropFile(file)}
-          />
-        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -495,15 +458,6 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
           </button>
         </div>
       </div>
-
-      {cropFile && (
-        <ImageCropModal
-          file={cropFile}
-          preset="bannerDesktop"
-          onCancel={() => setCropFile(null)}
-          onComplete={handleCropComplete}
-        />
-      )}
     </form>
   );
 }

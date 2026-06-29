@@ -21,7 +21,6 @@ type Offer struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Name         string             `bson:"name" json:"name"`
 	Description  string             `bson:"description" json:"description"`
-	Image        string             `bson:"image,omitempty" json:"image,omitempty"`
 	Type         OfferType          `bson:"type" json:"type"`
 	Scope        OfferScope         `bson:"scope" json:"scope"`
 	Percentage   float64            `bson:"percentage,omitempty" json:"percentage,omitempty"`

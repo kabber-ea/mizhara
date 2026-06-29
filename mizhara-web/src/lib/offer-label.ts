@@ -1,7 +1,7 @@
 import type { Offer } from "@/types/offer";
 import { formatINR } from "@/lib/format";
 
-function offerAppliesToProduct(productId: string, offer: Offer): boolean {
+export function offerAppliesToProduct(productId: string, offer: Offer): boolean {
   if (offer.scope === "all") return true;
   return (offer.productIds ?? []).includes(productId);
 }
@@ -118,6 +118,16 @@ export function getOfferLabel(offer: Offer): string {
   return offer.scope === "selected" ? `${bogo} — selected items` : `${bogo} — storewide`;
 }
 
+export function getOfferCardHeadline(offer: Offer): string {
+  if (offer.type === "percentage") {
+    return `FLAT ${offer.percentage}% OFF`;
+  }
+  if (offer.type === "fixed") {
+    return `FLAT ${formatINR(offer.fixedAmount ?? 0)} OFF`;
+  }
+  return `BUY ${offer.buyQuantity}\nGET ${offer.freeQuantity} FREE`;
+}
+
 export function getOfferHeadline(offer: Offer): string {
   if (offer.type === "percentage") {
     return `${offer.percentage}% OFF`;
@@ -126,6 +136,10 @@ export function getOfferHeadline(offer: Offer): string {
     return `${formatINR(offer.fixedAmount ?? 0)} OFF`;
   }
   return `B${offer.buyQuantity}G${offer.freeQuantity}`;
+}
+
+export function getOfferShopHref(offerId: string) {
+  return `/products?offer=${encodeURIComponent(offerId)}`;
 }
 
 export function getOfferTickerText(offer: Offer): string {

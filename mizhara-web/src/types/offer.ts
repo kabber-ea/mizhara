@@ -5,7 +5,6 @@ export type Offer = {
   id: string;
   name: string;
   description: string;
-  image?: string;
   type: OfferType;
   scope: OfferScope;
   percentage?: number;
@@ -27,7 +26,6 @@ export type OfferInput = {
   id?: string;
   name: string;
   description: string;
-  image?: string;
   type: OfferType;
   scope: OfferScope;
   percentage: number;

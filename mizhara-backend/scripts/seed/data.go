@@ -2,7 +2,6 @@ package seed
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"mizhara-backend/models"
@@ -22,49 +21,6 @@ func px(id int) string {
 
 func us(photo string) string {
 	return fmt.Sprintf("https://images.unsplash.com/%s?auto=format&fit=crop&w=800&h=800&q=80", photo)
-}
-
-func usBanner(photo string) string {
-	return fmt.Sprintf("https://images.unsplash.com/%s?auto=format&fit=crop&w=1680&h=720&q=80", photo)
-}
-
-func usBannerMobile(photo string) string {
-	return fmt.Sprintf("https://images.unsplash.com/%s?auto=format&fit=crop&w=1000&h=1200&q=80", photo)
-}
-
-func pxBanner(id int) string {
-	return fmt.Sprintf(
-		"https://images.pexels.com/photos/%d/pexels-photo-%d.jpeg?auto=compress&cs=tinysrgb&w=1680&h=720&fit=crop",
-		id, id,
-	)
-}
-
-func pxBannerMobile(id int) string {
-	return fmt.Sprintf(
-		"https://images.pexels.com/photos/%d/pexels-photo-%d.jpeg?auto=compress&cs=tinysrgb&w=1000&h=1200&fit=crop",
-		id, id,
-	)
-}
-
-func bannerPairFromImage(img string, pexelsID int) (desktop, mobile string) {
-	if strings.Contains(img, "images.unsplash.com") {
-		base := strings.Split(img, "?")[0]
-		return base + "?auto=format&fit=crop&w=1680&h=720&q=80",
-			base + "?auto=format&fit=crop&w=1000&h=1200&q=80"
-	}
-	if pexelsID > 0 {
-		return pxBanner(pexelsID), pxBannerMobile(pexelsID)
-	}
-	return img, img
-}
-
-func offerImageFromCategory(category string, index int) string {
-	images := CategoryImages[category]
-	if len(images) == 0 {
-		return usBanner("photo-1515562141203-67a3bb8b5221")
-	}
-	banner, _ := bannerPairFromImage(images[index%len(images)], 0)
-	return banner
 }
 
 // CategoryImages — each pool contains only images that match that jewelry type.
@@ -303,7 +259,6 @@ func GenerateOffers(now time.Time, productByID map[primitive.ObjectID]models.Pro
 		{
 			ID: primitive.NewObjectID(), Name: "Festive Offer",
 			Description: "20% off every piece — applied automatically at checkout.",
-			Image: offerImageFromCategory("Chains", 0),
 			Type: models.OfferTypePercentage, Scope: models.OfferScopeAll, Percentage: 20,
 			MinPurchase: 999, MaxDiscount: 1500,
 			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
@@ -311,7 +266,6 @@ func GenerateOffers(now time.Time, productByID map[primitive.ObjectID]models.Pro
 		{
 			ID: primitive.NewObjectID(), Name: "Welcome Offer",
 			Description: "15% off anklets and earrings with code MIZHARA15.",
-			Image: offerImageFromCategory("Earrings", 0),
 			Type: models.OfferTypePercentage, Scope: models.OfferScopeSelected, Percentage: 15,
 			MinPurchase: 799, MaxDiscount: 800,
 			ProductIDs: selectedIDs, Code: "MIZHARA15",
@@ -320,7 +274,6 @@ func GenerateOffers(now time.Time, productByID map[primitive.ObjectID]models.Pro
 		{
 			ID: primitive.NewObjectID(), Name: "Sparkle Savings",
 			Description: "Flat ₹500 off when you spend ₹2,499 or more.",
-			Image: offerImageFromCategory("Rings", 1),
 			Type: models.OfferTypeFixed, Scope: models.OfferScopeAll, FixedAmount: 500,
 			MinPurchase: 2499, Code: "SPARKLE500",
 			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
@@ -328,7 +281,6 @@ func GenerateOffers(now time.Time, productByID map[primitive.ObjectID]models.Pro
 		{
 			ID: primitive.NewObjectID(), Name: "Ring Duo Deal",
 			Description: "Buy 2 rings, get 1 free on selected styles.",
-			Image: offerImageFromCategory("Rings", 0),
 			Type: models.OfferTypeBogo, Scope: models.OfferScopeSelected,
 			BuyQuantity: 2, FreeQuantity: 1, ProductIDs: ringIDs,
 			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
@@ -336,7 +288,6 @@ func GenerateOffers(now time.Time, productByID map[primitive.ObjectID]models.Pro
 		{
 			ID: primitive.NewObjectID(), Name: "Bangle Bundle",
 			Description: "Buy 3 bangles, get 1 free — stack your wrist stack.",
-			Image: offerImageFromCategory("Bangles", 0),
 			Type: models.OfferTypeBogo, Scope: models.OfferScopeSelected,
 			BuyQuantity: 3, FreeQuantity: 1, ProductIDs: bangleIDs,
 			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,

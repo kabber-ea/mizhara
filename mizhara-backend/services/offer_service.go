@@ -21,7 +21,6 @@ type SerializedOffer struct {
 	ID           string     `json:"id"`
 	Name         string     `json:"name"`
 	Description  string     `json:"description"`
-	Image        string     `json:"image,omitempty"`
 	Type         string     `json:"type"`
 	Scope        string     `json:"scope"`
 	Percentage   float64    `json:"percentage,omitempty"`
@@ -43,7 +42,6 @@ type OfferInput struct {
 	ID           string     `json:"id,omitempty"`
 	Name         string     `json:"name"`
 	Description  string     `json:"description"`
-	Image        string     `json:"image"`
 	Type         string     `json:"type"`
 	Scope        string     `json:"scope"`
 	Percentage   float64    `json:"percentage"`
@@ -102,7 +100,7 @@ func serializeOffer(o models.Offer) SerializedOffer {
 		productIDs = []string{}
 	}
 	return SerializedOffer{
-		ID: o.ID.Hex(), Name: o.Name, Description: o.Description, Image: o.Image,
+		ID: o.ID.Hex(), Name: o.Name, Description: o.Description,
 		Type: string(o.Type), Scope: string(o.Scope),
 		Percentage: o.Percentage, FixedAmount: o.FixedAmount,
 		MinPurchase: o.MinPurchase, MaxDiscount: o.MaxDiscount,
@@ -210,7 +208,7 @@ func CreateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	now := time.Now()
 	o := models.Offer{
 		ID: primitive.NewObjectID(), Name: strings.TrimSpace(input.Name),
-		Description: strings.TrimSpace(input.Description), Image: strings.TrimSpace(input.Image),
+		Description: strings.TrimSpace(input.Description),
 		Type: models.OfferType(input.Type), Scope: models.OfferScope(input.Scope),
 		Percentage: input.Percentage, FixedAmount: input.FixedAmount,
 		MinPurchase: input.MinPurchase, MaxDiscount: input.MaxDiscount,
@@ -239,7 +237,6 @@ func UpdateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	}
 	update := bson.M{
 		"name": strings.TrimSpace(input.Name), "description": strings.TrimSpace(input.Description),
-		"image": strings.TrimSpace(input.Image),
 		"type": input.Type, "scope": input.Scope,
 		"percentage": input.Percentage, "fixedAmount": input.FixedAmount,
 		"minPurchase": input.MinPurchase, "maxDiscount": input.MaxDiscount,

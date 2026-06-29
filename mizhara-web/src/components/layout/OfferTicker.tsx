@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getOfferTickerText } from "@/lib/offer-label";
+import { getOfferTickerText, getOfferShopHref } from "@/lib/offer-label";
 import type { Offer } from "@/types/offer";
 
 const ROTATE_MS = 4500;
@@ -33,7 +33,7 @@ export default function OfferTicker({ offers }: OfferTickerProps) {
   if (!offers.length) return null;
 
   const offer = offers[index];
-  const href = offer.code ? `/cart?code=${encodeURIComponent(offer.code)}` : "/products";
+  const href = getOfferShopHref(offer.id);
 
   return (
     <div className="w-full bg-primary-dark border-b border-primary-dark">

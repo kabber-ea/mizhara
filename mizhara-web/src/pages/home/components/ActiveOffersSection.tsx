@@ -1,55 +1,48 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Offer } from "@/types/offer";
-import { getOfferConstraints, getOfferHeadline } from "@/lib/offer-label";
+import { getOfferCardHeadline, getOfferConstraints, getOfferShopHref } from "@/lib/offer-label";
 
 interface ActiveOffersSectionProps {
   offers: Offer[];
 }
 
-function OfferBanner({ offer }: { offer: Offer }) {
-  const href = offer.code ? `/cart?code=${encodeURIComponent(offer.code)}` : "/products";
+const cardBgs = ["bg-secondary", "bg-accent-pink/70", "bg-secondary/80", "bg-accent-pink/50"];
+
+function OfferCard({ offer, index }: { offer: Offer; index: number }) {
+  const href = getOfferShopHref(offer.id);
   const constraints = getOfferConstraints(offer);
+  const headline = getOfferCardHeadline(offer);
+  const lines = headline.split("\n");
 
   return (
     <Link
       to={href}
-      className="group relative shrink-0 snap-start w-[85vw] sm:w-[420px] lg:w-[480px] aspect-[16/9] overflow-hidden border border-border-custom bg-primary-dark"
+      className={`group relative shrink-0 snap-start w-[9.5rem] sm:w-[11.5rem] aspect-square rounded-2xl border border-border-custom/80 ${cardBgs[index % cardBgs.length]} flex flex-col items-center justify-center p-4 text-center transition-all hover:border-primary/40 hover:shadow-[0_6px_24px_rgba(42,36,32,0.08)] hover:-translate-y-0.5`}
     >
-      {offer.image ? (
-        <img
-          src={offer.image}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-[#3d3530] to-primary-dark" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-primary-dark/85 via-primary-dark/35 to-primary-dark/10" />
-
-      <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-6">
-        <p className="font-serif text-3xl sm:text-4xl font-light text-white leading-none tracking-tight">
-          {getOfferHeadline(offer)}
-        </p>
-        <p className="mt-2 text-sm text-white/90 font-light line-clamp-1">{offer.name}</p>
-        {constraints.length > 0 && (
-          <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-white/55">
-            {constraints.join(" · ")}
-          </p>
-        )}
-        <div className="mt-4 flex items-center justify-between gap-3">
-          {offer.code ? (
-            <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/80 border border-white/30 px-2 py-1">
-              {offer.code}
-            </span>
-          ) : (
-            <span className="text-[9px] uppercase tracking-[0.14em] text-white/50">Auto applied</span>
-          )}
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white group-hover:text-accent-gold transition-colors">
-            Shop →
+      <span className="absolute top-2.5 right-2.5 text-[10px] text-primary/35 font-serif" aria-hidden>
+        ✦
+      </span>
+      <p className="font-serif text-lg sm:text-xl font-semibold text-primary-dark leading-tight tracking-tight whitespace-pre-line">
+        {lines.map((line, i) => (
+          <span key={i} className="block">
+            {line}
           </span>
-        </div>
-      </div>
+        ))}
+      </p>
+      <p className="mt-2 text-[9px] font-medium uppercase tracking-[0.14em] text-muted-custom line-clamp-2">
+        {offer.name}
+      </p>
+      {constraints.length > 0 && (
+        <p className="mt-1.5 text-[8px] uppercase tracking-[0.12em] text-muted-custom/80 line-clamp-1">
+          {constraints[0]}
+        </p>
+      )}
+      {offer.code && (
+        <span className="mt-3 text-[8px] font-semibold uppercase tracking-[0.16em] text-primary border border-primary/25 px-2 py-0.5 rounded-full">
+          {offer.code}
+        </span>
+      )}
     </Link>
   );
 }
@@ -62,8 +55,7 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
   const scroll = (direction: -1 | 1) => {
     const track = trackRef.current;
     if (!track) return;
-    const amount = track.clientWidth * 0.85;
-    track.scrollBy({ left: direction * amount, behavior: "smooth" });
+    track.scrollBy({ left: direction * 200, behavior: "smooth" });
   };
 
   return (
@@ -103,10 +95,10 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
 
         <div
           ref={trackRef}
-          className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide"
+          className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide"
         >
-          {offers.map((offer) => (
-            <OfferBanner key={offer.id} offer={offer} />
+          {offers.map((offer, index) => (
+            <OfferCard key={offer.id} offer={offer} index={index} />
           ))}
         </div>
       </div>

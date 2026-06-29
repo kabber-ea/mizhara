@@ -6,7 +6,6 @@ import { useCart } from "@/providers/CartProvider";
 import { formatINR } from "@/lib/format";
 import { api } from "@/lib/api";
 import OfferTicker from "@/components/layout/OfferTicker";
-import ContactMenu from "@/components/layout/ContactMenu";
 import CategoryStrip from "@/components/layout/CategoryStrip";
 import type { Category } from "@/types/catalog";
 import type { Offer } from "@/types/offer";
@@ -117,8 +116,6 @@ export default function Navbar() {
                       Sign in
                     </Link>
                   )}
-
-                  {!isHomePage && <ContactMenu />}
 
                   <button
                     type="button"

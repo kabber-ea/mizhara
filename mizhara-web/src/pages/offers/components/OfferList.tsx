@@ -38,7 +38,6 @@ export default function OfferList({ offers, products, onEdit, onRefresh }: Offer
         buyQuantity: offer.buyQuantity ?? 0,
         freeQuantity: offer.freeQuantity ?? 0,
         code: offer.code || "",
-        image: offer.image || "",
       });
       onRefresh();
     } catch (e) {
