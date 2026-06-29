@@ -120,12 +120,12 @@ export function getOfferLabel(offer: Offer): string {
 
 export function getOfferCardHeadline(offer: Offer): string {
   if (offer.type === "percentage") {
-    return `FLAT ${offer.percentage}% OFF`;
+    return `FLAT\n${offer.percentage}% OFF`;
   }
   if (offer.type === "fixed") {
-    return `FLAT ${formatINR(offer.fixedAmount ?? 0)} OFF`;
+    return `FLAT\n${formatINR(offer.fixedAmount ?? 0)} OFF`;
   }
-  return `BUY ${offer.buyQuantity}\nGET ${offer.freeQuantity} FREE`;
+  return `BUY ${offer.buyQuantity}\nGET ${offer.freeQuantity}\nFREE`;
 }
 
 export function getOfferHeadline(offer: Offer): string {

@@ -7,9 +7,7 @@ interface ActiveOffersSectionProps {
   offers: Offer[];
 }
 
-const cardBgs = ["bg-secondary", "bg-accent-pink/70", "bg-secondary/80", "bg-accent-pink/50"];
-
-function OfferCard({ offer, index }: { offer: Offer; index: number }) {
+function OfferCard({ offer }: { offer: Offer }) {
   const href = getOfferShopHref(offer.id);
   const constraints = getOfferConstraints(offer);
   const headline = getOfferCardHeadline(offer);
@@ -18,12 +16,9 @@ function OfferCard({ offer, index }: { offer: Offer; index: number }) {
   return (
     <Link
       to={href}
-      className={`group relative shrink-0 snap-start w-[9.5rem] sm:w-[11.5rem] aspect-square rounded-2xl border border-border-custom/80 ${cardBgs[index % cardBgs.length]} flex flex-col items-center justify-center p-4 text-center transition-all hover:border-primary/40 hover:shadow-[0_6px_24px_rgba(42,36,32,0.08)] hover:-translate-y-0.5`}
+      className="group relative z-0 w-[9.5rem] sm:w-[11.5rem] aspect-square rounded-2xl border border-border-custom bg-white shadow-[0_2px_16px_-6px_rgba(42,36,32,0.1)] flex flex-col items-center justify-center p-4 text-center transition-all hover:z-10 hover:border-accent-gold/60 hover:shadow-[0_8px_24px_-8px_rgba(60,52,46,0.14)] hover:-translate-y-0.5"
     >
-      <span className="absolute top-2.5 right-2.5 text-[10px] text-primary/35 font-serif" aria-hidden>
-        ✦
-      </span>
-      <p className="font-serif text-lg sm:text-xl font-semibold text-primary-dark leading-tight tracking-tight whitespace-pre-line">
+      <p className="font-slab text-[0.95rem] sm:text-[1.05rem] font-bold uppercase text-primary leading-snug tracking-[0.04em] whitespace-pre-line group-hover:text-primary-hover transition-colors">
         {lines.map((line, i) => (
           <span key={i} className="block">
             {line}
@@ -59,7 +54,7 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
   };
 
   return (
-    <section className="py-12 sm:py-16 bg-white border-y border-border-custom/50">
+    <section className="py-12 sm:py-16 bg-background border-y border-border-custom/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-4 mb-6 sm:mb-8">
           <div>
@@ -67,7 +62,7 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
               Privileges
             </p>
             <h2 className="font-serif text-2xl sm:text-[1.75rem] font-light text-primary-dark mt-1 tracking-tight">
-              Curated Offers
+              Offers
             </h2>
             <div className="h-px bg-gradient-to-r from-transparent via-accent-gold to-transparent w-12 mt-2.5" />
           </div>
@@ -95,10 +90,12 @@ export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps
 
         <div
           ref={trackRef}
-          className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide"
+          className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide"
         >
-          {offers.map((offer, index) => (
-            <OfferCard key={offer.id} offer={offer} index={index} />
+          {offers.map((offer) => (
+            <div key={offer.id} className="shrink-0 snap-start pt-2 pb-1">
+              <OfferCard offer={offer} />
+            </div>
           ))}
         </div>
       </div>
