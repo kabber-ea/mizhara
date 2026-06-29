@@ -5,7 +5,3 @@ export function formatINR(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
-
-export function toPaise(amountInRupees: number): number {
-  return Math.round(amountInRupees * 100);
-}

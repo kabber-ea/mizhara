@@ -40,10 +40,6 @@ func ConnectDB() error {
 	return err
 }
 
-func DB() *mongo.Database {
-	return database
-}
-
 func Collection(name string) *mongo.Collection {
 	return database.Collection(name)
 }

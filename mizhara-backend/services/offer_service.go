@@ -18,17 +18,21 @@ import (
 )
 
 type SerializedOffer struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Type         string   `json:"type"`
-	Scope        string   `json:"scope"`
-	Percentage   float64  `json:"percentage,omitempty"`
-	BuyQuantity  int      `json:"buyQuantity,omitempty"`
-	FreeQuantity int      `json:"freeQuantity,omitempty"`
-	ProductIDs   []string `json:"productIds,omitempty"`
-	Code         string   `json:"code,omitempty"`
-	IsActive     bool     `json:"isActive"`
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	Description  string     `json:"description"`
+	Image        string     `json:"image,omitempty"`
+	Type         string     `json:"type"`
+	Scope        string     `json:"scope"`
+	Percentage   float64    `json:"percentage,omitempty"`
+	FixedAmount  float64    `json:"fixedAmount,omitempty"`
+	MinPurchase  float64    `json:"minPurchase,omitempty"`
+	MaxDiscount  float64    `json:"maxDiscount,omitempty"`
+	BuyQuantity  int        `json:"buyQuantity,omitempty"`
+	FreeQuantity int        `json:"freeQuantity,omitempty"`
+	ProductIDs   []string   `json:"productIds,omitempty"`
+	Code         string     `json:"code,omitempty"`
+	IsActive     bool       `json:"isActive"`
 	StartsAt     *time.Time `json:"startsAt,omitempty"`
 	EndsAt       *time.Time `json:"endsAt,omitempty"`
 	CreatedAt    time.Time  `json:"createdAt"`
@@ -36,17 +40,21 @@ type SerializedOffer struct {
 }
 
 type OfferInput struct {
-	ID           string   `json:"id,omitempty"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Type         string   `json:"type"`
-	Scope        string   `json:"scope"`
-	Percentage   float64  `json:"percentage"`
-	BuyQuantity  int      `json:"buyQuantity"`
-	FreeQuantity int      `json:"freeQuantity"`
-	ProductIDs   []string `json:"productIds"`
-	Code         string   `json:"code"`
-	IsActive     bool     `json:"isActive"`
+	ID           string     `json:"id,omitempty"`
+	Name         string     `json:"name"`
+	Description  string     `json:"description"`
+	Image        string     `json:"image"`
+	Type         string     `json:"type"`
+	Scope        string     `json:"scope"`
+	Percentage   float64    `json:"percentage"`
+	FixedAmount  float64    `json:"fixedAmount"`
+	MinPurchase  float64    `json:"minPurchase"`
+	MaxDiscount  float64    `json:"maxDiscount"`
+	BuyQuantity  int        `json:"buyQuantity"`
+	FreeQuantity int        `json:"freeQuantity"`
+	ProductIDs   []string   `json:"productIds"`
+	Code         string     `json:"code"`
+	IsActive     bool       `json:"isActive"`
 	StartsAt     *time.Time `json:"startsAt,omitempty"`
 	EndsAt       *time.Time `json:"endsAt,omitempty"`
 }
@@ -94,9 +102,11 @@ func serializeOffer(o models.Offer) SerializedOffer {
 		productIDs = []string{}
 	}
 	return SerializedOffer{
-		ID: o.ID.Hex(), Name: o.Name, Description: o.Description,
+		ID: o.ID.Hex(), Name: o.Name, Description: o.Description, Image: o.Image,
 		Type: string(o.Type), Scope: string(o.Scope),
-		Percentage: o.Percentage, BuyQuantity: o.BuyQuantity, FreeQuantity: o.FreeQuantity,
+		Percentage: o.Percentage, FixedAmount: o.FixedAmount,
+		MinPurchase: o.MinPurchase, MaxDiscount: o.MaxDiscount,
+		BuyQuantity: o.BuyQuantity, FreeQuantity: o.FreeQuantity,
 		ProductIDs: productIDs, Code: o.Code, IsActive: offerIsActive(o),
 		StartsAt: o.StartsAt, EndsAt: o.EndsAt,
 		CreatedAt: o.CreatedAt, UpdatedAt: o.UpdatedAt,
@@ -122,8 +132,8 @@ func validateOfferInput(input OfferInput) error {
 		return lib.BadRequest("offer name is required")
 	}
 	typ := models.OfferType(input.Type)
-	if typ != models.OfferTypePercentage && typ != models.OfferTypeBogo {
-		return lib.BadRequest("offer type must be percentage or bogo")
+	if typ != models.OfferTypePercentage && typ != models.OfferTypeFixed && typ != models.OfferTypeBogo {
+		return lib.BadRequest("offer type must be percentage, fixed, or bogo")
 	}
 	scope := models.OfferScope(input.Scope)
 	if scope != models.OfferScopeAll && scope != models.OfferScopeSelected {
@@ -137,9 +147,31 @@ func validateOfferInput(input OfferInput) error {
 			return lib.BadRequest("percentage must be between 1 and 100")
 		}
 	}
+	if typ == models.OfferTypeFixed {
+		if input.FixedAmount <= 0 {
+			return lib.BadRequest("fixed discount amount must be greater than 0")
+		}
+	}
 	if typ == models.OfferTypeBogo {
 		if input.BuyQuantity <= 0 || input.FreeQuantity <= 0 {
 			return lib.BadRequest("buy and free quantities must be at least 1")
+		}
+	}
+	if input.MinPurchase < 0 {
+		return lib.BadRequest("minimum purchase cannot be negative")
+	}
+	if input.MaxDiscount < 0 {
+		return lib.BadRequest("maximum discount cannot be negative")
+	}
+	if typ != models.OfferTypePercentage && input.MaxDiscount > 0 {
+		return lib.BadRequest("maximum discount applies to percentage offers only")
+	}
+	if typ == models.OfferTypeBogo {
+		if input.MinPurchase > 0 {
+			return lib.BadRequest("minimum purchase applies to percentage and fixed offers only")
+		}
+		if input.MaxDiscount > 0 {
+			return lib.BadRequest("maximum discount applies to percentage offers only")
 		}
 	}
 	return nil
@@ -178,9 +210,11 @@ func CreateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	now := time.Now()
 	o := models.Offer{
 		ID: primitive.NewObjectID(), Name: strings.TrimSpace(input.Name),
-		Description: strings.TrimSpace(input.Description),
+		Description: strings.TrimSpace(input.Description), Image: strings.TrimSpace(input.Image),
 		Type: models.OfferType(input.Type), Scope: models.OfferScope(input.Scope),
-		Percentage: input.Percentage, BuyQuantity: input.BuyQuantity, FreeQuantity: input.FreeQuantity,
+		Percentage: input.Percentage, FixedAmount: input.FixedAmount,
+		MinPurchase: input.MinPurchase, MaxDiscount: input.MaxDiscount,
+		BuyQuantity: input.BuyQuantity, FreeQuantity: input.FreeQuantity,
 		ProductIDs: input.ProductIDs, Code: strings.ToUpper(strings.TrimSpace(input.Code)),
 		IsActive: boolPtr(input.IsActive), StartsAt: input.StartsAt, EndsAt: input.EndsAt,
 		CreatedAt: now, UpdatedAt: now,
@@ -205,8 +239,11 @@ func UpdateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	}
 	update := bson.M{
 		"name": strings.TrimSpace(input.Name), "description": strings.TrimSpace(input.Description),
+		"image": strings.TrimSpace(input.Image),
 		"type": input.Type, "scope": input.Scope,
-		"percentage": input.Percentage, "buyQuantity": input.BuyQuantity, "freeQuantity": input.FreeQuantity,
+		"percentage": input.Percentage, "fixedAmount": input.FixedAmount,
+		"minPurchase": input.MinPurchase, "maxDiscount": input.MaxDiscount,
+		"buyQuantity": input.BuyQuantity, "freeQuantity": input.FreeQuantity,
 		"productIds": input.ProductIDs, "code": strings.ToUpper(strings.TrimSpace(input.Code)),
 		"isActive": input.IsActive, "startsAt": input.StartsAt, "endsAt": input.EndsAt,
 		"updatedAt": time.Now(),
@@ -374,6 +411,9 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 		if !offerIsLive(o, now) {
 			return nil, lib.BadRequest("this offer is no longer active")
 		}
+		if err := validateOfferMinPurchase(o, lines); err != nil {
+			return nil, err
+		}
 		return &o, nil
 	}
 
@@ -392,6 +432,9 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 		}
 		if !offerIsLive(o, now) {
 			return nil, lib.BadRequest("offer is no longer active")
+		}
+		if err := validateOfferMinPurchase(o, lines); err != nil {
+			return nil, err
 		}
 		return &o, nil
 	}
@@ -436,16 +479,52 @@ func lineEligible(o models.Offer, productID string) bool {
 	return false
 }
 
+func eligibleSubtotal(o models.Offer, lines []resolvedLine) float64 {
+	eligible := 0.0
+	for _, line := range lines {
+		if lineEligible(o, line.productID) {
+			eligible += line.price * float64(line.quantity)
+		}
+	}
+	return eligible
+}
+
+func validateOfferMinPurchase(o models.Offer, lines []resolvedLine) error {
+	if o.MinPurchase <= 0 {
+		return nil
+	}
+	if o.Type != models.OfferTypePercentage && o.Type != models.OfferTypeFixed {
+		return nil
+	}
+	eligible := eligibleSubtotal(o, lines)
+	if eligible < o.MinPurchase {
+		return lib.BadRequest(fmt.Sprintf("minimum eligible purchase of ₹%.0f required for this offer", o.MinPurchase))
+	}
+	return nil
+}
+
 func calculateOfferDiscount(o models.Offer, lines []resolvedLine) float64 {
 	switch o.Type {
 	case models.OfferTypePercentage:
-		eligible := 0.0
-		for _, line := range lines {
-			if lineEligible(o, line.productID) {
-				eligible += line.price * float64(line.quantity)
-			}
+		eligible := eligibleSubtotal(o, lines)
+		if o.MinPurchase > 0 && eligible < o.MinPurchase {
+			return 0
 		}
-		return eligible * o.Percentage / 100
+		discount := eligible * o.Percentage / 100
+		if o.MaxDiscount > 0 && discount > o.MaxDiscount {
+			discount = o.MaxDiscount
+		}
+		return discount
+	case models.OfferTypeFixed:
+		eligible := eligibleSubtotal(o, lines)
+		if o.MinPurchase > 0 && eligible < o.MinPurchase {
+			return 0
+		}
+		discount := o.FixedAmount
+		if discount > eligible {
+			discount = eligible
+		}
+		return discount
 	case models.OfferTypeBogo:
 		discount := 0.0
 		bundle := o.BuyQuantity + o.FreeQuantity
@@ -470,9 +549,17 @@ func describeOffer(o models.Offer) string {
 	switch o.Type {
 	case models.OfferTypePercentage:
 		if o.Scope == models.OfferScopeAll {
-			return formatPct(o.Percentage) + " off all items"
+			return formatPct(o.Percentage) + " off all items" + offerConstraintSuffix(o)
 		}
-		return formatPct(o.Percentage) + " off selected items"
+		return formatPct(o.Percentage) + " off selected items" + offerConstraintSuffix(o)
+	case models.OfferTypeFixed:
+		label := "₹" + formatMoney(o.FixedAmount) + " off"
+		if o.Scope == models.OfferScopeSelected {
+			label += " selected items"
+		} else {
+			label += " all items"
+		}
+		return label + offerConstraintSuffix(o)
 	case models.OfferTypeBogo:
 		label := "Buy " + itoa(o.BuyQuantity) + " get " + itoa(o.FreeQuantity) + " free"
 		if o.Scope == models.OfferScopeSelected {
@@ -489,6 +576,27 @@ func formatPct(v float64) string {
 		return strconv.Itoa(int(v)) + "%"
 	}
 	return strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.1f", v), "0"), ".") + "%"
+}
+
+func formatMoney(v float64) string {
+	if v == math.Trunc(v) {
+		return strconv.Itoa(int(v))
+	}
+	return strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.0f", v), "0"), ".")
+}
+
+func offerConstraintSuffix(o models.Offer) string {
+	parts := []string{}
+	if o.MinPurchase > 0 {
+		parts = append(parts, "min ₹"+formatMoney(o.MinPurchase))
+	}
+	if o.Type == models.OfferTypePercentage && o.MaxDiscount > 0 {
+		parts = append(parts, "up to ₹"+formatMoney(o.MaxDiscount))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(parts, ", ") + ")"
 }
 
 func itoa(n int) string {

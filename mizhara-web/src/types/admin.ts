@@ -34,10 +34,3 @@ export type SerializedOrder = {
   createdAt: string;
   updatedAt: string;
 };
-
-export type PaginationMeta = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-};

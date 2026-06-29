@@ -20,14 +20,12 @@ type SerializedCategory struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Slug     string `json:"slug"`
-	Image    string `json:"image,omitempty"`
 	IsActive bool   `json:"isActive"`
 }
 
 type CategoryInput struct {
 	ID       string `json:"id,omitempty"`
 	Name     string `json:"name"`
-	Image    string `json:"image"`
 	IsActive *bool  `json:"isActive,omitempty"`
 }
 
@@ -40,7 +38,7 @@ func categoryIsActive(c models.Category) bool {
 
 func serializeCategory(c models.Category) SerializedCategory {
 	return SerializedCategory{
-		ID: c.ID.Hex(), Name: c.Name, Slug: c.Slug, Image: c.Image,
+		ID: c.ID.Hex(), Name: c.Name, Slug: c.Slug,
 		IsActive: categoryIsActive(c),
 	}
 }
@@ -49,7 +47,7 @@ func CreateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	if err := RequireAdmin(session); err != nil {
 		return nil, err
 	}
-	c, err := createCategory(ctx, input.Name, input.Image)
+	c, err := createCategory(ctx, input.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -69,13 +67,9 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	if name == "" {
 		return nil, lib.BadRequest("category name is required")
 	}
-	image := strings.TrimSpace(input.Image)
-	if image == "" {
-		return nil, lib.BadRequest("category image is required")
-	}
 	slug := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 	now := time.Now()
-	set := bson.M{"name": name, "slug": slug, "image": image, "updatedAt": now}
+	set := bson.M{"name": name, "slug": slug, "updatedAt": now}
 	if input.IsActive != nil {
 		set["isActive"] = *input.IsActive
 	}
@@ -151,31 +145,15 @@ func ListActiveCategoryNames(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func ListCategoryNames(ctx context.Context) ([]string, error) {
-	items, err := ListCategories(ctx)
-	if err != nil {
-		return nil, err
-	}
-	names := make([]string, len(items))
-	for i, item := range items {
-		names[i] = item.Name
-	}
-	return names, nil
-}
-
-func createCategory(ctx context.Context, name, image string) (*models.Category, error) {
+func createCategory(ctx context.Context, name string) (*models.Category, error) {
 	trimmed := strings.TrimSpace(name)
 	if trimmed == "" {
 		return nil, lib.BadRequest("category name is required")
 	}
-	image = strings.TrimSpace(image)
-	if image == "" {
-		return nil, lib.BadRequest("category image is required")
-	}
 	slug := strings.ToLower(strings.ReplaceAll(trimmed, " ", "-"))
 	now := time.Now()
 	doc := models.Category{
-		ID: primitive.NewObjectID(), Name: trimmed, Slug: slug, Image: image,
+		ID: primitive.NewObjectID(), Name: trimmed, Slug: slug,
 		IsActive: boolPtr(true),
 		CreatedAt: now, UpdatedAt: now,
 	}
@@ -183,14 +161,4 @@ func createCategory(ctx context.Context, name, image string) (*models.Category, 
 		return nil, err
 	}
 	return &doc, nil
-}
-
-func CreateCategory(ctx context.Context, name, image string) error {
-	_, err := createCategory(ctx, name, image)
-	return err
-}
-
-func DeleteCategory(ctx context.Context, name string) error {
-	_, err := lib.Categories().DeleteOne(ctx, bson.M{"name": name})
-	return err
 }

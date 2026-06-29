@@ -1,13 +1,17 @@
-export type OfferType = "percentage" | "bogo";
+export type OfferType = "percentage" | "fixed" | "bogo";
 export type OfferScope = "all" | "selected";
 
 export type Offer = {
   id: string;
   name: string;
   description: string;
+  image?: string;
   type: OfferType;
   scope: OfferScope;
   percentage?: number;
+  fixedAmount?: number;
+  minPurchase?: number;
+  maxDiscount?: number;
   buyQuantity?: number;
   freeQuantity?: number;
   productIds?: string[];
@@ -23,9 +27,13 @@ export type OfferInput = {
   id?: string;
   name: string;
   description: string;
+  image?: string;
   type: OfferType;
   scope: OfferScope;
   percentage: number;
+  fixedAmount: number;
+  minPurchase: number;
+  maxDiscount: number;
   buyQuantity: number;
   freeQuantity: number;
   productIds: string[];

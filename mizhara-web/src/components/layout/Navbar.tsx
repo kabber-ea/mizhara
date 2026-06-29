@@ -1,9 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import { loginUrl } from "@/lib/auth-url";
 import { useCart } from "@/providers/CartProvider";
 import { formatINR } from "@/lib/format";
+import { api } from "@/lib/api";
+import OfferTicker from "@/components/layout/OfferTicker";
+import CategoryStrip from "@/components/layout/CategoryStrip";
+import type { Category } from "@/types/catalog";
+import type { Offer } from "@/types/offer";
 
 const glassNav =
   "bg-white/80 backdrop-blur-md border-b border-border-custom/60 shadow-[0_1px_12px_rgba(60,52,46,0.06)]";
@@ -12,11 +17,17 @@ export default function Navbar() {
   const { cartItems, cartCount, cartTotal, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart } = useCart();
   const { user, loading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeOffers, setActiveOffers] = useState<Offer[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const location = useLocation();
   const pathname = location.pathname;
 
   const isCustomer = user?.role === "customer";
   const showStoreNav = !loading && user?.role !== "admin";
+  const isHomePage = pathname === "/";
+  const isAuthPage = ["/login", "/signup", "/forgot-password", "/reset-password"].includes(pathname);
+  const showOfferTicker = showStoreNav && !isAuthPage && activeOffers.length > 0;
+  const showCategoryStrip = showStoreNav && isHomePage;
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -24,9 +35,33 @@ export default function Navbar() {
     { name: "Contact", path: "/contact" },
   ];
 
+  useEffect(() => {
+    if (!showStoreNav || isAuthPage) {
+      setActiveOffers([]);
+      return;
+    }
+    api
+      .get<Offer[]>("/api/offers/active")
+      .then((res) => setActiveOffers(res.data ?? []))
+      .catch(() => setActiveOffers([]));
+  }, [showStoreNav, isAuthPage]);
+
+  useEffect(() => {
+    if (!showCategoryStrip) {
+      setCategories([]);
+      return;
+    }
+    api
+      .get<Category[]>("/api/categories")
+      .then((res) => setCategories(res.data ?? []))
+      .catch(() => setCategories([]));
+  }, [showCategoryStrip]);
+
   return (
     <>
-      <header className={`sticky top-0 z-40 w-full ${glassNav}`}>
+      <div className="sticky top-0 z-40 w-full">
+        {showOfferTicker && <OfferTicker offers={activeOffers} />}
+        <header className={`w-full ${glassNav}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link
@@ -161,7 +196,9 @@ export default function Navbar() {
             </div>
           </div>
         )}
-      </header>
+        </header>
+        {showCategoryStrip && <CategoryStrip categories={categories} />}
+      </div>
 
       {showStoreNav && isCartOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">

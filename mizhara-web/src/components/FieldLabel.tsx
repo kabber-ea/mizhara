@@ -11,7 +11,7 @@ type FieldLabelProps = {
   className?: string;
 };
 
-export const fieldLabelClass = "block text-[10px] font-bold uppercase mb-1";
+const fieldLabelClass = "block text-[10px] font-bold uppercase mb-1";
 export const fieldLabelClassLg = "block text-[10px] font-bold uppercase mb-2";
 
 export default function FieldLabel({

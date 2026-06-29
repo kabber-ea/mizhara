@@ -27,7 +27,6 @@ func (CategoriesController) Create(c *gin.Context) {
 	var body struct {
 		Name     string `json:"name"`
 		Category string `json:"category"`
-		Image    string `json:"image"`
 	}
 	if c.BindJSON(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
@@ -38,7 +37,7 @@ func (CategoriesController) Create(c *gin.Context) {
 		name = strings.TrimSpace(body.Category)
 	}
 	item, err := services.CreateCategoryForAdmin(c.Request.Context(), middleware.GetSession(c), services.CategoryInput{
-		Name: name, Image: body.Image,
+		Name: name,
 	})
 	if err != nil {
 		respondError(c, err)

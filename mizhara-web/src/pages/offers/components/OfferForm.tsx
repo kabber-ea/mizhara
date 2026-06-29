@@ -1,16 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
+import ImageCropModal from "@/components/ImageCropModal";
+import ImageFileInput from "@/components/ImageFileInput";
+import ImagePreviewThumb from "@/components/ImagePreviewThumb";
 import FieldError from "@/components/FieldError";
 import FieldLabel, { fieldLabelClassLg } from "@/components/FieldLabel";
 import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
 import { fieldInputClass, fieldSectionClass } from "@/lib/form-styles";
-import { isPositiveNumber } from "@/lib/form-validation";
-import type { Offer, OfferInput } from "@/types/offer";
+import { isNonNegativeInt, isPositiveNumber } from "@/lib/form-validation";
+import { uploadImageFile } from "@/lib/upload-file";
+import type { Offer, OfferInput, OfferType } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 
 type OfferField =
   | "name"
   | "percentage"
+  | "fixedAmount"
+  | "minPurchase"
+  | "maxDiscount"
   | "buyQuantity"
   | "freeQuantity"
   | "products"
@@ -28,9 +35,13 @@ interface OfferFormProps {
 export default function OfferForm({ products, editingOffer, onSuccess, onCancel }: OfferFormProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<"percentage" | "bogo">("percentage");
+  const [image, setImage] = useState("");
+  const [type, setType] = useState<OfferType>("percentage");
   const [scope, setScope] = useState<"all" | "selected">("all");
   const [percentage, setPercentage] = useState("20");
+  const [fixedAmount, setFixedAmount] = useState("500");
+  const [minPurchase, setMinPurchase] = useState("");
+  const [maxDiscount, setMaxDiscount] = useState("");
   const [buyQuantity, setBuyQuantity] = useState("2");
   const [freeQuantity, setFreeQuantity] = useState("1");
   const [productIds, setProductIds] = useState<string[]>([]);
@@ -39,15 +50,20 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [loading, setLoading] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const { fieldErrors, setFieldErrors, clearFieldError } = useFieldErrors<OfferField>();
 
   useEffect(() => {
     if (editingOffer) {
       setName(editingOffer.name);
       setDescription(editingOffer.description || "");
+      setImage(editingOffer.image || "");
       setType(editingOffer.type);
       setScope(editingOffer.scope);
       setPercentage(String(editingOffer.percentage ?? 20));
+      setFixedAmount(String(editingOffer.fixedAmount ?? 500));
+      setMinPurchase(editingOffer.minPurchase ? String(editingOffer.minPurchase) : "");
+      setMaxDiscount(editingOffer.maxDiscount ? String(editingOffer.maxDiscount) : "");
       setBuyQuantity(String(editingOffer.buyQuantity ?? 2));
       setFreeQuantity(String(editingOffer.freeQuantity ?? 1));
       setProductIds(editingOffer.productIds || []);
@@ -58,9 +74,13 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
     } else {
       setName("");
       setDescription("");
+      setImage("");
       setType("percentage");
       setScope("all");
       setPercentage("20");
+      setFixedAmount("500");
+      setMinPurchase("");
+      setMaxDiscount("");
       setBuyQuantity("2");
       setFreeQuantity("1");
       setProductIds([]);
@@ -82,16 +102,30 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
 
   const collectValidationErrors = useCallback((): Partial<Record<OfferField, string>> => {
     const errors: Partial<Record<OfferField, string>> = {};
-    if (!name.trim()) errors.name = "Offer name is required.";
+    if (!name.trim()) errors.name = "Offer title is required.";
 
     if (type === "percentage") {
       const pct = Number(percentage);
       if (!isPositiveNumber(percentage) || pct > 100) {
         errors.percentage = "Enter a discount between 1 and 100.";
       }
+    } else if (type === "fixed") {
+      if (!isPositiveNumber(fixedAmount)) {
+        errors.fixedAmount = "Enter a fixed discount greater than 0.";
+      }
     } else {
       if (!isPositiveNumber(buyQuantity)) errors.buyQuantity = "Buy quantity must be at least 1.";
       if (!isPositiveNumber(freeQuantity)) errors.freeQuantity = "Free quantity must be at least 1.";
+    }
+
+    if (minPurchase.trim() && !isNonNegativeInt(minPurchase)) {
+      errors.minPurchase = "Minimum purchase must be a whole number.";
+    }
+    if (maxDiscount.trim() && !isNonNegativeInt(maxDiscount)) {
+      errors.maxDiscount = "Maximum discount must be a whole number.";
+    }
+    if (type !== "percentage" && maxDiscount.trim()) {
+      errors.maxDiscount = "Maximum discount applies to percentage offers only.";
     }
 
     if (scope === "selected" && productIds.length === 0) {
@@ -103,7 +137,7 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
     }
 
     return errors;
-  }, [name, type, percentage, buyQuantity, freeQuantity, scope, productIds, startsAt, endsAt]);
+  }, [name, type, percentage, fixedAmount, minPurchase, maxDiscount, buyQuantity, freeQuantity, scope, productIds, startsAt, endsAt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,9 +154,13 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       id: editingOffer?.id,
       name: name.trim(),
       description,
+      image: image.trim(),
       type,
       scope,
       percentage: Number(percentage) || 0,
+      fixedAmount: Number(fixedAmount) || 0,
+      minPurchase: minPurchase.trim() ? Number(minPurchase) : 0,
+      maxDiscount: type === "percentage" && maxDiscount.trim() ? Number(maxDiscount) : 0,
       buyQuantity: Number(buyQuantity) || 0,
       freeQuantity: Number(freeQuantity) || 0,
       productIds: scope === "selected" ? productIds : [],
@@ -146,6 +184,19 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
     }
   };
 
+  const handleCropComplete = async (croppedFile: File) => {
+    setCropFile(null);
+    setLoading(true);
+    try {
+      const url = await uploadImageFile(croppedFile);
+      setImage(url);
+    } catch (err: unknown) {
+      setFieldErrors({ submit: apiErrorMessage(err, "Failed to upload banner image.") });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} noValidate className="p-6 bg-white border border-border-custom rounded-2xl space-y-5">
       <h3 className="font-serif text-base font-bold text-primary-dark">
@@ -154,7 +205,7 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <FieldLabel required>Offer Name</FieldLabel>
+          <FieldLabel required>Offer Title</FieldLabel>
           <input
             type="text"
             value={name}
@@ -162,9 +213,12 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
               setName(e.target.value);
               clearFieldError("name");
             }}
-            placeholder="Summer Sale"
+            placeholder="Festive Offer"
             className={fieldInputClass(!!fieldErrors.name)}
           />
+          <p className="text-[10px] text-muted-custom mt-1.5">
+            Shown in the top announcement bar (e.g. Festive Offer - Upto 20% off on all items).
+          </p>
           <FieldError message={fieldErrors.name} />
         </div>
         <div>
@@ -190,20 +244,38 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
         />
       </div>
 
+      <div className={fieldSectionClass()}>
+        <FieldLabel className={fieldLabelClassLg}>Banner Image (optional)</FieldLabel>
+        <p className="text-[10px] text-muted-custom mb-3">Shown on the home page offers carousel. 16:9 recommended.</p>
+        <div className="flex flex-wrap items-start gap-4">
+          {image && (
+            <ImagePreviewThumb src={image} alt="Offer banner" variant="wide" onRemove={() => setImage("")} />
+          )}
+          <ImageFileInput
+            preset="bannerDesktop"
+            disabled={loading}
+            onSelect={(file) => setCropFile(file)}
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <FieldLabel>Offer Type</FieldLabel>
           <select
             value={type}
             onChange={(e) => {
-              setType(e.target.value as "percentage" | "bogo");
+              setType(e.target.value as OfferType);
               clearFieldError("percentage");
+              clearFieldError("fixedAmount");
               clearFieldError("buyQuantity");
               clearFieldError("freeQuantity");
+              clearFieldError("maxDiscount");
             }}
             className="w-full px-4 py-2 border border-border-custom rounded-xl text-xs"
           >
             <option value="percentage">Percentage off</option>
+            <option value="fixed">Fixed amount off</option>
             <option value="bogo">Buy X Get Y Free</option>
           </select>
         </div>
@@ -224,20 +296,88 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       </div>
 
       {type === "percentage" ? (
-        <div>
-          <FieldLabel required>Discount Percentage</FieldLabel>
-          <input
-            type="number"
-            step="1"
-            inputMode="numeric"
-            value={percentage}
-            onChange={(e) => {
-              setPercentage(e.target.value);
-              clearFieldError("percentage");
-            }}
-            className={`${fieldInputClass(!!fieldErrors.percentage)} max-w-xs`}
-          />
-          <FieldError message={fieldErrors.percentage} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
+          <div>
+            <FieldLabel required>Discount %</FieldLabel>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={percentage}
+              onChange={(e) => {
+                setPercentage(e.target.value);
+                clearFieldError("percentage");
+              }}
+              className={fieldInputClass(!!fieldErrors.percentage)}
+            />
+            <FieldError message={fieldErrors.percentage} />
+          </div>
+          <div>
+            <FieldLabel>Min. purchase (₹)</FieldLabel>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={minPurchase}
+              onChange={(e) => {
+                setMinPurchase(e.target.value);
+                clearFieldError("minPurchase");
+              }}
+              placeholder="Optional"
+              className={fieldInputClass(!!fieldErrors.minPurchase)}
+            />
+            <FieldError message={fieldErrors.minPurchase} />
+          </div>
+          <div>
+            <FieldLabel>Max discount (₹)</FieldLabel>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={maxDiscount}
+              onChange={(e) => {
+                setMaxDiscount(e.target.value);
+                clearFieldError("maxDiscount");
+              }}
+              placeholder="Optional"
+              className={fieldInputClass(!!fieldErrors.maxDiscount)}
+            />
+            <FieldError message={fieldErrors.maxDiscount} />
+          </div>
+        </div>
+      ) : type === "fixed" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+          <div>
+            <FieldLabel required>Discount amount (₹)</FieldLabel>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={fixedAmount}
+              onChange={(e) => {
+                setFixedAmount(e.target.value);
+                clearFieldError("fixedAmount");
+              }}
+              className={fieldInputClass(!!fieldErrors.fixedAmount)}
+            />
+            <FieldError message={fieldErrors.fixedAmount} />
+          </div>
+          <div>
+            <FieldLabel>Min. purchase (₹)</FieldLabel>
+            <input
+              type="number"
+              step="1"
+              inputMode="numeric"
+              value={minPurchase}
+              onChange={(e) => {
+                setMinPurchase(e.target.value);
+                clearFieldError("minPurchase");
+              }}
+              placeholder="Optional"
+              className={fieldInputClass(!!fieldErrors.minPurchase)}
+            />
+            <FieldError message={fieldErrors.minPurchase} />
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 max-w-md">
@@ -355,6 +495,15 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
           </button>
         </div>
       </div>
+
+      {cropFile && (
+        <ImageCropModal
+          file={cropFile}
+          preset="bannerDesktop"
+          onCancel={() => setCropFile(null)}
+          onComplete={handleCropComplete}
+        />
+      )}
     </form>
   );
 }

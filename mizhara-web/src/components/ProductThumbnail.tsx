@@ -3,11 +3,10 @@ import { useState } from "react";
 type ProductThumbnailProps = {
   src?: string;
   alt: string;
-  category?: string;
   className?: string;
 };
 
-export default function ProductThumbnail({ src, alt, category, className = "h-11 w-11" }: ProductThumbnailProps) {
+export default function ProductThumbnail({ src, alt, className = "h-11 w-11" }: ProductThumbnailProps) {
   const [broken, setBroken] = useState(false);
 
   if (!src || broken) {

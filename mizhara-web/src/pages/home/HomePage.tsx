@@ -5,19 +5,17 @@ import Footer from "@/components/layout/Footer";
 import Hero from "./components/Hero";
 import HomeTrustBar from "./components/HomeTrustBar";
 import ActiveOffersSection from "./components/ActiveOffersSection";
-import ShopByCategory from "./components/ShopByCategory";
 import BudgetSection from "./components/BudgetSection";
 import StorySection from "./components/StorySection";
 import ShopCTA from "./components/ShopCTA";
 import ProductSection from "./components/ProductSection";
-import type { SerializedProduct, Category } from "@/types/catalog";
+import type { SerializedProduct } from "@/types/catalog";
 import type { Offer } from "@/types/offer";
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<SerializedProduct[]>([]);
   const [newProducts, setNewProducts] = useState<SerializedProduct[]>([]);
   const [trendingProducts, setTrendingProducts] = useState<SerializedProduct[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [activeOffers, setActiveOffers] = useState<Offer[]>([]);
 
   useEffect(() => {
@@ -25,21 +23,18 @@ export default function HomePage() {
       api.get<SerializedProduct[]>("/api/products/featured?limit=8"),
       api.get<SerializedProduct[]>("/api/products/new?limit=8"),
       api.get<SerializedProduct[]>("/api/products/trending?limit=8"),
-      api.get<Category[]>("/api/categories"),
       api.get<Offer[]>("/api/offers/active"),
     ])
-      .then(([featured, newest, trending, cats, offers]) => {
+      .then(([featured, newest, trending, offers]) => {
         setFeaturedProducts(featured.data ?? []);
         setNewProducts(newest.data ?? []);
         setTrendingProducts(trending.data ?? []);
-        setCategories(cats.data ?? []);
         setActiveOffers(offers.data ?? []);
       })
       .catch(() => {
         setFeaturedProducts([]);
         setNewProducts([]);
         setTrendingProducts([]);
-        setCategories([]);
         setActiveOffers([]);
       });
   }, []);
@@ -52,7 +47,6 @@ export default function HomePage() {
       <main className="flex-grow">
         <Hero featuredProducts={featuredProducts} offers={activeOffers} />
 
-        <ShopByCategory categories={categories} />
         <HomeTrustBar />
 
         <ProductSection

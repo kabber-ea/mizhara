@@ -19,3 +19,4 @@ export function isNonNegativeInt(value: string) {
   const n = Number(value);
   return value.trim() !== "" && Number.isInteger(n) && n >= 0;
 }
+

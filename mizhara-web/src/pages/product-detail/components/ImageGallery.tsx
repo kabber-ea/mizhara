@@ -3,7 +3,6 @@ import { useState } from "react";
 interface ImageGalleryProps {
   images: string[];
   name: string;
-  category: string;
 }
 
 export default function ImageGallery({ images, name }: ImageGalleryProps) {

@@ -1,4 +1,4 @@
-export type CropArea = { x: number; y: number; width: number; height: number };
+type CropArea = { x: number; y: number; width: number; height: number };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

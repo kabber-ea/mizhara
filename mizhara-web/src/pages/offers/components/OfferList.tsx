@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { getOfferLabel } from "@/lib/offer-label";
 import type { Offer } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 
@@ -7,15 +8,6 @@ interface OfferListProps {
   products: AdminProduct[];
   onEdit: (offer: Offer) => void;
   onRefresh: () => void;
-}
-
-function describeOffer(offer: Offer): string {
-  if (offer.type === "percentage") {
-    const pct = `${offer.percentage}% off`;
-    return offer.scope === "all" ? `${pct} — all items` : `${pct} — selected items`;
-  }
-  const bogo = `Buy ${offer.buyQuantity} get ${offer.freeQuantity} free`;
-  return offer.scope === "all" ? `${bogo} — all items` : `${bogo} — selected items`;
 }
 
 export default function OfferList({ offers, products, onEdit, onRefresh }: OfferListProps) {
@@ -40,9 +32,13 @@ export default function OfferList({ offers, products, onEdit, onRefresh }: Offer
         isActive: !offer.isActive,
         productIds: offer.productIds || [],
         percentage: offer.percentage ?? 0,
+        fixedAmount: offer.fixedAmount ?? 0,
+        minPurchase: offer.minPurchase ?? 0,
+        maxDiscount: offer.maxDiscount ?? 0,
         buyQuantity: offer.buyQuantity ?? 0,
         freeQuantity: offer.freeQuantity ?? 0,
         code: offer.code || "",
+        image: offer.image || "",
       });
       onRefresh();
     } catch (e) {
@@ -83,7 +79,7 @@ export default function OfferList({ offers, products, onEdit, onRefresh }: Offer
                     </p>
                   )}
                 </td>
-                <td className="px-4 py-3 text-muted-custom">{describeOffer(offer)}</td>
+                <td className="px-4 py-3 text-muted-custom">{getOfferLabel(offer)}</td>
                 <td className="px-4 py-3">
                   {offer.code ? (
                     <span className="font-mono font-bold text-primary">{offer.code}</span>

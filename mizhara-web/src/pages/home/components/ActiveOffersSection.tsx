@@ -1,51 +1,112 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Offer } from "@/types/offer";
-import { getOfferHeadline, getOfferLabel } from "@/lib/offer-label";
-
-const OFFER_CARD_TONES = [
-  "bg-gradient-to-br from-[#3a332e] to-[#524840]",
-  "bg-gradient-to-br from-[#2a2420] to-[#3d3530]",
-  "bg-gradient-to-br from-[#5c4f44] to-[#7a6a5c]",
-  "bg-gradient-to-br from-[#1a1614] to-[#2e2824]",
-] as const;
+import { getOfferConstraints, getOfferHeadline } from "@/lib/offer-label";
 
 interface ActiveOffersSectionProps {
   offers: Offer[];
 }
 
-export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps) {
-  if (!offers?.length) return null;
+function OfferBanner({ offer }: { offer: Offer }) {
+  const href = offer.code ? `/cart?code=${encodeURIComponent(offer.code)}` : "/products";
+  const constraints = getOfferConstraints(offer);
 
   return (
-    <section className="py-14 sm:py-16 bg-secondary/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-serif text-2xl sm:text-3xl font-light text-primary-dark text-center mb-10 tracking-tight">
-          Curated Offers
-        </h2>
+    <Link
+      to={href}
+      className="group relative shrink-0 snap-start w-[85vw] sm:w-[420px] lg:w-[480px] aspect-[16/9] overflow-hidden border border-border-custom bg-primary-dark"
+    >
+      {offer.image ? (
+        <img
+          src={offer.image}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-dark via-[#3d3530] to-primary-dark" />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-primary-dark/85 via-primary-dark/35 to-primary-dark/10" />
 
-        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
-          {offers.map((offer, i) => (
-            <Link
-              key={offer.id}
-              to={offer.code ? `/cart?code=${encodeURIComponent(offer.code)}` : "/products"}
-              className={`group shrink-0 snap-start w-56 sm:w-64 aspect-[3/4] rounded-2xl overflow-hidden transition-transform hover:-translate-y-1 ${OFFER_CARD_TONES[i % OFFER_CARD_TONES.length]}`}
-            >
-              <div className="flex flex-col h-full p-6">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/70">
-                  {offer.code ? `Code ${offer.code}` : "Auto Applied"}
-                </p>
-                <p className="font-serif text-3xl sm:text-4xl font-light text-white mt-3 leading-none">
-                  {getOfferHeadline(offer)}
-                </p>
-                <p className="font-serif text-lg text-white/90 mt-2">{offer.name}</p>
-                <p className="text-xs text-white/65 mt-3 line-clamp-2 font-light leading-relaxed">
-                  {offer.description || getOfferLabel(offer)}
-                </p>
-                <span className="mt-auto inline-flex self-start py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-white/90 border-b border-white/40 group-hover:text-white group-hover:border-accent-gold transition-colors">
-                  Shop Now
-                </span>
-              </div>
-            </Link>
+      <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-6">
+        <p className="font-serif text-3xl sm:text-4xl font-light text-white leading-none tracking-tight">
+          {getOfferHeadline(offer)}
+        </p>
+        <p className="mt-2 text-sm text-white/90 font-light line-clamp-1">{offer.name}</p>
+        {constraints.length > 0 && (
+          <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-white/55">
+            {constraints.join(" · ")}
+          </p>
+        )}
+        <div className="mt-4 flex items-center justify-between gap-3">
+          {offer.code ? (
+            <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/80 border border-white/30 px-2 py-1">
+              {offer.code}
+            </span>
+          ) : (
+            <span className="text-[9px] uppercase tracking-[0.14em] text-white/50">Auto applied</span>
+          )}
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white group-hover:text-accent-gold transition-colors">
+            Shop →
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export default function ActiveOffersSection({ offers }: ActiveOffersSectionProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  if (!offers?.length) return null;
+
+  const scroll = (direction: -1 | 1) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const amount = track.clientWidth * 0.85;
+    track.scrollBy({ left: direction * amount, behavior: "smooth" });
+  };
+
+  return (
+    <section className="py-12 sm:py-16 bg-white border-y border-border-custom/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-end justify-between gap-4 mb-6 sm:mb-8">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-custom">
+              Privileges
+            </p>
+            <h2 className="font-serif text-2xl sm:text-[1.75rem] font-light text-primary-dark mt-1 tracking-tight">
+              Curated Offers
+            </h2>
+            <div className="h-px bg-gradient-to-r from-transparent via-accent-gold to-transparent w-12 mt-2.5" />
+          </div>
+          {offers.length > 1 && (
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => scroll(-1)}
+                aria-label="Scroll offers left"
+                className="w-9 h-9 flex items-center justify-center border border-border-custom text-primary-dark hover:bg-primary-dark hover:text-white transition-colors"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={() => scroll(1)}
+                aria-label="Scroll offers right"
+                className="w-9 h-9 flex items-center justify-center border border-border-custom text-primary-dark hover:bg-primary-dark hover:text-white transition-colors"
+              >
+                ›
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div
+          ref={trackRef}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide"
+        >
+          {offers.map((offer) => (
+            <OfferBanner key={offer.id} offer={offer} />
           ))}
         </div>
       </div>

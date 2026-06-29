@@ -133,7 +133,6 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
                         <ProductThumbnail
                           src={product.images?.[0]}
                           alt={product.name}
-                          category={product.category}
                         />
                       </td>
                       <td className="px-4 py-3">

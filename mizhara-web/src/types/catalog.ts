@@ -2,7 +2,6 @@ export type Category = {
   id: string;
   name: string;
   slug: string;
-  image?: string;
   isActive: boolean;
 };
 
@@ -23,26 +22,6 @@ export type SerializedProduct = {
   isActive: boolean;
   stockQuantity: number;
   inStock: boolean;
-};
-
-export type ProductInput = {
-  id?: string;
-  name: string;
-  description?: string;
-  category: string;
-  costPrice?: number;
-  price: number;
-  materials?: string[];
-  sizes?: string[];
-  images?: string[];
-  bannerImage?: string;
-  bannerImageMobile?: string;
-  isFeatured?: boolean;
-  isActive?: boolean;
-  stockQuantity?: number;
-  inStock?: boolean;
-  rating?: number;
-  reviewsCount?: number;
 };
 
 export type AdminProduct = SerializedProduct & {

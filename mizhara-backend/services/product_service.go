@@ -327,15 +327,6 @@ func findProductByID(ctx context.Context, id string) (*models.Product, error) {
 	return &p, nil
 }
 
-func GetProductByID(ctx context.Context, id string) (*SerializedProduct, error) {
-	p, err := findProductByID(ctx, id)
-	if err != nil || p == nil {
-		return nil, err
-	}
-	s := serializeProduct(*p)
-	return &s, nil
-}
-
 func GetRelatedProducts(ctx context.Context, category, excludeID string, limit int64) ([]SerializedProduct, error) {
 	if limit == 0 {
 		limit = 4

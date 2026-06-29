@@ -5,9 +5,7 @@ import type { SerializedProduct } from "@/types/catalog";
 import type { Offer } from "@/types/offer";
 
 interface ProductSectionProps {
-  index?: string;
   title: string;
-  subtitle?: string;
   label?: string;
   products: SerializedProduct[];
   emptyMessage: string;
@@ -19,9 +17,7 @@ interface ProductSectionProps {
 }
 
 export default function ProductSection({
-  index,
   title,
-  subtitle,
   label,
   products,
   emptyMessage,

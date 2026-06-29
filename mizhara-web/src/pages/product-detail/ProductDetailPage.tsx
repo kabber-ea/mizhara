@@ -58,7 +58,7 @@ export default function ProductDetailPage() {
       <main className="flex-grow">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
-            <ImageGallery images={product.images} name={product.name} category={product.category} />
+            <ImageGallery images={product.images} name={product.name} />
             <ProductInfo product={product} />
           </div>
         </section>

@@ -44,18 +44,3 @@ func BuildTrackingURL(provider TrackingProvider, trackingNumber, customURL strin
 		return ""
 	}
 }
-
-func GetProviderLabel(provider TrackingProvider) string {
-	labels := map[TrackingProvider]string{
-		ProviderDelhivery:  "Delhivery",
-		ProviderBlueDart:   "Blue Dart",
-		ProviderDTDC:       "DTDC",
-		ProviderIndiaPost:  "India Post",
-		ProviderShiprocket: "Shiprocket",
-		ProviderOther:      "Other",
-	}
-	if l, ok := labels[provider]; ok {
-		return l
-	}
-	return string(provider)
-}
