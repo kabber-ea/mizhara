@@ -118,7 +118,7 @@ export default function Navbar() {
                     </Link>
                   )}
 
-                  <ContactMenu />
+                  {!isHomePage && <ContactMenu />}
 
                   <button
                     type="button"

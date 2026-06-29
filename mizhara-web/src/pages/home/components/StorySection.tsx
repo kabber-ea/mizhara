@@ -1,4 +1,4 @@
-import { INSTAGRAM_URL, whatsappUrl } from "@/lib/contact-links";
+import { INSTAGRAM_URL, SUPPORT_EMAIL, whatsappUrl } from "@/lib/contact-links";
 import type { SerializedProduct } from "@/types/catalog";
 
 interface StorySectionProps {
@@ -80,6 +80,12 @@ export default function StorySection({ spotlightProduct }: StorySectionProps) {
                 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→']"
               >
                 Instagram
+              </a>
+              <a
+                href={`mailto:${SUPPORT_EMAIL}`}
+                className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary-hover after:content-['_→']"
+              >
+                Email
               </a>
             </div>
           </div>
