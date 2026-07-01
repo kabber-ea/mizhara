@@ -1,9 +1,0 @@
-.env
-.env.*
-!.env.example
-tmp/
-scripts/seed/img/
-.git
-.gitignore
-*.md
-.air.toml
