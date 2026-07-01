@@ -16,7 +16,7 @@ RUN apk add --no-cache ca-certificates netcat-openbsd wget
 
 WORKDIR /app
 
-COPY --from=build /mizhara-api /mizhara-seed ./
+COPY --from=build /app/mizhara-api /app/mizhara-seed ./
 COPY scripts/seed/data ./scripts/seed/data
 COPY docker-entrypoint.sh .
 RUN chmod +x docker-entrypoint.sh mizhara-api mizhara-seed
