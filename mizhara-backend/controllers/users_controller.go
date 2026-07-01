@@ -14,6 +14,7 @@ func (UsersController) ListCustomers(c *gin.Context) {
 	result, err := services.ListUsersForAdmin(
 		c.Request.Context(), middleware.GetSession(c),
 		c.Query("page"), c.Query("limit"), c.Query("search"),
+		c.Query("sortBy"), c.Query("sortDir"),
 	)
 	if err != nil {
 		respondError(c, err)

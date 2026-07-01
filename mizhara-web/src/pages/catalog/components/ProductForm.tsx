@@ -7,6 +7,7 @@ import FieldError from "@/components/FieldError";
 import FieldLabel, { RequiredMark, fieldLabelClassLg } from "@/components/FieldLabel";
 import { api, apiErrorMessage } from "@/lib/api";
 import { fieldInputClass, fieldSectionClass } from "@/lib/form-styles";
+import { isPositiveNumber, parseAmountInput } from "@/lib/form-validation";
 import { hasFeaturedBanners, type CropPreset } from "@/lib/image-upload";
 import { uploadImageFile } from "@/lib/upload-file";
 import type { AdminProduct } from "@/types/catalog";
@@ -63,6 +64,8 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
     });
   }, []);
 
+  const editingProductId = editingProduct?.id ?? null;
+
   useEffect(() => {
     if (editingProduct) {
       setName(editingProduct.name || "");
@@ -97,7 +100,15 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
     setPendingBannerDesktop(null);
     setPendingBannerMobile(null);
     setFieldErrors({});
-  }, [editingProduct, categories]);
+    // Only reset when switching products — not when the parent re-renders categories.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingProductId]);
+
+  useEffect(() => {
+    if (!editingProduct && categories.length > 0) {
+      setCategory((prev) => prev || categories[0]);
+    }
+  }, [categories, editingProduct]);
 
   useEffect(() => {
     return () => {
@@ -125,10 +136,10 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
 
     if (!name.trim()) errors.name = "Product name is required.";
     if (!category) errors.category = "Please select a category.";
-    if (!costPrice.trim() || Number(costPrice) <= 0) {
+    if (!isPositiveNumber(costPrice)) {
       errors.costPrice = "Unit cost must be greater than zero.";
     }
-    if (!price.trim() || Number(price) <= 0) {
+    if (!isPositiveNumber(price)) {
       errors.price = "Retail price must be greater than zero.";
     }
     if (stockQuantity.trim() === "" || Number(stockQuantity) < 0) {
@@ -234,7 +245,12 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
 
     try {
       const uploadedUrls = await Promise.all(pendingImages.map((item) => uploadImageFile(item.file)));
-      const images = [...savedImages, ...uploadedUrls];
+      const images = [...savedImages, ...uploadedUrls].filter((url) => url.trim() !== "");
+      if (images.length === 0) {
+        setFieldErrors({ images: "At least one product image is required.", submit: "Image upload failed. Please try again." });
+        setLoading(false);
+        return;
+      }
 
       let bannerImage = savedBannerDesktop;
       if (pendingBannerDesktop) {
@@ -246,13 +262,24 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
         bannerImageMobile = await uploadImageFile(pendingBannerMobile.file);
       }
 
+      const parsedCost = parseAmountInput(costPrice);
+      const parsedPrice = parseAmountInput(price);
+      if (parsedCost === null || parsedPrice === null) {
+        setFieldErrors({
+          ...(parsedCost === null ? { costPrice: "Enter a valid unit cost." } : {}),
+          ...(parsedPrice === null ? { price: "Enter a valid retail price." } : {}),
+        });
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         id: editingProduct?.id,
         name: name.trim(),
         description,
         category,
-        costPrice: Number(costPrice),
-        price: Number(price),
+        costPrice: parsedCost,
+        price: parsedPrice,
         materials: materials.split(",").map((m) => m.trim()).filter(Boolean),
         sizes: sizes.split(",").map((s) => s.trim()).filter(Boolean) || ["One Size"],
         isFeatured,
@@ -338,8 +365,9 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
             <FieldLabel required>Unit Cost (INR ₹)</FieldLabel>
             <input
               type="number"
-              step="1"
-              inputMode="numeric"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
               value={costPrice}
               onChange={(e) => {
                 setCostPrice(e.target.value);
@@ -355,8 +383,9 @@ export default function ProductForm({ categories, editingProduct, onSuccess, onC
             <FieldLabel required>Retail Price (INR ₹)</FieldLabel>
             <input
               type="number"
-              step="1"
-              inputMode="numeric"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
               value={price}
               onChange={(e) => {
                 setPrice(e.target.value);

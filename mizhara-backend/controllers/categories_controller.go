@@ -59,3 +59,11 @@ func (CategoriesController) Update(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, item)
 }
+
+func (CategoriesController) Delete(c *gin.Context) {
+	if err := services.DeleteCategoryForAdmin(c.Request.Context(), middleware.GetSession(c), c.Query("id")); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}

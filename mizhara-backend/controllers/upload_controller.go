@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"mizhara-backend/middleware"
 	"mizhara-backend/services"
 )
@@ -18,7 +19,11 @@ func (UploadController) Upload(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file required"})
 		return
 	}
-	dest := filepath.Join(os.TempDir(), file.Filename)
+	ext := filepath.Ext(file.Filename)
+	if ext == "" {
+		ext = ".jpg"
+	}
+	dest := filepath.Join(os.TempDir(), uuid.New().String()+ext)
 	if err := c.SaveUploadedFile(file, dest); err != nil {
 		respondError(c, err)
 		return
@@ -26,6 +31,10 @@ func (UploadController) Upload(c *gin.Context) {
 	url, err := services.UploadProductImageForAdmin(c.Request.Context(), middleware.GetSession(c), dest)
 	if err != nil {
 		respondError(c, err)
+		return
+	}
+	if url == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "upload returned an empty image url"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"url": url})

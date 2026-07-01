@@ -23,6 +23,9 @@ mizhara-backend/
 ├── middleware/
 ├── routes/
 └── scripts/seed/
+    ├── cmd/           # go run ./scripts/seed/cmd
+    ├── data/          # JSON seed files
+    └── img/           # product images ({Product Name}/product1.webp, …)
 ```
 
 ## Authorization
@@ -50,8 +53,19 @@ mizhara-backend/
 ```bash
 cp .env.example .env
 go mod tidy
+# Requires MONGODB_URI + Cloudinary keys in .env; uploads scripts/seed/img/{Product Name}/*.webp per product
 go run ./scripts/seed/cmd
-go run main.go
+go run .
+```
+
+Seed data lives in `scripts/seed/data/` (`categories.json`, `customers.json`, `products.json`, `offers.json`). Product images live in `scripts/seed/img/{exact product name}/` and are uploaded to Cloudinary during seed.
+
+```bash
+# Skip image uploads (local dev without Cloudinary)
+go run ./scripts/seed/cmd --skip-images
+
+# Re-upload images for existing DB products only
+go run ./scripts/sync-img-to-cloudinary/
 ```
 
 ## Development (auto-reload)
@@ -68,4 +82,10 @@ Ensure `%USERPROFILE%\go\bin` is on your PATH, then from `mizhara-backend`:
 air
 ```
 
-Air watches `.go` files and rebuilds/restarts the API on save (like nodemon). Config lives in `.air.toml`; build output goes to `tmp/`.
+Air watches `.go` files and rebuilds/restarts the API on save (like nodemon). Config lives in `.air.toml`.
+
+On Windows, if **Application Control** blocks local `.exe` files, Air is configured to run via `go run .` instead of executing a built binary in the project folder.
+
+If port 3000 is already in use, stop the old process (Ctrl+C in the terminal, or end `go.exe` / `mizhara-api.exe` in Task Manager) before starting Air again.
+
+**Without Air:** `go run .`

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "start": "serve -s dist -l tcp://0.0.0.0:${PORT:-5000}",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -15,7 +16,8 @@
     "react-dom": "^19.2.7",
     "react-easy-crop": "^6.0.2",
     "react-router-dom": "^7.18.0",
-    "recharts": "^3.9.0"
+    "recharts": "^3.9.0",
+    "serve": "^14.2.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.1",

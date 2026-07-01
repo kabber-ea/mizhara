@@ -12,7 +12,35 @@ import (
 type ProductsController struct{}
 
 func (ProductsController) List(c *gin.Context) {
-	items, err := services.ListProductsForViewer(c.Request.Context(), middleware.GetSession(c))
+	session := middleware.GetSession(c)
+	if c.Query("page") != "" {
+		if session != nil && session.Role == lib.RoleAdmin {
+			result, err := services.ListAdminProductsPaginated(
+				c.Request.Context(), session,
+				c.Query("page"), c.Query("limit"), c.Query("search"),
+				c.Query("sortBy"), c.Query("sortDir"),
+			)
+			if err != nil {
+				respondError(c, err)
+				return
+			}
+			c.JSON(http.StatusOK, result)
+			return
+		}
+		result, err := services.ListCustomerProductsPaginated(
+			c.Request.Context(),
+			c.Query("page"), c.Query("limit"), c.Query("search"),
+			c.Query("category"), c.Query("maxPrice"), c.Query("sort"),
+			c.Query("offer"),
+		)
+		if err != nil {
+			respondError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, result)
+		return
+	}
+	items, err := services.ListProductsForViewer(c.Request.Context(), session)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -21,7 +49,7 @@ func (ProductsController) List(c *gin.Context) {
 }
 
 func (ProductsController) Featured(c *gin.Context) {
-	limit := parseLimit(c.Query("limit"), 8)
+	limit := parseFeaturedLimit(c.Query("limit"))
 	items, err := services.GetFeaturedProducts(c.Request.Context(), limit)
 	if err != nil {
 		respondError(c, err)

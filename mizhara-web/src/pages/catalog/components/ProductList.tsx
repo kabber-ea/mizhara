@@ -1,52 +1,81 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { formatINR } from "@/lib/format";
 import { api, apiErrorMessage } from "@/lib/api";
 import Pagination from "@/components/Pagination";
 import ProductThumbnail from "@/components/ProductThumbnail";
+import SortableTableHeader from "@/components/SortableTableHeader";
+import TableSkeleton from "@/components/TableSkeleton";
+import { TableDeleteButton, TableEditButton } from "@/components/TableIconButtons";
+import { DEFAULT_SORT, nextSort, type SortState } from "@/lib/sort";
 import type { AdminProduct } from "@/types/catalog";
 import type { PaginationMeta } from "@/lib/pagination";
 
 const PAGE_SIZE = 10;
 
 interface ProductListProps {
-  products: AdminProduct[];
   onEdit: (product: AdminProduct) => void;
-  onRefresh: () => void;
+  onMeta?: (meta: { total: number; featuredCount: number }) => void;
 }
 
-export default function ProductList({ products, onEdit, onRefresh }: ProductListProps) {
+export default function ProductList({ onEdit, onMeta }: ProductListProps) {
+  const { confirm, dialog } = useConfirmDialog();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
+  const [items, setItems] = useState<AdminProduct[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    page: 1,
+    limit: PAGE_SIZE,
+    total: 0,
+    totalPages: 1,
+  });
+  const [loading, setLoading] = useState(true);
   const [featuredError, setFeaturedError] = useState("");
 
-  const filtered = useMemo(
-    () =>
-      products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.category.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    [products, searchTerm]
-  );
+  const debouncedSearch = useDebounce(searchTerm);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const loadProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_SIZE),
+        search: debouncedSearch,
+        sortBy: sort.column,
+        sortDir: sort.direction,
+      });
+      const { data } = await api.get<{
+        items: AdminProduct[];
+        pagination: PaginationMeta;
+        featuredCount: number;
+      }>(`/api/products?${params}`);
+      setItems(data.items ?? []);
+      setPagination(data.pagination);
+      onMeta?.({ total: data.pagination.total, featuredCount: data.featuredCount ?? 0 });
+    } catch (e) {
+      console.error("Failed to load products", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, debouncedSearch, sort, onMeta]);
 
-  const pagination: PaginationMeta = {
-    page: currentPage,
-    limit: PAGE_SIZE,
-    total: filtered.length,
-    totalPages,
-  };
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   useEffect(() => {
     setPage(1);
-  }, [searchTerm]);
+  }, [debouncedSearch, sort]);
 
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  const handleSort = (column: string) => {
+    setSort((prev) => nextSort(prev, column));
+  };
+
+  const refresh = () => {
+    loadProducts();
+  };
 
   const handleToggleFeatured = async (product: AdminProduct) => {
     setFeaturedError("");
@@ -55,7 +84,7 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
         ...product,
         isFeatured: !product.isFeatured,
       });
-      onRefresh();
+      refresh();
     } catch (err: unknown) {
       setFeaturedError(apiErrorMessage(err, "Failed to update featured status."));
     }
@@ -67,17 +96,21 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
         ...product,
         isActive: !product.isActive,
       });
-      onRefresh();
+      refresh();
     } catch (e) {
       console.error("Failed to toggle active state", e);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this ornament?")) return;
+    const ok = await confirm({
+      title: "Delete this product?",
+      message: "This ornament will be permanently removed from the catalog.",
+    });
+    if (!ok) return;
     try {
       await api.delete(`/api/products?id=${id}`);
-      onRefresh();
+      refresh();
     } catch (e) {
       console.error("Failed to delete product", e);
     }
@@ -85,6 +118,7 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
 
   return (
     <div className="bg-white border border-border-custom rounded-2xl overflow-hidden shadow-xs space-y-4 p-6">
+      {dialog}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border-custom/50 pb-4">
         <h3 className="font-serif text-base font-bold text-primary-dark">Product Catalog</h3>
         <input
@@ -102,54 +136,44 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {loading && items.length === 0 ? (
+        <TableSkeleton rows={6} />
+      ) : items.length === 0 ? (
         <div className="text-center py-10 text-xs text-muted-custom">
           No matching ornaments found in the catalog.
         </div>
       ) : (
-        <>
+        <div className={loading ? "opacity-60 pointer-events-none transition-opacity duration-150" : ""}>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-border-custom/50 text-xs text-left">
               <thead>
-                <tr className="text-primary-dark font-bold bg-accent-mint/10">
+                <tr className="text-primary-dark bg-accent-mint/10">
                   <th className="px-4 py-3 w-14">Image</th>
-                  <th className="px-4 py-3">Product</th>
-                  <th className="px-4 py-3">Unit Cost</th>
-                  <th className="px-4 py-3">Retail Price</th>
-                  <th className="px-4 py-3 text-center">Stock</th>
-                  <th className="px-4 py-3 text-center">Margin</th>
-                  <th className="px-4 py-3 text-center">Featured</th>
-                  <th className="px-4 py-3 text-center">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <SortableTableHeader label="Product" column="name" sort={sort} onSort={handleSort} />
+                  <SortableTableHeader label="Unit Cost" column="costPrice" sort={sort} onSort={handleSort} />
+                  <SortableTableHeader label="Retail Price" column="price" sort={sort} onSort={handleSort} />
+                  <SortableTableHeader label="Stock" column="stock" sort={sort} onSort={handleSort} align="center" />
+                  <SortableTableHeader label="Featured" column="featured" sort={sort} onSort={handleSort} align="center" />
+                  <SortableTableHeader label="Status" column="status" sort={sort} onSort={handleSort} align="center" />
+                  <SortableTableHeader label="Last Updated" column="updatedAt" sort={sort} onSort={handleSort} />
+                  <th className="px-4 py-3 text-right font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-custom/50">
-                {paginated.map((product) => {
-                  const margin = product.price - product.costPrice;
-                  const marginPct = product.price > 0 ? Math.round((margin / product.price) * 100) : 0;
-                  return (
+                {items.map((product) => (
                     <tr key={product.id} className={`hover:bg-accent-pink/5 transition-colors ${!product.isActive ? "opacity-60" : ""}`}>
                       <td className="px-4 py-3">
-                        <ProductThumbnail
-                          src={product.images?.[0]}
-                          alt={product.name}
-                        />
+                        <ProductThumbnail src={product.images?.[0]} alt={product.name} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-semibold text-foreground">{product.name}</div>
                         <div className="text-[10px] text-primary/70 font-medium mt-0.5">{product.category}</div>
-                        <div className="text-[10px] text-muted-custom line-clamp-1 mt-0.5">{product.description}</div>
                       </td>
                       <td className="px-4 py-3 text-muted-custom">{formatINR(product.costPrice)}</td>
                       <td className="px-4 py-3 font-extrabold text-primary-dark">{formatINR(product.price)}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`text-[10px] font-bold ${product.stockQuantity <= 5 ? "text-amber-600" : "text-emerald-600"}`}>
                           {product.stockQuantity ?? (product.inStock ? "—" : "0")}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`text-[10px] font-bold ${margin >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-                          {formatINR(margin)} ({marginPct}%)
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -175,28 +199,30 @@ export default function ProductList({ products, onEdit, onRefresh }: ProductList
                           {product.isActive ? "Active" : "Inactive"}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
-                        <button
-                          onClick={() => onEdit(product)}
-                          className="px-3 py-1 bg-white border border-border-custom hover:border-primary text-foreground font-semibold rounded-lg transition-all"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="px-3 py-1 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-600 font-semibold rounded-lg transition-all"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-4 py-3 text-muted-custom whitespace-nowrap">
+                        {product.updatedAt
+                          ? new Date(product.updatedAt).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <TableEditButton onClick={() => onEdit(product)} />
+                          <TableDeleteButton onClick={() => handleDelete(product.id)} />
+                        </div>
                       </td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
           </div>
           <Pagination pagination={pagination} onPageChange={setPage} />
-        </>
+        </div>
       )}
     </div>
   );

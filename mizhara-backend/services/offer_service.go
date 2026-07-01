@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -196,6 +197,124 @@ func ListOffersForAdmin(ctx context.Context, session *lib.SessionPayload) ([]Ser
 		out = []SerializedOffer{}
 	}
 	return out, nil
+}
+
+// BuildProductFilterForOffers restricts products to those matching at least one offer.
+// Returns nil when any offer applies storewide (no extra filter needed).
+func BuildProductFilterForOffers(ctx context.Context, offerIDHexes []string) (bson.M, error) {
+	var ids []string
+	for _, id := range offerIDHexes {
+		id = strings.TrimSpace(id)
+		if id != "" {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	objectIDs := make([]primitive.ObjectID, 0, len(ids))
+	for _, id := range ids {
+		oid, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			continue
+		}
+		objectIDs = append(objectIDs, oid)
+	}
+	if len(objectIDs) == 0 {
+		return bson.M{"_id": bson.M{"$in": []primitive.ObjectID{}}}, nil
+	}
+
+	cur, err := lib.Offers().Find(ctx, bson.M{"_id": bson.M{"$in": objectIDs}})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	productIDs := make(map[string]struct{})
+	for cur.Next(ctx) {
+		var offer models.Offer
+		if err := cur.Decode(&offer); err != nil {
+			return nil, err
+		}
+		if offer.Scope == models.OfferScopeAll {
+			return nil, nil
+		}
+		for _, pid := range offer.ProductIDs {
+			if pid != "" {
+				productIDs[pid] = struct{}{}
+			}
+		}
+	}
+
+	if len(productIDs) == 0 {
+		return bson.M{"_id": bson.M{"$in": []primitive.ObjectID{}}}, nil
+	}
+
+	productObjectIDs := make([]primitive.ObjectID, 0, len(productIDs))
+	for pid := range productIDs {
+		oid, err := primitive.ObjectIDFromHex(pid)
+		if err != nil {
+			continue
+		}
+		productObjectIDs = append(productObjectIDs, oid)
+	}
+	if len(productObjectIDs) == 0 {
+		return bson.M{"_id": bson.M{"$in": []primitive.ObjectID{}}}, nil
+	}
+	return bson.M{"_id": bson.M{"$in": productObjectIDs}}, nil
+}
+
+func ListOffersForAdminPaginated(ctx context.Context, session *lib.SessionPayload, page, limit, search string) (map[string]interface{}, error) {
+	if err := RequireAdmin(session); err != nil {
+		return nil, err
+	}
+	p := lib.ParsePagination(page, limit, search)
+	match := bson.M{}
+	if p.Search != "" {
+		escaped := regexp.QuoteMeta(p.Search)
+		match["$or"] = bson.A{
+			bson.M{"name": bson.M{"$regex": escaped, "$options": "i"}},
+			bson.M{"code": bson.M{"$regex": escaped, "$options": "i"}},
+		}
+	}
+
+	total, _ := lib.Offers().CountDocuments(ctx, match)
+	activeCount, _ := lib.Offers().CountDocuments(ctx, bson.M{"isActive": bson.M{"$ne": false}})
+	withCodeCount, _ := lib.Offers().CountDocuments(ctx, bson.M{"code": bson.M{"$exists": true, "$ne": ""}})
+
+	cur, err := lib.Offers().Find(ctx, match,
+		options.Find().
+			SetSort(bson.D{{Key: "createdAt", Value: -1}}).
+			SetSkip(int64(p.Skip)).
+			SetLimit(int64(p.Limit)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var items []SerializedOffer
+	for cur.Next(ctx) {
+		var o models.Offer
+		if err := cur.Decode(&o); err != nil {
+			return nil, err
+		}
+		items = append(items, serializeOffer(o))
+	}
+	if items == nil {
+		items = []SerializedOffer{}
+	}
+
+	return map[string]interface{}{
+		"items":      items,
+		"pagination": lib.BuildPaginationMeta(p.Page, p.Limit, int(total)),
+		"stats": map[string]int{
+			"total":         int(total),
+			"activeCount":   int(activeCount),
+			"withCodeCount": int(withCodeCount),
+		},
+	}, nil
 }
 
 func CreateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input OfferInput) (*SerializedOffer, error) {

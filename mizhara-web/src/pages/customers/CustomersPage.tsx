@@ -7,10 +7,13 @@ import type { PaginationMeta } from "@/lib/pagination";
 import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
+import SortableTableHeader from "@/components/SortableTableHeader";
+import { DEFAULT_SORT, nextSort, type SortState } from "@/lib/sort";
 
 export default function AdminCustomersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const [items, setItems] = useState<SerializedCustomer[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({
     page: 1,
@@ -30,6 +33,8 @@ export default function AdminCustomersPage() {
         page: String(page),
         limit: "10",
         search: debouncedSearch,
+        sortBy: sort.column,
+        sortDir: sort.direction,
       });
       const { data } = await api.get<{ items: SerializedCustomer[]; pagination: PaginationMeta }>(
         `/api/users?${params}`
@@ -41,7 +46,7 @@ export default function AdminCustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, sort]);
 
   useEffect(() => {
     loadCustomers();
@@ -49,7 +54,11 @@ export default function AdminCustomersPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, sort]);
+
+  const handleSort = (column: string) => {
+    setSort((prev) => nextSort(prev, column));
+  };
 
   return (
     <div className="space-y-6">
@@ -79,12 +88,12 @@ export default function AdminCustomersPage() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-left text-[10px] text-muted-custom uppercase border-b border-border-custom">
-                    <th className="pb-3 pr-4">Name</th>
-                    <th className="pb-3 pr-4">Email</th>
-                    <th className="pb-3 pr-4">Phone</th>
-                    <th className="pb-3 pr-4">Joined</th>
-                    <th className="pb-3 pr-4">Orders</th>
-                    <th className="pb-3 pr-4">Total Spent</th>
+                    <SortableTableHeader label="Name" column="name" sort={sort} onSort={handleSort} className="pb-3 pr-4 !px-0" />
+                    <SortableTableHeader label="Email" column="email" sort={sort} onSort={handleSort} className="pb-3 pr-4 !px-0" />
+                    <SortableTableHeader label="Phone" column="phone" sort={sort} onSort={handleSort} className="pb-3 pr-4 !px-0" />
+                    <SortableTableHeader label="Joined" column="createdAt" sort={sort} onSort={handleSort} className="pb-3 pr-4 !px-0" />
+                    <SortableTableHeader label="Orders" column="orderCount" sort={sort} onSort={handleSort} className="pb-3 pr-4 !px-0" />
+                    <SortableTableHeader label="Total Spent" column="totalSpent" sort={sort} onSort={handleSort} className="pb-3 pr-4 !px-0" />
                     <th className="pb-3"></th>
                   </tr>
                 </thead>

@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"errors"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +33,7 @@ type SerializedProduct struct {
 	IsActive      bool     `json:"isActive"`
 	StockQuantity int      `json:"stockQuantity"`
 	InStock       bool     `json:"inStock"`
+	UpdatedAt     string   `json:"updatedAt"`
 }
 
 type AdminProduct struct {
@@ -93,6 +96,16 @@ func customerProductBaseFilter(activeCategoryNames []string) bson.M {
 	return filter
 }
 
+func productUpdatedAt(p models.Product) time.Time {
+	if !p.UpdatedAt.IsZero() {
+		return p.UpdatedAt
+	}
+	if !p.CreatedAt.IsZero() {
+		return p.CreatedAt
+	}
+	return time.Now()
+}
+
 func serializeProduct(p models.Product) SerializedProduct {
 	stock := p.StockQuantity
 	if stock <= 0 && p.InStock {
@@ -103,6 +116,7 @@ func serializeProduct(p models.Product) SerializedProduct {
 		Price: p.Price, Rating: p.Rating, ReviewsCount: p.ReviewsCount,
 		Images: p.Images, BannerImage: p.BannerImage, BannerImageMobile: p.BannerImageMobile, Materials: p.Materials, Sizes: p.Sizes,
 		IsFeatured: p.IsFeatured, IsActive: productIsActive(p), StockQuantity: stock, InStock: syncInStock(stock),
+		UpdatedAt: productUpdatedAt(p).Format(time.RFC3339),
 	}
 }
 
@@ -190,6 +204,202 @@ func ListAdminProducts(ctx context.Context) ([]AdminProduct, error) {
 	return out, nil
 }
 
+func ListCustomerProductsPaginated(ctx context.Context, pageStr, limitStr, search, category, maxPriceStr, sortBy, offerIDsStr string) (map[string]interface{}, error) {
+	activeCats, err := ListActiveCategoryNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	baseFilter := customerProductBaseFilter(activeCats)
+	p := lib.ParsePagination(pageStr, limitStr, search)
+
+	match := bson.M{"$and": bson.A{baseFilter}}
+	if category != "" && category != "All" {
+		match["$and"] = append(match["$and"].(bson.A), bson.M{"category": category})
+	}
+	if maxPriceStr != "" {
+		if maxPrice, err := strconv.ParseFloat(maxPriceStr, 64); err == nil && maxPrice > 0 {
+			match["$and"] = append(match["$and"].(bson.A), bson.M{"price": bson.M{"$lte": maxPrice}})
+		}
+	}
+	if p.Search != "" {
+		escaped := regexp.QuoteMeta(p.Search)
+		match["$and"] = append(match["$and"].(bson.A), bson.M{"$or": bson.A{
+			bson.M{"name": bson.M{"$regex": escaped, "$options": "i"}},
+			bson.M{"description": bson.M{"$regex": escaped, "$options": "i"}},
+			bson.M{"materials": bson.M{"$regex": escaped, "$options": "i"}},
+		}})
+	}
+	if offerIDsStr != "" {
+		offerFilter, err := BuildProductFilterForOffers(ctx, strings.Split(offerIDsStr, ","))
+		if err != nil {
+			return nil, err
+		}
+		if offerFilter != nil {
+			match["$and"] = append(match["$and"].(bson.A), offerFilter)
+		}
+	}
+
+	sort := customerProductSort(sortBy)
+	total, _ := lib.Products().CountDocuments(ctx, match)
+	maxPrice, _ := customerCatalogMaxPrice(ctx, baseFilter)
+
+	cur, err := lib.Products().Find(ctx, match,
+		options.Find().
+			SetSort(sort).
+			SetSkip(int64(p.Skip)).
+			SetLimit(int64(p.Limit)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var items []SerializedProduct
+	for cur.Next(ctx) {
+		var prod models.Product
+		if err := cur.Decode(&prod); err != nil {
+			return nil, err
+		}
+		items = append(items, serializeProduct(prod))
+	}
+	if items == nil {
+		items = []SerializedProduct{}
+	}
+
+	return map[string]interface{}{
+		"items": items,
+		"pagination": lib.BuildPaginationMeta(p.Page, p.Limit, int(total)),
+		"maxPrice": maxPrice,
+	}, nil
+}
+
+func customerProductSort(sortBy string) bson.D {
+	switch sortBy {
+	case "price-low":
+		return bson.D{{Key: "price", Value: 1}}
+	case "price-high":
+		return bson.D{{Key: "price", Value: -1}}
+	case "rating":
+		return bson.D{{Key: "rating", Value: -1}, {Key: "createdAt", Value: -1}}
+	case "newest":
+		return bson.D{{Key: "createdAt", Value: -1}}
+	default:
+		return bson.D{{Key: "isFeatured", Value: -1}, {Key: "rating", Value: -1}, {Key: "createdAt", Value: -1}}
+	}
+}
+
+func customerCatalogMaxPrice(ctx context.Context, baseFilter bson.M) (float64, error) {
+	pipeline := bson.A{
+		bson.M{"$match": baseFilter},
+		bson.M{"$group": bson.M{"_id": nil, "maxPrice": bson.M{"$max": "$price"}}},
+	}
+	cur, err := lib.Products().Aggregate(ctx, pipeline)
+	if err != nil {
+		return 0, err
+	}
+	defer cur.Close(ctx)
+	if !cur.Next(ctx) {
+		return 0, nil
+	}
+	var result struct {
+		MaxPrice float64 `bson:"maxPrice"`
+	}
+	if err := cur.Decode(&result); err != nil {
+		return 0, err
+	}
+	return result.MaxPrice, nil
+}
+
+var adminProductSortFields = map[string]string{
+	"name":       "name",
+	"category":   "category",
+	"costPrice":  "costPrice",
+	"price":      "price",
+	"stock":      "stockQuantity",
+	"featured":   "isFeatured",
+	"status":     "isActive",
+	"createdAt":  "createdAt",
+	"updatedAt":  "updatedAt",
+}
+
+func ListAdminProductsPaginated(ctx context.Context, session *lib.SessionPayload, page, limit, search, sortBy, sortDir string) (map[string]interface{}, error) {
+	if err := RequireAdmin(session); err != nil {
+		return nil, err
+	}
+	p := lib.ParsePagination(page, limit, search)
+	match := bson.M{}
+	if p.Search != "" {
+		escaped := regexp.QuoteMeta(p.Search)
+		match["$or"] = bson.A{
+			bson.M{"name": bson.M{"$regex": escaped, "$options": "i"}},
+			bson.M{"category": bson.M{"$regex": escaped, "$options": "i"}},
+		}
+	}
+
+	sort := lib.ParseSort(sortBy, sortDir, adminProductSortFields, "createdAt")
+	total, _ := lib.Products().CountDocuments(ctx, match)
+	featuredCount, _ := lib.Products().CountDocuments(ctx, bson.M{"isFeatured": true})
+
+	var items []AdminProduct
+	var err error
+	if sortBy == "margin" {
+		items, err = listAdminProductsSortedByMargin(ctx, match, p.Skip, p.Limit, sort.Dir)
+	} else {
+		items, err = listAdminProductsFind(ctx, match, p.Skip, p.Limit, sort)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"items":         items,
+		"pagination":    lib.BuildPaginationMeta(p.Page, p.Limit, int(total)),
+		"featuredCount": int(featuredCount),
+	}, nil
+}
+
+func listAdminProductsFind(ctx context.Context, match bson.M, skip, limit int, sort lib.SortParams) ([]AdminProduct, error) {
+	cur, err := lib.Products().Find(ctx, match,
+		options.Find().
+			SetSort(bson.D{{Key: sort.Field, Value: sort.Dir}}).
+			SetSkip(int64(skip)).
+			SetLimit(int64(limit)),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	return decodeAdminProducts(ctx, cur)
+}
+
+func listAdminProductsSortedByMargin(ctx context.Context, match bson.M, skip, limit, dir int) ([]AdminProduct, error) {
+	pipeline := bson.A{
+		bson.M{"$match": match},
+		bson.M{"$addFields": bson.M{"margin": bson.M{"$subtract": bson.A{"$price", "$costPrice"}}}},
+		bson.M{"$sort": bson.D{{Key: "margin", Value: dir}}},
+		bson.M{"$skip": skip},
+		bson.M{"$limit": limit},
+	}
+	cur, err := lib.Products().Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	return decodeAdminProducts(ctx, cur)
+}
+
+func decodeAdminProducts(ctx context.Context, cur *mongo.Cursor) ([]AdminProduct, error) {
+	var out []AdminProduct
+	for cur.Next(ctx) {
+		var p models.Product
+		if err := cur.Decode(&p); err != nil {
+			return nil, err
+		}
+		out = append(out, serializeAdminProduct(p))
+	}
+	return out, nil
+}
+
 func prepareProductInput(input ProductInput) ProductInput {
 	input.BannerImage = strings.TrimSpace(input.BannerImage)
 	input.BannerImageMobile = strings.TrimSpace(input.BannerImageMobile)
@@ -213,17 +423,17 @@ func validateProductInput(input ProductInput) error {
 }
 
 func GetFeaturedProducts(ctx context.Context, limit int64) ([]SerializedProduct, error) {
-	if limit == 0 {
-		limit = 8
-	}
 	activeCats, err := ListActiveCategoryNames(ctx)
 	if err != nil {
 		return []SerializedProduct{}, nil
 	}
 	filter := customerProductBaseFilter(activeCats)
 	filter["isFeatured"] = true
-	filter["inStock"] = true
-	cur, err := lib.Products().Find(ctx, filter, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}).SetLimit(limit))
+	findOpts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	if limit > 0 {
+		findOpts.SetLimit(limit)
+	}
+	cur, err := lib.Products().Find(ctx, filter, findOpts)
 	if err != nil {
 		return []SerializedProduct{}, nil
 	}

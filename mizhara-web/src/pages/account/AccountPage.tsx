@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import StatusBadge from "@/components/StatusBadge";
 import FieldError from "@/components/FieldError";
 import FieldLabel from "@/components/FieldLabel";
 import { useAuth } from "@/providers/AuthProvider";
 import { useFieldErrors } from "@/hooks/use-field-errors";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { forgotPasswordUrl } from "@/lib/auth-url";
 import { formatINR } from "@/lib/format";
 import { api, apiErrorMessage } from "@/lib/api";
@@ -33,6 +32,7 @@ const emptyAddressDraft = (): SavedAddress => ({
 
 export default function AccountPage() {
   const { user, refresh } = useAuth();
+  const { confirm, dialog } = useConfirmDialog();
   const [tab, setTab] = useState<Tab>("profile");
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
@@ -191,6 +191,13 @@ export default function AccountPage() {
   };
 
   const deleteAddress = async (id: string) => {
+    const ok = await confirm({
+      title: "Remove this address?",
+      message: "This saved address will be deleted from your account.",
+      confirmLabel: "Remove",
+    });
+    if (!ok) return;
+
     const next = savedAddresses.filter((a) => a.id !== id);
     if (next.length > 0 && !next.some((a) => a.isDefault)) {
       next[0] = { ...next[0], isDefault: true };
@@ -241,8 +248,8 @@ export default function AccountPage() {
   const defaultAddr = getDefaultSavedAddress(savedAddresses);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
+    <>
+      {dialog}
       <main className="flex-grow max-w-3xl w-full mx-auto px-4 py-10">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold text-primary-dark">My Account</h1>
@@ -591,7 +598,6 @@ export default function AccountPage() {
           </div>
         )}
       </main>
-      <Footer />
-    </div>
+    </>
   );
 }

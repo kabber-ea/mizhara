@@ -22,6 +22,7 @@ export type SerializedProduct = {
   isActive: boolean;
   stockQuantity: number;
   inStock: boolean;
+  updatedAt?: string;
 };
 
 export type AdminProduct = SerializedProduct & {

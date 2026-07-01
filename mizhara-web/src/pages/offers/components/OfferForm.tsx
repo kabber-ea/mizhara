@@ -4,7 +4,7 @@ import FieldLabel, { fieldLabelClassLg } from "@/components/FieldLabel";
 import { useFieldErrors } from "@/hooks/use-field-errors";
 import { api, apiErrorMessage } from "@/lib/api";
 import { fieldInputClass, fieldSectionClass } from "@/lib/form-styles";
-import { isNonNegativeInt, isPositiveNumber } from "@/lib/form-validation";
+import { isNonNegativeAmount, isNonNegativeInt, isPositiveNumber, parseAmountInput, parseNonNegativeAmountInput } from "@/lib/form-validation";
 import type { Offer, OfferInput, OfferType } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 
@@ -110,11 +110,11 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       if (!isPositiveNumber(freeQuantity)) errors.freeQuantity = "Free quantity must be at least 1.";
     }
 
-    if (minPurchase.trim() && !isNonNegativeInt(minPurchase)) {
-      errors.minPurchase = "Minimum purchase must be a whole number.";
+    if (minPurchase.trim() && !isNonNegativeAmount(minPurchase)) {
+      errors.minPurchase = "Enter a valid minimum purchase amount.";
     }
-    if (maxDiscount.trim() && !isNonNegativeInt(maxDiscount)) {
-      errors.maxDiscount = "Maximum discount must be a whole number.";
+    if (maxDiscount.trim() && !isNonNegativeAmount(maxDiscount)) {
+      errors.maxDiscount = "Enter a valid maximum discount amount.";
     }
     if (type !== "percentage" && maxDiscount.trim()) {
       errors.maxDiscount = "Maximum discount applies to percentage offers only.";
@@ -149,9 +149,9 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       type,
       scope,
       percentage: Number(percentage) || 0,
-      fixedAmount: Number(fixedAmount) || 0,
-      minPurchase: minPurchase.trim() ? Number(minPurchase) : 0,
-      maxDiscount: type === "percentage" && maxDiscount.trim() ? Number(maxDiscount) : 0,
+      fixedAmount: parseAmountInput(fixedAmount) ?? 0,
+      minPurchase: minPurchase.trim() ? (parseNonNegativeAmountInput(minPurchase) ?? 0) : 0,
+      maxDiscount: type === "percentage" && maxDiscount.trim() ? (parseNonNegativeAmountInput(maxDiscount) ?? 0) : 0,
       buyQuantity: Number(buyQuantity) || 0,
       freeQuantity: Number(freeQuantity) || 0,
       productIds: scope === "selected" ? productIds : [],
@@ -279,8 +279,9 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
             <FieldLabel>Min. purchase (₹)</FieldLabel>
             <input
               type="number"
-              step="1"
-              inputMode="numeric"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
               value={minPurchase}
               onChange={(e) => {
                 setMinPurchase(e.target.value);
@@ -295,8 +296,9 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
             <FieldLabel>Max discount (₹)</FieldLabel>
             <input
               type="number"
-              step="1"
-              inputMode="numeric"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
               value={maxDiscount}
               onChange={(e) => {
                 setMaxDiscount(e.target.value);
@@ -314,8 +316,9 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
             <FieldLabel required>Discount amount (₹)</FieldLabel>
             <input
               type="number"
-              step="1"
-              inputMode="numeric"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
               value={fixedAmount}
               onChange={(e) => {
                 setFixedAmount(e.target.value);
@@ -329,8 +332,9 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
             <FieldLabel>Min. purchase (₹)</FieldLabel>
             <input
               type="number"
-              step="1"
-              inputMode="numeric"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
               value={minPurchase}
               onChange={(e) => {
                 setMinPurchase(e.target.value);

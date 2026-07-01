@@ -5,25 +5,22 @@ import OfferList from "./components/OfferList";
 import PageSkeleton from "@/components/PageSkeleton";
 import type { Offer } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
+
 export default function OffersPage() {
-  const [offers, setOffers] = useState<Offer[]>([]);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [stats, setStats] = useState({ total: 0, activeCount: 0, withCodeCount: 0 });
+  const [listKey, setListKey] = useState(0);
 
-  const loadData = async () => {
+  const loadProducts = async () => {
     try {
       setLoading(true);
-      const [{ data: offersData }, { data: productsData }] = await Promise.all([
-        api.get<Offer[]>("/api/offers"),
-        api.get<AdminProduct[]>("/api/products"),
-      ]);
-      setOffers(offersData ?? []);
-      setProducts(productsData ?? []);
+      const { data } = await api.get<AdminProduct[]>("/api/products");
+      setProducts(data ?? []);
     } catch (e) {
-      console.error("Failed to load offers", e);
-      setOffers([]);
+      console.error("Failed to load products for offers", e);
       setProducts([]);
     } finally {
       setLoading(false);
@@ -31,11 +28,14 @@ export default function OffersPage() {
   };
 
   useEffect(() => {
-    loadData();
+    loadProducts();
   }, []);
 
-  const safeOffers = offers ?? [];
-  const activeCount = safeOffers.filter((o) => o.isActive).length;
+  const handleOfferSuccess = () => {
+    setShowForm(false);
+    setEditingOffer(null);
+    setListKey((k) => k + 1);
+  };
 
   if (loading) return <PageSkeleton />;
 
@@ -62,17 +62,15 @@ export default function OffersPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 bg-white border border-border-custom rounded-2xl">
           <span className="text-[10px] font-bold text-muted-custom uppercase">Total Offers</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{safeOffers.length}</p>
+          <p className="text-2xl font-extrabold text-primary-dark mt-1">{stats.total}</p>
         </div>
         <div className="p-5 bg-white border border-border-custom rounded-2xl">
           <span className="text-[10px] font-bold text-muted-custom uppercase">Active Now</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{activeCount}</p>
+          <p className="text-2xl font-extrabold text-primary-dark mt-1">{stats.activeCount}</p>
         </div>
         <div className="p-5 bg-white border border-border-custom rounded-2xl">
           <span className="text-[10px] font-bold text-muted-custom uppercase">With Coupon Code</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">
-            {safeOffers.filter((o) => o.code).length}
-          </p>
+          <p className="text-2xl font-extrabold text-primary-dark mt-1">{stats.withCodeCount}</p>
         </div>
       </div>
 
@@ -80,15 +78,15 @@ export default function OffersPage() {
         <OfferForm
           products={products ?? []}
           editingOffer={editingOffer}
-          onSuccess={() => { setShowForm(false); setEditingOffer(null); loadData(); }}
+          onSuccess={handleOfferSuccess}
           onCancel={() => { setShowForm(false); setEditingOffer(null); }}
         />
       ) : (
         <OfferList
-          offers={safeOffers}
+          key={listKey}
           products={products ?? []}
           onEdit={(offer) => { setEditingOffer(offer); setShowForm(true); }}
-          onRefresh={loadData}
+          onMeta={setStats}
         />
       )}
     </div>

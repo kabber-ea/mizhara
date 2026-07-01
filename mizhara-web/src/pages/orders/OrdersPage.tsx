@@ -10,6 +10,7 @@ import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import StatusBadge from "@/components/StatusBadge";
+import { TableEditButton } from "@/components/TableIconButtons";
 
 const DELIVERY_FILTERS: { value: string; label: string }[] = [
   { value: "all", label: "All statuses" },
@@ -248,13 +249,11 @@ function OrderRow({
           )}
         </td>
         <td className="py-3">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button type="button" onClick={onToggleExpand} className="text-[10px] text-primary font-semibold hover:underline">
               {expanded ? "Hide" : "View"}
             </button>
-            <button type="button" onClick={onEdit} className="text-[10px] text-primary-dark font-semibold hover:underline">
-              Update
-            </button>
+            <TableEditButton onClick={onEdit} label="Update order" />
           </div>
         </td>
       </tr>

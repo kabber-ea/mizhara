@@ -2,17 +2,19 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
+  # Build only checks compile; run via `go run` (Windows App Control blocks local .exe).
   cmd = "go build -o ./tmp/main.exe ."
-  bin = "tmp/main.exe"
+  entrypoint = ["go", "run", "."]
   include_ext = ["go", "tpl", "tmpl", "html"]
-  exclude_dir = ["tmp", "vendor", "testdata", "scripts"]
+  exclude_dir = ["tmp", "bin", "vendor", "testdata", "scripts"]
   exclude_regex = ["_test\\.go"]
   delay = 1000
-  send_interrupt = true
+  send_interrupt = false
   kill_delay = 500
+  poll = true
 
 [log]
   time = false
 
 [misc]
-  clean_on_exit = true
+  clean_on_exit = false

@@ -21,7 +21,7 @@ func Setup() *gin.Engine {
 		origin = "http://localhost:5173"
 	}
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{origin, "http://localhost:5173", "http://localhost:3000"},
+		AllowOrigins:     []string{origin, "http://localhost:5173", "http://localhost:8080", "http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		AllowCredentials: true,
@@ -41,6 +41,10 @@ func Setup() *gin.Engine {
 
 	api := r.Group("/api")
 	{
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": "ok"})
+		})
+
 		// Auth — public
 		api.POST("/auth/login", auth.Login)
 		api.POST("/auth/register", auth.Register)
@@ -64,6 +68,7 @@ func Setup() *gin.Engine {
 		api.GET("/categories", middleware.OptionalAuth(), categories.List)
 		api.POST("/categories", middleware.AuthRequired(), categories.Create)
 		api.PUT("/categories", middleware.AuthRequired(), categories.Update)
+		api.DELETE("/categories", middleware.AuthRequired(), categories.Delete)
 
 		// Offers
 		api.GET("/offers/active", offers.ListActive)

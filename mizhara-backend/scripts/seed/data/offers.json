@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Festive Offer",
+    "description": "20% off every piece — applied automatically at checkout.",
+    "type": "percentage",
+    "scope": "all",
+    "percentage": 20,
+    "minPurchase": 999,
+    "maxDiscount": 1500,
+    "isActive": true
+  },
+  {
+    "name": "Welcome Offer",
+    "description": "15% off anklets and earrings with code MIZHARA15.",
+    "type": "percentage",
+    "scope": "selected",
+    "percentage": 15,
+    "minPurchase": 799,
+    "maxDiscount": 800,
+    "code": "MIZHARA15",
+    "isActive": true,
+    "productCategories": [
+      "Anklets",
+      "Earrings"
+    ],
+    "productsPerCategory": 3
+  },
+  {
+    "name": "Sparkle Savings",
+    "description": "Flat ₹500 off when you spend ₹2,499 or more.",
+    "type": "fixed",
+    "scope": "all",
+    "fixedAmount": 500,
+    "minPurchase": 2499,
+    "code": "SPARKLE500",
+    "isActive": true
+  },
+  {
+    "name": "Ring Duo Deal",
+    "description": "Buy 2 rings, get 1 free on selected styles.",
+    "type": "bogo",
+    "scope": "selected",
+    "buyQuantity": 2,
+    "freeQuantity": 1,
+    "isActive": true,
+    "productCategories": [
+      "Rings"
+    ],
+    "productsPerCategory": 5
+  },
+  {
+    "name": "Bangle Bundle",
+    "description": "Buy 3 bangles, get 1 free — stack your wrist stack.",
+    "type": "bogo",
+    "scope": "selected",
+    "buyQuantity": 3,
+    "freeQuantity": 1,
+    "isActive": true,
+    "productCategories": [
+      "Bangles"
+    ]
+  }
+]

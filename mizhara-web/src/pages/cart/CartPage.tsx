@@ -3,8 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
 import { loginUrl } from "@/lib/auth-url";
 import { useCart } from "@/providers/CartProvider";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import FieldError from "@/components/FieldError";
 import FieldLabel from "@/components/FieldLabel";
 import { useFieldErrors } from "@/hooks/use-field-errors";
@@ -273,10 +271,7 @@ export default function CartPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
-
-      <main className="flex-grow max-w-5xl w-full mx-auto px-4 py-10">
+    <main className="flex-grow max-w-5xl w-full mx-auto px-4 py-10">
         {step !== "success" && (
           <div className="mb-10">
             <h1 className="font-serif text-3xl font-bold text-center text-primary-dark mb-6">Checkout</h1>
@@ -516,8 +511,6 @@ export default function CartPage() {
             <Link to="/products" className="inline-block px-8 py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl">Continue Shopping</Link>
           </div>
         )}
-      </main>
-      <Footer />
-    </div>
+    </main>
   );
 }

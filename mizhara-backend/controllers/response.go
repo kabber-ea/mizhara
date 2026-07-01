@@ -24,6 +24,21 @@ func parseLimit(raw string, fallback int64) int64 {
 	return n
 }
 
+// parseFeaturedLimit: 0 = all featured products; numeric cap 100 for homepage carousel.
+func parseFeaturedLimit(raw string) int64 {
+	if raw == "" || strings.EqualFold(raw, "all") {
+		return 0
+	}
+	n, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || n <= 0 {
+		return 0
+	}
+	if n > 100 {
+		return 100
+	}
+	return n
+}
+
 func respondError(c *gin.Context, err error) {
 	if err == nil {
 		return

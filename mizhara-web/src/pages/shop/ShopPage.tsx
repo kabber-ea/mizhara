@@ -1,7 +1,5 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import FilterSidebar from "@/pages/shop/components/FilterSidebar";
 import ProductGrid from "@/pages/shop/components/ProductGrid";
 import SortDropdown from "@/pages/shop/components/SortDropdown";
@@ -179,7 +177,6 @@ function CatalogContent() {
     setSearchParams(next, { replace: true });
   };
 
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8 text-center space-y-2">
@@ -243,20 +240,16 @@ function CatalogContent() {
 
 export default function ProductsPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
-      <main className="flex-grow">
-        <Suspense
-          fallback={
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center text-xs text-muted-custom">
-              Loading the Mizhara Collection...
-            </div>
-          }
-        >
-          <CatalogContent />
-        </Suspense>
-      </main>
-      <Footer />
-    </div>
+    <main className="flex-grow">
+      <Suspense
+        fallback={
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center text-xs text-muted-custom">
+            Loading the Mizhara Collection...
+          </div>
+        }
+      >
+        <CatalogContent />
+      </Suspense>
+    </main>
   );
 }

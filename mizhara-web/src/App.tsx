@@ -3,6 +3,7 @@ import AuthProvider from "@/providers/AuthProvider";
 import CartProvider from "@/providers/CartProvider";
 import { CustomerRoute, GuestOnlyStore } from "@/components/ProtectedRoute";
 import AdminLayout from "@/components/layout/AdminLayout";
+import StoreLayout from "@/components/layout/StoreLayout";
 import HomePage from "@/pages/home/HomePage";
 import ShopPage from "@/pages/shop/ShopPage";
 import ProductDetailPage from "@/pages/product-detail/ProductDetailPage";
@@ -29,11 +30,13 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            <Route path="/" element={<GuestOnlyStore><HomePage /></GuestOnlyStore>} />
-            <Route path="/products" element={<GuestOnlyStore><ShopPage /></GuestOnlyStore>} />
-            <Route path="/products/:id" element={<GuestOnlyStore><ProductDetailPage /></GuestOnlyStore>} />
-            <Route path="/cart" element={<GuestOnlyStore><CartPage /></GuestOnlyStore>} />
-            <Route path="/account" element={<CustomerRoute><AccountPage /></CustomerRoute>} />
+            <Route element={<StoreLayout />}>
+              <Route path="/" element={<GuestOnlyStore><HomePage /></GuestOnlyStore>} />
+              <Route path="/products" element={<GuestOnlyStore><ShopPage /></GuestOnlyStore>} />
+              <Route path="/products/:id" element={<GuestOnlyStore><ProductDetailPage /></GuestOnlyStore>} />
+              <Route path="/cart" element={<GuestOnlyStore><CartPage /></GuestOnlyStore>} />
+              <Route path="/account" element={<CustomerRoute><AccountPage /></CustomerRoute>} />
+            </Route>
 
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />

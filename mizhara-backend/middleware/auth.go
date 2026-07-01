@@ -48,10 +48,18 @@ func GetSession(c *gin.Context) *lib.SessionPayload {
 
 func SetSessionCookie(c *gin.Context, token string) {
 	secure := gin.Mode() == gin.ReleaseMode
-	c.SetSameSite(http.SameSiteLaxMode)
+	if secure {
+		c.SetSameSite(http.SameSiteNoneMode)
+	} else {
+		c.SetSameSite(http.SameSiteLaxMode)
+	}
 	c.SetCookie(lib.CookieName, token, 7*24*60*60, "/", "", secure, true)
 }
 
 func ClearSessionCookie(c *gin.Context) {
-	c.SetCookie(lib.CookieName, "", -1, "/", "", false, true)
+	secure := gin.Mode() == gin.ReleaseMode
+	if secure {
+		c.SetSameSite(http.SameSiteNoneMode)
+	}
+	c.SetCookie(lib.CookieName, "", -1, "/", "", secure, true)
 }

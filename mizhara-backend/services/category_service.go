@@ -67,7 +67,17 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	if name == "" {
 		return nil, lib.BadRequest("category name is required")
 	}
+	var existing models.Category
+	if err := lib.Categories().FindOne(ctx, bson.M{"_id": id}).Decode(&existing); err != nil {
+		return nil, lib.ErrNotFound
+	}
 	slug := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+	var duplicate models.Category
+	dupErr := lib.Categories().FindOne(ctx, bson.M{"name": name, "_id": bson.M{"$ne": id}}).Decode(&duplicate)
+	if dupErr == nil {
+		return nil, lib.BadRequest("a category with this name already exists")
+	}
+	oldName := existing.Name
 	now := time.Now()
 	set := bson.M{"name": name, "slug": slug, "updatedAt": now}
 	if input.IsActive != nil {
@@ -80,12 +90,46 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	if res.MatchedCount == 0 {
 		return nil, lib.ErrNotFound
 	}
+	if oldName != name {
+		_, _ = lib.Products().UpdateMany(ctx, bson.M{"category": oldName}, bson.M{
+			"$set": bson.M{"category": name, "updatedAt": now},
+		})
+	}
 	var c models.Category
 	if err := lib.Categories().FindOne(ctx, bson.M{"_id": id}).Decode(&c); err != nil {
 		return nil, err
 	}
 	out := serializeCategory(c)
 	return &out, nil
+}
+
+func DeleteCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, id string) error {
+	if err := RequireAdmin(session); err != nil {
+		return err
+	}
+	oid, err := primitive.ObjectIDFromHex(strings.TrimSpace(id))
+	if err != nil {
+		return lib.BadRequest("invalid category id")
+	}
+	var cat models.Category
+	if err := lib.Categories().FindOne(ctx, bson.M{"_id": oid}).Decode(&cat); err != nil {
+		return lib.ErrNotFound
+	}
+	count, err := lib.Products().CountDocuments(ctx, bson.M{"category": cat.Name})
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return lib.BadRequest("cannot delete a category that still has products assigned")
+	}
+	res, err := lib.Categories().DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return lib.ErrNotFound
+	}
+	return nil
 }
 
 func ListCategoriesForViewer(ctx context.Context, session *lib.SessionPayload) ([]SerializedCategory, error) {

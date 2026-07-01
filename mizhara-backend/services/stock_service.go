@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"time"
 
 	"mizhara-backend/lib"
 	"go.mongodb.org/mongo-driver/bson"
@@ -39,6 +40,7 @@ func DeductStockForOrder(ctx context.Context, items []struct {
 			"$set": bson.M{
 				"stockQuantity": newStock,
 				"inStock":       syncInStock(newStock),
+				"updatedAt":     time.Now(),
 			},
 		})
 	}

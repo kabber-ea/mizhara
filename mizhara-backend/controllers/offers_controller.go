@@ -37,7 +37,20 @@ func (OffersController) Preview(c *gin.Context) {
 }
 
 func (OffersController) List(c *gin.Context) {
-	items, err := services.ListOffersForAdmin(c.Request.Context(), middleware.GetSession(c))
+	session := middleware.GetSession(c)
+	if c.Query("page") != "" {
+		result, err := services.ListOffersForAdminPaginated(
+			c.Request.Context(), session,
+			c.Query("page"), c.Query("limit"), c.Query("search"),
+		)
+		if err != nil {
+			respondError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, result)
+		return
+	}
+	items, err := services.ListOffersForAdmin(c.Request.Context(), session)
 	if err != nil {
 		respondError(c, err)
 		return

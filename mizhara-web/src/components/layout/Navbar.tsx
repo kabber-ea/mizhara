@@ -35,10 +35,7 @@ export default function Navbar() {
   ];
 
   useEffect(() => {
-    if (!showStoreNav || isAuthPage) {
-      setActiveOffers([]);
-      return;
-    }
+    if (!showStoreNav || isAuthPage) return;
     api
       .get<Offer[]>("/api/offers/active")
       .then((res) => setActiveOffers(res.data ?? []))
@@ -46,10 +43,7 @@ export default function Navbar() {
   }, [showStoreNav, isAuthPage]);
 
   useEffect(() => {
-    if (!showCategoryStrip) {
-      setCategories([]);
-      return;
-    }
+    if (!showCategoryStrip) return;
     api
       .get<Category[]>("/api/categories")
       .then((res) => setCategories(res.data ?? []))

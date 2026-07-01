@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import ProductForm from "@/pages/catalog/components/ProductForm";
 import ProductList from "@/pages/catalog/components/ProductList";
 import CategoryManager from "@/pages/catalog/components/CategoryManager";
@@ -7,21 +7,17 @@ import { api } from "@/lib/api";
 import type { AdminProduct, Category } from "@/types/catalog";
 
 export default function AdminCatalogPage() {
-  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
+  const [productMeta, setProductMeta] = useState({ total: 0, featuredCount: 0 });
 
-  const loadData = async () => {
+  const loadCategories = async () => {
     try {
       setLoading(true);
-      const [{ data: productsData }, { data: categoriesData }] = await Promise.all([
-        api.get<AdminProduct[]>("/api/products"),
-        api.get<Category[]>("/api/categories"),
-      ]);
-      setProducts(productsData ?? []);
+      const { data: categoriesData } = await api.get<Category[]>("/api/categories");
       setCategories(categoriesData ?? []);
     } catch (e) {
       console.error("Failed to load catalog", e);
@@ -31,12 +27,15 @@ export default function AdminCatalogPage() {
   };
 
   useEffect(() => {
-    loadData();
+    loadCategories();
   }, []);
 
-  const totalProducts = products.length;
-  const featuredProductsCount = products.filter((p) => p.isFeatured).length;
+  const handleProductMeta = useCallback((meta: { total: number; featuredCount: number }) => {
+    setProductMeta(meta);
+  }, []);
+
   const totalCategories = categories.length;
+  const categoryNames = useMemo(() => categories.map((c) => c.name), [categories]);
 
   return (
     <div className="space-y-6">
@@ -48,11 +47,11 @@ export default function AdminCatalogPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 bg-white border border-border-custom rounded-2xl">
           <span className="text-[10px] font-bold text-muted-custom uppercase">Total Ornaments</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{totalProducts}</p>
+          <p className="text-2xl font-extrabold text-primary-dark mt-1">{productMeta.total}</p>
         </div>
         <div className="p-5 bg-white border border-border-custom rounded-2xl">
           <span className="text-[10px] font-bold text-muted-custom uppercase">Featured</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{featuredProductsCount}</p>
+          <p className="text-2xl font-extrabold text-primary-dark mt-1">{productMeta.featuredCount}</p>
         </div>
         <div className="p-5 bg-white border border-border-custom rounded-2xl">
           <span className="text-[10px] font-bold text-muted-custom uppercase">Categories</span>
@@ -98,37 +97,36 @@ export default function AdminCatalogPage() {
         )}
       </div>
 
-      {loading && products.length === 0 ? (
-        <PageSkeleton rows={4}  />
+      {loading && categories.length === 0 ? (
+        <PageSkeleton rows={4} />
       ) : (
         <div className="space-y-6">
           {showForm && activeTab === "products" && (
             <ProductForm
-              categories={categories.map((c) => c.name)}
+              categories={categoryNames}
               editingProduct={editingProduct}
               onSuccess={() => {
                 setShowForm(false);
                 setEditingProduct(null);
-                loadData();
+                loadCategories();
               }}
               onCancel={() => {
                 setShowForm(false);
                 setEditingProduct(null);
               }}
-             />
+            />
           )}
           {!showForm && activeTab === "products" && (
             <ProductList
-              products={products}
               onEdit={(p) => {
                 setEditingProduct(p);
                 setShowForm(true);
               }}
-              onRefresh={loadData}
-             />
+              onMeta={handleProductMeta}
+            />
           )}
           {activeTab === "categories" && (
-            <CategoryManager categories={categories} onRefresh={loadData}  />
+            <CategoryManager categories={categories} onRefresh={loadCategories} />
           )}
         </div>
       )}

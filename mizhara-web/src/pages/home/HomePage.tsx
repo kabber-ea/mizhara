@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import Hero from "./components/Hero";
 import HomeTrustBar from "./components/HomeTrustBar";
 import ActiveOffersSection from "./components/ActiveOffersSection";
@@ -20,7 +18,7 @@ export default function HomePage() {
 
   useEffect(() => {
     Promise.all([
-      api.get<SerializedProduct[]>("/api/products/featured?limit=8"),
+      api.get<SerializedProduct[]>("/api/products/featured?limit=all"),
       api.get<SerializedProduct[]>("/api/products/new?limit=8"),
       api.get<SerializedProduct[]>("/api/products/trending?limit=8"),
       api.get<Offer[]>("/api/offers/active"),
@@ -42,9 +40,7 @@ export default function HomePage() {
   const storyProduct = featuredProducts[0] ?? newProducts[0];
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
-      <main className="flex-grow">
+    <main className="flex-grow">
         <Hero featuredProducts={featuredProducts} offers={activeOffers} />
 
         <HomeTrustBar />
@@ -88,8 +84,6 @@ export default function HomePage() {
 
         <StorySection spotlightProduct={storyProduct} />
         <ShopCTA />
-      </main>
-      <Footer />
-    </div>
+    </main>
   );
 }

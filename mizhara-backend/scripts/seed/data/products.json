@@ -1,0 +1,1164 @@
+[
+  {
+    "name": "Celestial Starlet Chain",
+    "description": "Handcrafted Starlet Chain from Mizhara's Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Chains",
+    "costPrice": 174.64999999999998,
+    "price": 499,
+    "rating": 4.2,
+    "reviewsCount": 8,
+    "stockQuantity": 15,
+    "materials": [
+      "925 Sterling Silver",
+      "Rose Gold Plating",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "16 inches",
+      "18 inches",
+      "20 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Golden Layered Chain",
+    "description": "Handcrafted Layered Chain from Mizhara's Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Chains",
+    "costPrice": 253.74999999999997,
+    "price": 725,
+    "rating": 4.4,
+    "reviewsCount": 14,
+    "stockQuantity": 17,
+    "materials": [
+      "925 Sterling Silver",
+      "Rose Gold Plating",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "16 inches",
+      "18 inches",
+      "20 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Ruby Pendant Chain",
+    "description": "Handcrafted Pendant Chain from Mizhara's Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Chains",
+    "costPrice": 332.84999999999997,
+    "price": 951,
+    "rating": 4.6000000000000005,
+    "reviewsCount": 20,
+    "stockQuantity": 19,
+    "materials": [
+      "925 Sterling Silver",
+      "Rose Gold Plating",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "16 inches",
+      "18 inches",
+      "20 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Ivory Charm Chain",
+    "description": "Handcrafted Charm Chain from Mizhara's Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Chains",
+    "costPrice": 411.95,
+    "price": 1177,
+    "rating": 4.800000000000001,
+    "reviewsCount": 26,
+    "stockQuantity": 21,
+    "materials": [
+      "925 Sterling Silver",
+      "Rose Gold Plating",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "16 inches",
+      "18 inches",
+      "20 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Crystal Box Chain",
+    "description": "Handcrafted Box Chain from Mizhara's Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Chains",
+    "costPrice": 491.04999999999995,
+    "price": 1403,
+    "rating": 4.2,
+    "reviewsCount": 32,
+    "stockQuantity": 23,
+    "materials": [
+      "925 Sterling Silver",
+      "Rose Gold Plating",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "16 inches",
+      "18 inches",
+      "20 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Silk Snake Chain",
+    "description": "Handcrafted Snake Chain from Mizhara's Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Chains",
+    "costPrice": 570.15,
+    "price": 1629,
+    "rating": 4.4,
+    "reviewsCount": 38,
+    "stockQuantity": 25,
+    "materials": [
+      "925 Sterling Silver",
+      "Rose Gold Plating",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "16 inches",
+      "18 inches",
+      "20 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Aurora Rope Chain",
+    "description": "Handcrafted Rope Chain from Mizhara's Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Chains",
+    "costPrice": 649.25,
+    "price": 1855,
+    "rating": 4.6000000000000005,
+    "reviewsCount": 44,
+    "stockQuantity": 27,
+    "materials": [
+      "925 Sterling Silver",
+      "Rose Gold Plating",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "16 inches",
+      "18 inches",
+      "20 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Rose Charm Bracelet",
+    "description": "Handcrafted Charm Bracelet from Mizhara's Bracelets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bracelets",
+    "costPrice": 510.29999999999995,
+    "price": 1458,
+    "rating": 4.9,
+    "reviewsCount": 29,
+    "stockQuantity": 22,
+    "materials": [
+      "Alloy",
+      "Pearl",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "Adjustable",
+      "6 inches",
+      "7 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Velvet Tennis Bracelet",
+    "description": "Handcrafted Tennis Bracelet from Mizhara's Bracelets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bracelets",
+    "costPrice": 589.4,
+    "price": 1684,
+    "rating": 4.3,
+    "reviewsCount": 35,
+    "stockQuantity": 24,
+    "materials": [
+      "Alloy",
+      "Pearl",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "Adjustable",
+      "6 inches",
+      "7 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Starlit Cuff Bracelet",
+    "description": "Handcrafted Cuff Bracelet from Mizhara's Bracelets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bracelets",
+    "costPrice": 668.5,
+    "price": 1910,
+    "rating": 4.5,
+    "reviewsCount": 41,
+    "stockQuantity": 26,
+    "materials": [
+      "Alloy",
+      "Pearl",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "Adjustable",
+      "6 inches",
+      "7 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Lotus Pearl Bracelet",
+    "description": "Handcrafted Pearl Bracelet from Mizhara's Bracelets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bracelets",
+    "costPrice": 747.5999999999999,
+    "price": 2136,
+    "rating": 4.7,
+    "reviewsCount": 47,
+    "stockQuantity": 28,
+    "materials": [
+      "Alloy",
+      "Pearl",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "Adjustable",
+      "6 inches",
+      "7 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Saffron Beaded Bracelet",
+    "description": "Handcrafted Beaded Bracelet from Mizhara's Bracelets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bracelets",
+    "costPrice": 826.6999999999999,
+    "price": 2362,
+    "rating": 4.9,
+    "reviewsCount": 53,
+    "stockQuantity": 30,
+    "materials": [
+      "Alloy",
+      "Pearl",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "Adjustable",
+      "6 inches",
+      "7 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Moonlit Link Bracelet",
+    "description": "Handcrafted Link Bracelet from Mizhara's Bracelets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bracelets",
+    "costPrice": 905.8,
+    "price": 2588,
+    "rating": 4.3,
+    "reviewsCount": 59,
+    "stockQuantity": 32,
+    "materials": [
+      "Alloy",
+      "Pearl",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "Adjustable",
+      "6 inches",
+      "7 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Pearl Wrap Bracelet",
+    "description": "Handcrafted Wrap Bracelet from Mizhara's Bracelets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bracelets",
+    "costPrice": 984.9,
+    "price": 2814,
+    "rating": 4.5,
+    "reviewsCount": 65,
+    "stockQuantity": 34,
+    "materials": [
+      "Alloy",
+      "Pearl",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "Adjustable",
+      "6 inches",
+      "7 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Jasmine Belly Chain",
+    "description": "Handcrafted Belly Chain from Mizhara's Waist Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Waist Chains",
+    "costPrice": 845.9499999999999,
+    "price": 2417,
+    "rating": 4.800000000000001,
+    "reviewsCount": 50,
+    "stockQuantity": 29,
+    "materials": [
+      "Brass",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "28 inches",
+      "30 inches",
+      "32 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Celestial Kamarband",
+    "description": "Handcrafted Kamarband from Mizhara's Waist Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Waist Chains",
+    "costPrice": 925.05,
+    "price": 2643,
+    "rating": 4.2,
+    "reviewsCount": 56,
+    "stockQuantity": 31,
+    "materials": [
+      "Brass",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "28 inches",
+      "30 inches",
+      "32 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Golden Layered Waist Chain",
+    "description": "Handcrafted Layered Waist Chain from Mizhara's Waist Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Waist Chains",
+    "costPrice": 1004.15,
+    "price": 2869,
+    "rating": 4.4,
+    "reviewsCount": 62,
+    "stockQuantity": 33,
+    "materials": [
+      "Brass",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "28 inches",
+      "30 inches",
+      "32 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Ruby Coin Waist Chain",
+    "description": "Handcrafted Coin Waist Chain from Mizhara's Waist Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Waist Chains",
+    "costPrice": 1083.25,
+    "price": 3095,
+    "rating": 4.6000000000000005,
+    "reviewsCount": 68,
+    "stockQuantity": 35,
+    "materials": [
+      "Brass",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "28 inches",
+      "30 inches",
+      "32 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Ivory Pearl Waist Chain",
+    "description": "Handcrafted Pearl Waist Chain from Mizhara's Waist Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Waist Chains",
+    "costPrice": 1162.35,
+    "price": 3321,
+    "rating": 4.800000000000001,
+    "reviewsCount": 74,
+    "stockQuantity": 37,
+    "materials": [
+      "Brass",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "28 inches",
+      "30 inches",
+      "32 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Crystal Delicate Waist Chain",
+    "description": "Handcrafted Delicate Waist Chain from Mizhara's Waist Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Waist Chains",
+    "costPrice": 1241.4499999999998,
+    "price": 3547,
+    "rating": 4.2,
+    "reviewsCount": 80,
+    "stockQuantity": 39,
+    "materials": [
+      "Brass",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "28 inches",
+      "30 inches",
+      "32 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Silk Festive Waist Chain",
+    "description": "Handcrafted Festive Waist Chain from Mizhara's Waist Chains collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Waist Chains",
+    "costPrice": 1320.55,
+    "price": 3773,
+    "rating": 4.4,
+    "reviewsCount": 86,
+    "stockQuantity": 41,
+    "materials": [
+      "Brass",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "28 inches",
+      "30 inches",
+      "32 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Emerald Payal",
+    "description": "Handcrafted Payal from Mizhara's Anklets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Anklets",
+    "costPrice": 1181.6,
+    "price": 3376,
+    "rating": 4.7,
+    "reviewsCount": 71,
+    "stockQuantity": 36,
+    "materials": [
+      "925 Sterling Silver",
+      "Ghungroo Bells",
+      "Pearl"
+    ],
+    "sizes": [
+      "9 inches",
+      "9.5 inches + Extender",
+      "10 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Rose Charm Anklet",
+    "description": "Handcrafted Charm Anklet from Mizhara's Anklets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Anklets",
+    "costPrice": 1260.6999999999998,
+    "price": 3602,
+    "rating": 4.9,
+    "reviewsCount": 77,
+    "stockQuantity": 38,
+    "materials": [
+      "925 Sterling Silver",
+      "Ghungroo Bells",
+      "Pearl"
+    ],
+    "sizes": [
+      "9 inches",
+      "9.5 inches + Extender",
+      "10 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Velvet Pearl Anklet",
+    "description": "Handcrafted Pearl Anklet from Mizhara's Anklets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Anklets",
+    "costPrice": 1339.8,
+    "price": 3828,
+    "rating": 4.3,
+    "reviewsCount": 83,
+    "stockQuantity": 40,
+    "materials": [
+      "925 Sterling Silver",
+      "Ghungroo Bells",
+      "Pearl"
+    ],
+    "sizes": [
+      "9 inches",
+      "9.5 inches + Extender",
+      "10 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Starlit Layered Anklet",
+    "description": "Handcrafted Layered Anklet from Mizhara's Anklets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Anklets",
+    "costPrice": 193.89999999999998,
+    "price": 554,
+    "rating": 4.5,
+    "reviewsCount": 89,
+    "stockQuantity": 42,
+    "materials": [
+      "925 Sterling Silver",
+      "Ghungroo Bells",
+      "Pearl"
+    ],
+    "sizes": [
+      "9 inches",
+      "9.5 inches + Extender",
+      "10 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Lotus Ghungroo Anklet",
+    "description": "Handcrafted Ghungroo Anklet from Mizhara's Anklets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Anklets",
+    "costPrice": 273,
+    "price": 780,
+    "rating": 4.7,
+    "reviewsCount": 95,
+    "stockQuantity": 44,
+    "materials": [
+      "925 Sterling Silver",
+      "Ghungroo Bells",
+      "Pearl"
+    ],
+    "sizes": [
+      "9 inches",
+      "9.5 inches + Extender",
+      "10 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Saffron Delicate Anklet",
+    "description": "Handcrafted Delicate Anklet from Mizhara's Anklets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Anklets",
+    "costPrice": 352.09999999999997,
+    "price": 1006,
+    "rating": 4.9,
+    "reviewsCount": 101,
+    "stockQuantity": 46,
+    "materials": [
+      "925 Sterling Silver",
+      "Ghungroo Bells",
+      "Pearl"
+    ],
+    "sizes": [
+      "9 inches",
+      "9.5 inches + Extender",
+      "10 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Moonlit Beaded Anklet",
+    "description": "Handcrafted Beaded Anklet from Mizhara's Anklets collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Anklets",
+    "costPrice": 431.2,
+    "price": 1232,
+    "rating": 4.3,
+    "reviewsCount": 107,
+    "stockQuantity": 48,
+    "materials": [
+      "925 Sterling Silver",
+      "Ghungroo Bells",
+      "Pearl"
+    ],
+    "sizes": [
+      "9 inches",
+      "9.5 inches + Extender",
+      "10 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Aurora Solitaire Ring",
+    "description": "Handcrafted Solitaire Ring from Mizhara's Rings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Rings",
+    "costPrice": 292.25,
+    "price": 835,
+    "rating": 4.6000000000000005,
+    "reviewsCount": 92,
+    "stockQuantity": 43,
+    "materials": [
+      "925 Sterling Silver",
+      "Cubic Zirconia",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Jasmine Stackable Ring",
+    "description": "Handcrafted Stackable Ring from Mizhara's Rings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Rings",
+    "costPrice": 371.34999999999997,
+    "price": 1061,
+    "rating": 4.800000000000001,
+    "reviewsCount": 98,
+    "stockQuantity": 45,
+    "materials": [
+      "925 Sterling Silver",
+      "Cubic Zirconia",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Celestial Statement Ring",
+    "description": "Handcrafted Statement Ring from Mizhara's Rings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Rings",
+    "costPrice": 450.45,
+    "price": 1287,
+    "rating": 4.2,
+    "reviewsCount": 104,
+    "stockQuantity": 47,
+    "materials": [
+      "925 Sterling Silver",
+      "Cubic Zirconia",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Golden Band Ring",
+    "description": "Handcrafted Band Ring from Mizhara's Rings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Rings",
+    "costPrice": 529.55,
+    "price": 1513,
+    "rating": 4.4,
+    "reviewsCount": 110,
+    "stockQuantity": 49,
+    "materials": [
+      "925 Sterling Silver",
+      "Cubic Zirconia",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Ruby Cocktail Ring",
+    "description": "Handcrafted Cocktail Ring from Mizhara's Rings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Rings",
+    "costPrice": 608.65,
+    "price": 1739,
+    "rating": 4.6000000000000005,
+    "reviewsCount": 116,
+    "stockQuantity": 51,
+    "materials": [
+      "925 Sterling Silver",
+      "Cubic Zirconia",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Ivory Eternity Ring",
+    "description": "Handcrafted Eternity Ring from Mizhara's Rings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Rings",
+    "costPrice": 687.75,
+    "price": 1965,
+    "rating": 4.800000000000001,
+    "reviewsCount": 122,
+    "stockQuantity": 53,
+    "materials": [
+      "925 Sterling Silver",
+      "Cubic Zirconia",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Crystal Signet Ring",
+    "description": "Handcrafted Signet Ring from Mizhara's Rings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Rings",
+    "costPrice": 766.8499999999999,
+    "price": 2191,
+    "rating": 4.2,
+    "reviewsCount": 128,
+    "stockQuantity": 55,
+    "materials": [
+      "925 Sterling Silver",
+      "Cubic Zirconia",
+      "Rose Gold Plating"
+    ],
+    "sizes": [
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Pearl Stud Pin",
+    "description": "Handcrafted Stud Pin from Mizhara's Nose Pins collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Nose Pins",
+    "costPrice": 627.9,
+    "price": 1794,
+    "rating": 4.5,
+    "reviewsCount": 113,
+    "stockQuantity": 50,
+    "materials": [
+      "Surgical Steel",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Emerald Hoop Pin",
+    "description": "Handcrafted Hoop Pin from Mizhara's Nose Pins collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Nose Pins",
+    "costPrice": 707,
+    "price": 2020,
+    "rating": 4.7,
+    "reviewsCount": 119,
+    "stockQuantity": 52,
+    "materials": [
+      "Surgical Steel",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Rose Floral Pin",
+    "description": "Handcrafted Floral Pin from Mizhara's Nose Pins collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Nose Pins",
+    "costPrice": 786.0999999999999,
+    "price": 2246,
+    "rating": 4.9,
+    "reviewsCount": 125,
+    "stockQuantity": 54,
+    "materials": [
+      "Surgical Steel",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Velvet Crystal Pin",
+    "description": "Handcrafted Crystal Pin from Mizhara's Nose Pins collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Nose Pins",
+    "costPrice": 865.1999999999999,
+    "price": 2472,
+    "rating": 4.3,
+    "reviewsCount": 131,
+    "stockQuantity": 56,
+    "materials": [
+      "Surgical Steel",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Starlit Pearl Pin",
+    "description": "Handcrafted Pearl Pin from Mizhara's Nose Pins collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Nose Pins",
+    "costPrice": 944.3,
+    "price": 2698,
+    "rating": 4.5,
+    "reviewsCount": 137,
+    "stockQuantity": 58,
+    "materials": [
+      "Surgical Steel",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Lotus Minimal Pin",
+    "description": "Handcrafted Minimal Pin from Mizhara's Nose Pins collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Nose Pins",
+    "costPrice": 1023.4,
+    "price": 2924,
+    "rating": 4.7,
+    "reviewsCount": 143,
+    "stockQuantity": 15,
+    "materials": [
+      "Surgical Steel",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Saffron Festive Pin",
+    "description": "Handcrafted Festive Pin from Mizhara's Nose Pins collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Nose Pins",
+    "costPrice": 1102.5,
+    "price": 3150,
+    "rating": 4.9,
+    "reviewsCount": 149,
+    "stockQuantity": 17,
+    "materials": [
+      "Surgical Steel",
+      "Gold Plating",
+      "Crystal"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Silk Drop Earrings",
+    "description": "Handcrafted Drop Earrings from Mizhara's Earrings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Earrings",
+    "costPrice": 963.55,
+    "price": 2753,
+    "rating": 4.4,
+    "reviewsCount": 134,
+    "stockQuantity": 57,
+    "materials": [
+      "925 Sterling Silver",
+      "Pearl",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Aurora Stud Earrings",
+    "description": "Handcrafted Stud Earrings from Mizhara's Earrings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Earrings",
+    "costPrice": 1042.6499999999999,
+    "price": 2979,
+    "rating": 4.6000000000000005,
+    "reviewsCount": 140,
+    "stockQuantity": 59,
+    "materials": [
+      "925 Sterling Silver",
+      "Pearl",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Jasmine Hoop Earrings",
+    "description": "Handcrafted Hoop Earrings from Mizhara's Earrings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Earrings",
+    "costPrice": 1121.75,
+    "price": 3205,
+    "rating": 4.800000000000001,
+    "reviewsCount": 146,
+    "stockQuantity": 16,
+    "materials": [
+      "925 Sterling Silver",
+      "Pearl",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Celestial Jhumka",
+    "description": "Handcrafted Jhumka from Mizhara's Earrings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Earrings",
+    "costPrice": 1200.85,
+    "price": 3431,
+    "rating": 4.2,
+    "reviewsCount": 152,
+    "stockQuantity": 18,
+    "materials": [
+      "925 Sterling Silver",
+      "Pearl",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Golden Chandbali",
+    "description": "Handcrafted Chandbali from Mizhara's Earrings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Earrings",
+    "costPrice": 1279.9499999999998,
+    "price": 3657,
+    "rating": 4.4,
+    "reviewsCount": 158,
+    "stockQuantity": 20,
+    "materials": [
+      "925 Sterling Silver",
+      "Pearl",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Ruby Threader Earrings",
+    "description": "Handcrafted Threader Earrings from Mizhara's Earrings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Earrings",
+    "costPrice": 1359.05,
+    "price": 3883,
+    "rating": 4.6000000000000005,
+    "reviewsCount": 164,
+    "stockQuantity": 22,
+    "materials": [
+      "925 Sterling Silver",
+      "Pearl",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Ivory Cluster Earrings",
+    "description": "Handcrafted Cluster Earrings from Mizhara's Earrings collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Earrings",
+    "costPrice": 213.14999999999998,
+    "price": 609,
+    "rating": 4.800000000000001,
+    "reviewsCount": 170,
+    "stockQuantity": 24,
+    "materials": [
+      "925 Sterling Silver",
+      "Pearl",
+      "Cubic Zirconia"
+    ],
+    "sizes": [
+      "One Size"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Moonlit Kada",
+    "description": "Handcrafted Kada from Mizhara's Bangles collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bangles",
+    "costPrice": 1299.1999999999998,
+    "price": 3712,
+    "rating": 4.3,
+    "reviewsCount": 155,
+    "stockQuantity": 19,
+    "materials": [
+      "Brass",
+      "Enamel",
+      "Gold Plating"
+    ],
+    "sizes": [
+      "2.4 inches",
+      "2.6 inches",
+      "2.8 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Pearl Stackable Bangle",
+    "description": "Handcrafted Stackable Bangle from Mizhara's Bangles collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bangles",
+    "costPrice": 1378.3,
+    "price": 3938,
+    "rating": 4.5,
+    "reviewsCount": 161,
+    "stockQuantity": 21,
+    "materials": [
+      "Brass",
+      "Enamel",
+      "Gold Plating"
+    ],
+    "sizes": [
+      "2.4 inches",
+      "2.6 inches",
+      "2.8 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Emerald Cuff Bangle",
+    "description": "Handcrafted Cuff Bangle from Mizhara's Bangles collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bangles",
+    "costPrice": 232.39999999999998,
+    "price": 664,
+    "rating": 4.7,
+    "reviewsCount": 167,
+    "stockQuantity": 23,
+    "materials": [
+      "Brass",
+      "Enamel",
+      "Gold Plating"
+    ],
+    "sizes": [
+      "2.4 inches",
+      "2.6 inches",
+      "2.8 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Rose Pearl Bangle",
+    "description": "Handcrafted Pearl Bangle from Mizhara's Bangles collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bangles",
+    "costPrice": 311.5,
+    "price": 890,
+    "rating": 4.9,
+    "reviewsCount": 173,
+    "stockQuantity": 25,
+    "materials": [
+      "Brass",
+      "Enamel",
+      "Gold Plating"
+    ],
+    "sizes": [
+      "2.4 inches",
+      "2.6 inches",
+      "2.8 inches"
+    ],
+    "isFeatured": true
+  },
+  {
+    "name": "Velvet Enamel Bangle",
+    "description": "Handcrafted Enamel Bangle from Mizhara's Bangles collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bangles",
+    "costPrice": 390.59999999999997,
+    "price": 1116,
+    "rating": 4.3,
+    "reviewsCount": 179,
+    "stockQuantity": 27,
+    "materials": [
+      "Brass",
+      "Enamel",
+      "Gold Plating"
+    ],
+    "sizes": [
+      "2.4 inches",
+      "2.6 inches",
+      "2.8 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Starlit Filigree Bangle",
+    "description": "Handcrafted Filigree Bangle from Mizhara's Bangles collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bangles",
+    "costPrice": 469.7,
+    "price": 1342,
+    "rating": 4.5,
+    "reviewsCount": 185,
+    "stockQuantity": 29,
+    "materials": [
+      "Brass",
+      "Enamel",
+      "Gold Plating"
+    ],
+    "sizes": [
+      "2.4 inches",
+      "2.6 inches",
+      "2.8 inches"
+    ],
+    "isFeatured": false
+  },
+  {
+    "name": "Lotus Antique Bangle",
+    "description": "Handcrafted Antique Bangle from Mizhara's Bangles collection. Perfect for festive occasions and everyday elegance.",
+    "category": "Bangles",
+    "costPrice": 548.8,
+    "price": 1568,
+    "rating": 4.7,
+    "reviewsCount": 191,
+    "stockQuantity": 31,
+    "materials": [
+      "Brass",
+      "Enamel",
+      "Gold Plating"
+    ],
+    "sizes": [
+      "2.4 inches",
+      "2.6 inches",
+      "2.8 inches"
+    ],
+    "isFeatured": false
+  }
+]
