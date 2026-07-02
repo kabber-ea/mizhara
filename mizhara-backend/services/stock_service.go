@@ -13,36 +13,50 @@ func syncInStock(stock int) bool {
 	return stock > 0
 }
 
-func DeductStockForOrder(ctx context.Context, items []struct {
+type StockLineItem struct {
 	ProductID string
 	Quantity  int
-}) error {
+}
+
+func DeductStockForOrder(ctx context.Context, items []StockLineItem) error {
 	for _, item := range items {
-		if item.ProductID == "" || item.Quantity <= 0 {
-			continue
+		if err := deductProductStock(ctx, item.ProductID, item.Quantity); err != nil {
+			return err
 		}
-		oid, err := primitive.ObjectIDFromHex(item.ProductID)
-		if err != nil {
-			continue
-		}
-		var doc struct {
-			StockQuantity int `bson:"stockQuantity"`
-		}
-		err = lib.Products().FindOne(ctx, bson.M{"_id": oid}).Decode(&doc)
-		if err != nil {
-			continue
-		}
-		newStock := doc.StockQuantity - item.Quantity
-		if newStock < 0 {
-			newStock = 0
-		}
-		_, _ = lib.Products().UpdateOne(ctx, bson.M{"_id": oid}, bson.M{
-			"$set": bson.M{
-				"stockQuantity": newStock,
-				"inStock":       syncInStock(newStock),
-				"updatedAt":     time.Now(),
-			},
-		})
+	}
+	return nil
+}
+
+func deductProductStock(ctx context.Context, productID string, quantity int) error {
+	if productID == "" || quantity <= 0 {
+		return nil
+	}
+	oid, err := primitive.ObjectIDFromHex(productID)
+	if err != nil {
+		return lib.BadRequest("invalid product in order")
+	}
+
+	now := time.Now()
+	filter := bson.M{
+		"_id":           oid,
+		"stockQuantity": bson.M{"$gte": quantity},
+	}
+	update := bson.A{
+		bson.M{"$set": bson.M{
+			"stockQuantity": bson.M{"$subtract": bson.A{"$stockQuantity", quantity}},
+			"inStock": bson.M{"$gt": bson.A{
+				bson.M{"$subtract": bson.A{"$stockQuantity", quantity}},
+				0,
+			}},
+			"updatedAt": now,
+		}},
+	}
+	res, err := lib.Products().UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return lib.BadRequest("insufficient stock for one or more products")
 	}
 	return nil
 }

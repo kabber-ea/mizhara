@@ -68,6 +68,22 @@ func productIsActive(p models.Product) bool {
 	return *p.IsActive
 }
 
+func resolveProductCategory(ctx context.Context, categoryName string) (primitive.ObjectID, string, error) {
+	name := strings.TrimSpace(categoryName)
+	if name == "" {
+		return primitive.NilObjectID, "", lib.BadRequest("category is required")
+	}
+	var cat models.Category
+	err := lib.Categories().FindOne(ctx, bson.M{"name": name}).Decode(&cat)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return primitive.NilObjectID, "", lib.BadRequest("invalid category")
+		}
+		return primitive.NilObjectID, "", err
+	}
+	return cat.ID, cat.Name, nil
+}
+
 func productVisibleToCustomer(p models.Product, activeCategoryNames []string) bool {
 	if !productIsActive(p) {
 		return false
@@ -579,6 +595,10 @@ func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 	if err := validateProductInput(input); err != nil {
 		return nil, err
 	}
+	categoryID, categoryName, err := resolveProductCategory(ctx, input.Category)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now()
 	sizes := input.Sizes
 	if len(sizes) == 0 {
@@ -594,7 +614,7 @@ func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 	}
 	p := models.Product{
 		ID: primitive.NewObjectID(), Name: input.Name, Description: input.Description,
-		Category: input.Category, CostPrice: input.CostPrice, Price: input.Price,
+		Category: categoryName, CategoryID: categoryID, CostPrice: input.CostPrice, Price: input.Price,
 		Rating: input.Rating, ReviewsCount: input.ReviewsCount,
 		Images: input.Images, BannerImage: input.BannerImage, BannerImageMobile: input.BannerImageMobile, Materials: input.Materials, Sizes: sizes,
 		IsFeatured: input.IsFeatured, IsActive: boolPtr(isActive), StockQuantity: stock, InStock: syncInStock(stock),
@@ -603,7 +623,7 @@ func CreateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 	if p.Rating == 0 {
 		p.Rating = 4.5
 	}
-	_, err := lib.Products().InsertOne(ctx, p)
+	_, err = lib.Products().InsertOne(ctx, p)
 	if err != nil {
 		return nil, err
 	}
@@ -616,6 +636,10 @@ func UpdateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 	if err := validateProductInput(input); err != nil {
 		return nil, err
 	}
+	categoryID, categoryName, err := resolveProductCategory(ctx, input.Category)
+	if err != nil {
+		return nil, err
+	}
 	oid, err := primitive.ObjectIDFromHex(input.ID)
 	if err != nil {
 		return nil, nil
@@ -625,7 +649,7 @@ func UpdateProduct(ctx context.Context, input ProductInput) (*AdminProduct, erro
 		stock = 0
 	}
 	update := bson.M{
-		"name": input.Name, "description": input.Description, "category": input.Category,
+		"name": input.Name, "description": input.Description, "category": categoryName, "categoryId": categoryID,
 		"costPrice": input.CostPrice, "price": input.Price, "materials": input.Materials,
 		"sizes": input.Sizes, "images": input.Images, "bannerImage": input.BannerImage, "bannerImageMobile": input.BannerImageMobile, "isFeatured": input.IsFeatured,
 		"stockQuantity": stock, "inStock": syncInStock(stock), "updatedAt": time.Now(),

@@ -36,12 +36,22 @@ func ConnectDB() error {
 			return
 		}
 		database = client.Database("mizhara")
+		if err = EnsureIndexes(); err != nil {
+			return
+		}
+		ctx2, cancel2 := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel2()
+		err = RunMigrations(ctx2)
 	})
 	return err
 }
 
 func Collection(name string) *mongo.Collection {
 	return database.Collection(name)
+}
+
+func DBClient() *mongo.Client {
+	return client
 }
 
 func Users() *mongo.Collection     { return Collection("users") }

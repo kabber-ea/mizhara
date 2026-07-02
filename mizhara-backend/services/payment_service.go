@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -15,6 +16,7 @@ import (
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type PaymentVerifyInput struct {
@@ -142,26 +144,59 @@ func VerifyPayment(ctx context.Context, userID string, rzpOrderID, rzpPaymentID,
 	if err != nil {
 		return nil, lib.BadRequest("invalid user")
 	}
-	var order models.Order
-	err = lib.Orders().FindOneAndUpdate(ctx,
-		bson.M{"razorpayOrderId": rzpOrderID, "userId": uid},
-		bson.M{"$set": bson.M{"paymentStatus": models.PaymentPaid, "razorpayPaymentId": rzpPaymentID, "updatedAt": time.Now()}},
-	).Decode(&order)
-	if err != nil {
-		return nil, lib.ErrNotFound
-	}
 
-	deductItems := make([]struct {
-		ProductID string
-		Quantity  int
-	}, len(order.Items))
-	for i, item := range order.Items {
-		deductItems[i] = struct {
-			ProductID string
-			Quantity  int
-		}{ProductID: item.ProductID, Quantity: item.Quantity}
+	session, err := lib.DBClient().StartSession()
+	if err != nil {
+		return nil, err
 	}
-	_ = DeductStockForOrder(ctx, deductItems)
+	defer session.EndSession(ctx)
+
+	var order models.Order
+	_, err = session.WithTransaction(ctx, func(sc mongo.SessionContext) (interface{}, error) {
+		err := lib.Orders().FindOneAndUpdate(sc,
+			bson.M{
+				"razorpayOrderId": rzpOrderID,
+				"userId":          uid,
+				"paymentStatus":   models.PaymentPending,
+			},
+			bson.M{"$set": bson.M{
+				"paymentStatus":     models.PaymentPaid,
+				"razorpayPaymentId": rzpPaymentID,
+				"updatedAt":         time.Now(),
+			}},
+		).Decode(&order)
+		if err != nil {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				var existing models.Order
+				findErr := lib.Orders().FindOne(sc, bson.M{
+					"razorpayOrderId": rzpOrderID,
+					"userId":          uid,
+					"paymentStatus":   models.PaymentPaid,
+				}).Decode(&existing)
+				if findErr == nil {
+					order = existing
+					return order, nil
+				}
+				return nil, lib.ErrNotFound
+			}
+			return nil, err
+		}
+
+		deductItems := make([]StockLineItem, len(order.Items))
+		for i, item := range order.Items {
+			deductItems[i] = StockLineItem{ProductID: item.ProductID, Quantity: item.Quantity}
+		}
+		if err := DeductStockForOrder(sc, deductItems); err != nil {
+			return nil, err
+		}
+		return order, nil
+	})
+	if err != nil {
+		if errors.Is(err, lib.ErrNotFound) {
+			return nil, lib.ErrNotFound
+		}
+		return nil, err
+	}
 
 	return map[string]string{"orderNumber": order.OrderNumber}, nil
 }

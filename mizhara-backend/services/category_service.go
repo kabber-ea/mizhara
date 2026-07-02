@@ -91,8 +91,17 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 		return nil, lib.ErrNotFound
 	}
 	if oldName != name {
-		_, _ = lib.Products().UpdateMany(ctx, bson.M{"category": oldName}, bson.M{
+		_, _ = lib.Products().UpdateMany(ctx, bson.M{"categoryId": id}, bson.M{
 			"$set": bson.M{"category": name, "updatedAt": now},
+		})
+		_, _ = lib.Products().UpdateMany(ctx, bson.M{
+			"category": oldName,
+			"$or": bson.A{
+				bson.M{"categoryId": bson.M{"$exists": false}},
+				bson.M{"categoryId": primitive.NilObjectID},
+			},
+		}, bson.M{
+			"$set": bson.M{"category": name, "categoryId": id, "updatedAt": now},
 		})
 	}
 	var c models.Category
@@ -115,7 +124,18 @@ func DeleteCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, id
 	if err := lib.Categories().FindOne(ctx, bson.M{"_id": oid}).Decode(&cat); err != nil {
 		return lib.ErrNotFound
 	}
-	count, err := lib.Products().CountDocuments(ctx, bson.M{"category": cat.Name})
+	count, err := lib.Products().CountDocuments(ctx, bson.M{
+		"$or": bson.A{
+			bson.M{"categoryId": oid},
+			bson.M{
+				"category": cat.Name,
+				"$or": bson.A{
+					bson.M{"categoryId": bson.M{"$exists": false}},
+					bson.M{"categoryId": primitive.NilObjectID},
+				},
+			},
+		},
+	})
 	if err != nil {
 		return err
 	}

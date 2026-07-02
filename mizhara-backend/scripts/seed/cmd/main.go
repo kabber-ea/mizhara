@@ -119,13 +119,16 @@ func main() {
 	}
 	_, _ = lib.Users().InsertMany(ctx, customerDocs)
 
+	categoryIDs := make(map[string]primitive.ObjectID)
 	for _, cat := range categories {
 		isActive := true
+		catID := primitive.NewObjectID()
 		_, _ = lib.Categories().InsertOne(ctx, models.Category{
-			ID: primitive.NewObjectID(), Name: cat.Name,
+			ID: catID, Name: cat.Name,
 			Slug: strings.ToLower(strings.ReplaceAll(cat.Name, " ", "-")),
 			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
 		})
+		categoryIDs[cat.Name] = catID
 	}
 
 	productIDs := make([]primitive.ObjectID, 0, len(products))
@@ -158,7 +161,7 @@ func main() {
 
 		doc := models.Product{
 			ID: id, Name: p.Name, Description: p.Description,
-			Category: p.Category, CostPrice: p.CostPrice, Price: p.Price,
+			Category: p.Category, CategoryID: categoryIDs[p.Category], CostPrice: p.CostPrice, Price: p.Price,
 			Rating: p.Rating, ReviewsCount: p.ReviewsCount,
 			Images: images, BannerImage: bannerImage, BannerImageMobile: bannerImageMobile,
 			Materials: p.Materials, Sizes: p.Sizes, IsFeatured: p.IsFeatured,
