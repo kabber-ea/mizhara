@@ -1,14 +1,14 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { formatINR } from "@/lib/format";
+import { formatINR } from "@/utils/format";
 import { api } from "@/lib/api";
 import type { SerializedCustomer } from "@/types/admin";
-import type { PaginationMeta } from "@/lib/pagination";
+import type { PaginationMeta } from "@/utils/pagination";
 import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import SortableTableHeader from "@/components/SortableTableHeader";
-import { DEFAULT_SORT, nextSort, type SortState } from "@/lib/sort";
+import { DEFAULT_SORT, nextSort, type SortState } from "@/utils/sort";
 
 export default function AdminCustomersPage() {
   const [search, setSearch] = useState("");

@@ -5,8 +5,8 @@ import { api } from "@/lib/api";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TableDeleteButton, TableEditButton } from "@/components/TableIconButtons";
-import { getOfferLabel } from "@/lib/offer-label";
-import type { PaginationMeta } from "@/lib/pagination";
+import { getOfferLabel } from "@/utils/offerLabel";
+import type { PaginationMeta } from "@/utils/pagination";
 import type { Offer } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 

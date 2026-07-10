@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCart } from "@/providers/CartProvider";
-import { formatINR } from "@/lib/format";
+import { formatINR } from "@/utils/format";
 
 interface ProductInfoProps {
   product: {

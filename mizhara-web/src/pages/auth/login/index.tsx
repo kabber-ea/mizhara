@@ -4,12 +4,12 @@ import AuthLayout from "@/components/layout/AuthLayout";
 import FieldError from "@/components/FieldError";
 import FieldLabel from "@/components/FieldLabel";
 import { useAuth } from "@/providers/AuthProvider";
-import { useFieldErrors } from "@/hooks/use-field-errors";
-import { DEMO_ACCOUNTS, maskPassword } from "@/lib/demo-credentials";
+import { useFieldErrors } from "@/hooks/useFieldErrors";
+import { DEMO_ACCOUNTS, maskPassword } from "@/utils/demoCredentials";
 import { api, apiErrorMessage } from "@/lib/api";
-import { fieldInputClass } from "@/lib/form-styles";
-import { isValidEmail } from "@/lib/form-validation";
-import { forgotPasswordUrl, resolveAuthRedirect, signupUrl } from "@/lib/auth-url";
+import { fieldInputClass } from "@/utils/formStyles";
+import { isValidEmail } from "@/utils/formValidation";
+import { forgotPasswordUrl, resolveAuthRedirect, signupUrl } from "@/utils/authUrl";
 
 type LoginField = "identifier" | "password" | "submit";
 

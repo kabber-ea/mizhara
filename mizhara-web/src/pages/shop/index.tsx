@@ -4,7 +4,7 @@ import FilterSidebar from "@/pages/shop/components/FilterSidebar";
 import ProductGrid from "@/pages/shop/components/ProductGrid";
 import SortDropdown from "@/pages/shop/components/SortDropdown";
 import { api } from "@/lib/api";
-import { offerAppliesToProduct } from "@/lib/offer-label";
+import { offerAppliesToProduct } from "@/utils/offerLabel";
 import type { Offer } from "@/types/offer";
 import type { Category, SerializedProduct } from "@/types/catalog";
 

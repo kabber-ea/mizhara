@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
-import { loginUrl } from "@/lib/auth-url";
+import { loginUrl } from "@/utils/authUrl";
 import Sidebar from "@/components/layout/Sidebar";
 
 export default function AdminLayout() {

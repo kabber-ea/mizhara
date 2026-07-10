@@ -1,5 +1,5 @@
 import type { Offer } from "@/types/offer";
-import { formatINR } from "@/lib/format";
+import { formatINR } from "@/utils/format";
 
 export function offerAppliesToProduct(productId: string, offer: Offer): boolean {
   if (offer.scope === "all") return true;

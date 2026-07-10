@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Offer } from "@/types/offer";
-import { getOfferCardHeadline, getOfferConstraints, getOfferShopHref } from "@/lib/offer-label";
+import { getOfferCardHeadline, getOfferConstraints, getOfferShopHref } from "@/utils/offerLabel";
 
 interface ActiveOffersSectionProps {
   offers: Offer[];

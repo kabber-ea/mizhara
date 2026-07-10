@@ -1,4 +1,4 @@
-import type { PaginationMeta } from "@/lib/pagination";
+import type { PaginationMeta } from "@/utils/pagination";
 
 type PaginationProps = {
   pagination: PaginationMeta;

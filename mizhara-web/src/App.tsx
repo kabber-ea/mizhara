@@ -4,20 +4,20 @@ import CartProvider from "@/providers/CartProvider";
 import { CustomerRoute, GuestOnlyStore } from "@/components/ProtectedRoute";
 import AdminLayout from "@/components/layout/AdminLayout";
 import StoreLayout from "@/components/layout/StoreLayout";
-import HomePage from "@/pages/home/HomePage";
-import ShopPage from "@/pages/shop/ShopPage";
-import ProductDetailPage from "@/pages/product-detail/ProductDetailPage";
-import CartPage from "@/pages/cart/CartPage";
-import AccountPage from "@/pages/account/AccountPage";
-import LoginPage from "@/pages/auth/LoginPage";
-import SignupPage from "@/pages/auth/SignupPage";
-import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "@/pages/reset-password/ResetPasswordPage";
-import DashboardPage from "@/pages/dashboard/DashboardPage";
-import CatalogPage from "@/pages/catalog/CatalogPage";
-import OrdersPage from "@/pages/orders/OrdersPage";
-import CustomersPage from "@/pages/customers/CustomersPage";
-import OffersPage from "@/pages/offers/OffersPage";
+import HomePage from "@/pages/home";
+import ShopPage from "@/pages/shop";
+import ProductDetailPage from "@/pages/product-detail";
+import CartPage from "@/pages/cart";
+import AccountPage from "@/pages/account";
+import LoginPage from "@/pages/auth/login";
+import SignupPage from "@/pages/auth/signup";
+import ForgotPasswordPage from "@/pages/auth/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
+import DashboardPage from "@/pages/dashboard";
+import CatalogPage from "@/pages/catalog";
+import OrdersPage from "@/pages/orders";
+import CustomersPage from "@/pages/customers";
+import OffersPage from "@/pages/offers";
 
 export default function App() {
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getOfferTickerText, getOfferShopHref } from "@/lib/offer-label";
+import { getOfferTickerText, getOfferShopHref } from "@/utils/offerLabel";
 import type { Offer } from "@/types/offer";
 
 const ROTATE_MS = 4500;

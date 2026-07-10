@@ -4,7 +4,7 @@ import SearchInput from "@/components/SearchInput";
 import { TableDeleteButton, TableEditButton } from "@/components/TableIconButtons";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { api, apiErrorMessage } from "@/lib/api";
-import { fieldInputClass } from "@/lib/form-styles";
+import { fieldInputClass } from "@/utils/formStyles";
 import type { Category } from "@/types/catalog";
 
 interface CategoryManagerProps {

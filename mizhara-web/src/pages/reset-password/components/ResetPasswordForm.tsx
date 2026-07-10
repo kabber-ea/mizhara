@@ -2,10 +2,10 @@ import { useState, Suspense } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import FieldError from "@/components/FieldError";
 import FieldLabel from "@/components/FieldLabel";
-import { useFieldErrors } from "@/hooks/use-field-errors";
+import { useFieldErrors } from "@/hooks/useFieldErrors";
 import { api, apiErrorMessage } from "@/lib/api";
-import { fieldInputClass } from "@/lib/form-styles";
-import { forgotPasswordUrl, loginUrl } from "@/lib/auth-url";
+import { fieldInputClass } from "@/utils/formStyles";
+import { forgotPasswordUrl, loginUrl } from "@/utils/authUrl";
 
 type ResetField = "password" | "confirmPassword" | "submit";
 

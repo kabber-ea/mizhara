@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import FieldError from "@/components/FieldError";
 import FieldLabel, { fieldLabelClassLg } from "@/components/FieldLabel";
-import { useFieldErrors } from "@/hooks/use-field-errors";
+import { useFieldErrors } from "@/hooks/useFieldErrors";
 import { api, apiErrorMessage } from "@/lib/api";
-import { fieldInputClass, fieldSectionClass } from "@/lib/form-styles";
-import { isNonNegativeAmount, isNonNegativeInt, isPositiveNumber, parseAmountInput, parseNonNegativeAmountInput } from "@/lib/form-validation";
+import { fieldInputClass, fieldSectionClass } from "@/utils/formStyles";
+import { isNonNegativeAmount, isNonNegativeInt, isPositiveNumber, parseAmountInput, parseNonNegativeAmountInput } from "@/utils/formValidation";
 import type { Offer, OfferInput, OfferType } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 

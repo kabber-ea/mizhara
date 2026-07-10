@@ -1,5 +1,5 @@
 import type { Offer } from "@/types/offer";
-import { getOfferCardHeadline } from "@/lib/offer-label";
+import { getOfferCardHeadline } from "@/utils/offerLabel";
 
 interface FilterSidebarProps {
   search: string;

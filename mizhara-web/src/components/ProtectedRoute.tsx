@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
-import { loginUrl } from "@/lib/auth-url";
+import { loginUrl } from "@/utils/authUrl";
 
 export function CustomerRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

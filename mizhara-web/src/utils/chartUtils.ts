@@ -1,0 +1,55 @@
+export const CHART_COLORS = {
+  primary: "#9a7358",
+  primaryLight: "#c4a484",
+  sage: "#7ba38c",
+  rose: "#8b5a6b",
+  gold: "#b8956a",
+  grid: "#ebe4dc",
+  axis: "#a39a92",
+};
+
+export const PAYMENT_STATUS_COLORS: Record<string, string> = {
+  paid: "#5c9e7a",
+  pending: "#c9a227",
+  failed: "#c4727a",
+};
+
+export const DELIVERY_STATUS_COLORS: Record<string, string> = {
+  processing: "#c9a227",
+  packed: "#7b9eb5",
+  shipped: "#8b7bb5",
+  out_for_delivery: "#9a7358",
+  delivered: "#5c9e7a",
+  cancelled: "#c4727a",
+  returned: "#c4845a",
+};
+
+export const chartMargin = { top: 8, right: 8, left: -8, bottom: 0 };
+export const axisTick = { fontSize: 10, fill: CHART_COLORS.axis, fontFamily: "Roboto, sans-serif" };
+
+export const CATEGORY_COLORS = [
+  "#9a7358",
+  "#7ba38c",
+  "#8b5a6b",
+  "#b8956a",
+  "#5c9e7a",
+  "#7b9eb5",
+  "#c4a484",
+  "#c4727a",
+];
+
+export function categoryColor(index: number) {
+  return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+}
+
+export function deliveryStatusColor(status: string, index: number) {
+  return DELIVERY_STATUS_COLORS[status] ?? ["#9a7358", "#7ba38c", "#c4a484"][index % 3];
+}
+
+export function paymentStatusColor(status: string, index: number) {
+  return PAYMENT_STATUS_COLORS[status] ?? ["#8b5a6b", "#c4a484", "#7ba38c"][index % 3];
+}
+
+export function formatStatusLabel(status: string) {
+  return status.replace(/_/g, " ");
+}

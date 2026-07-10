@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { formatINR } from "@/lib/format";
+import { formatINR } from "@/utils/format";
 import { api } from "@/lib/api";
-import { TRACKING_PROVIDERS } from "@/lib/tracking";
+import { TRACKING_PROVIDERS } from "@/utils/tracking";
 import type { SerializedOrder } from "@/types/admin";
 import type { DeliveryStatus } from "@/types/order";
-import type { PaginationMeta } from "@/lib/pagination";
+import type { PaginationMeta } from "@/utils/pagination";
 import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";

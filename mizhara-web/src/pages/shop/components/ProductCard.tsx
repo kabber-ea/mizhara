@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/providers/CartProvider";
-import { formatINR } from "@/lib/format";
-import { getProductBogoBadge, getProductPercentageDisplay } from "@/lib/offer-label";
+import { formatINR } from "@/utils/format";
+import { getProductBogoBadge, getProductPercentageDisplay } from "@/utils/offerLabel";
 import type { Offer } from "@/types/offer";
 
 interface ProductCardProps {

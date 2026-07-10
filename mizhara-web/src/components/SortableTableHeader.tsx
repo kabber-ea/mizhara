@@ -1,4 +1,4 @@
-import type { SortDirection, SortState } from "@/lib/sort";
+import type { SortDirection, SortState } from "@/utils/sort";
 
 type SortableTableHeaderProps = {
   label: string;

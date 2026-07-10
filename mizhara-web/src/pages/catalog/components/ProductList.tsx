@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
-import { formatINR } from "@/lib/format";
+import { formatINR } from "@/utils/format";
 import { api, apiErrorMessage } from "@/lib/api";
 import Pagination from "@/components/Pagination";
 import ProductThumbnail from "@/components/ProductThumbnail";
 import SortableTableHeader from "@/components/SortableTableHeader";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TableDeleteButton, TableEditButton } from "@/components/TableIconButtons";
-import { DEFAULT_SORT, nextSort, type SortState } from "@/lib/sort";
+import { DEFAULT_SORT, nextSort, type SortState } from "@/utils/sort";
 import type { AdminProduct } from "@/types/catalog";
-import type { PaginationMeta } from "@/lib/pagination";
+import type { PaginationMeta } from "@/utils/pagination";
 
 const PAGE_SIZE = 10;
 

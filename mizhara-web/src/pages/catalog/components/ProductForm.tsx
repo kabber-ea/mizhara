@@ -6,10 +6,10 @@ import FormSettingToggle from "@/components/FormSettingToggle";
 import FieldError from "@/components/FieldError";
 import FieldLabel, { RequiredMark, fieldLabelClassLg } from "@/components/FieldLabel";
 import { api, apiErrorMessage } from "@/lib/api";
-import { fieldInputClass, fieldSectionClass } from "@/lib/form-styles";
-import { isPositiveNumber, parseAmountInput } from "@/lib/form-validation";
-import { hasFeaturedBanners, type CropPreset } from "@/lib/image-upload";
-import { uploadImageFile } from "@/lib/upload-file";
+import { fieldInputClass, fieldSectionClass } from "@/utils/formStyles";
+import { isPositiveNumber, parseAmountInput } from "@/utils/formValidation";
+import { hasFeaturedBanners, type CropPreset } from "@/utils/imageUpload";
+import { uploadImageFile } from "@/utils/uploadFile";
 import type { AdminProduct } from "@/types/catalog";
 
 type PendingImage = { file: File; preview: string };

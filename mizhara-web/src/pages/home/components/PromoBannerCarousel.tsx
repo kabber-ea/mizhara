@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { formatINR } from "@/lib/format";
-import { getProductBestOffer, getProductOfferTag } from "@/lib/offer-label";
+import { formatINR } from "@/utils/format";
+import { getProductBestOffer, getProductOfferTag } from "@/utils/offerLabel";
 import type { SerializedProduct } from "@/types/catalog";
 import type { Offer } from "@/types/offer";
 

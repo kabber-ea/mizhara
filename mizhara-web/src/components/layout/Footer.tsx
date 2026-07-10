@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { INSTAGRAM_URL } from "@/lib/contact-links";
+import { INSTAGRAM_URL } from "@/utils/contactLinks";
 
 export default function Footer() {
   return (

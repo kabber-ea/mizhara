@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/providers/AuthProvider";
-import { loginUrl } from "@/lib/auth-url";
+import { loginUrl } from "@/utils/authUrl";
 import { useCart } from "@/providers/CartProvider";
-import { formatINR } from "@/lib/format";
+import { formatINR } from "@/utils/format";
 import { api } from "@/lib/api";
 import OfferTicker from "@/components/layout/OfferTicker";
 import CategoryStrip from "@/components/layout/CategoryStrip";

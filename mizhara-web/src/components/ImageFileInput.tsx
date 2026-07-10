@@ -1,6 +1,6 @@
 import { useId } from "react";
-import { IMAGE_ACCEPT, imageUploadHint, validateImageFile, type CropPreset } from "@/lib/image-upload";
-import { filePickerClass } from "@/lib/form-styles";
+import { IMAGE_ACCEPT, imageUploadHint, validateImageFile, type CropPreset } from "@/utils/imageUpload";
+import { filePickerClass } from "@/utils/formStyles";
 import FieldError from "@/components/FieldError";
 
 type ImageFileInputProps = {
