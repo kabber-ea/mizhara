@@ -11,7 +11,7 @@ import RecentOrdersTable from "@/pages/dashboard/components/RecentOrdersTable";
 import RevenueTrendChart from "@/pages/dashboard/components/RevenueTrendChart";
 import TopProductsShowcase from "@/pages/dashboard/components/TopProductsShowcase";
 import TrendingLeaderboard from "@/pages/dashboard/components/TrendingLeaderboard";
-import type { DashboardData } from "@/pages/dashboard/types";
+import type { DashboardData } from "@/types/dashboard";
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);

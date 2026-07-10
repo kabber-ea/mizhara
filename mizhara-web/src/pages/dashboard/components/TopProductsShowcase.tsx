@@ -1,6 +1,6 @@
 import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
-import type { ProductSales } from "../types";
+import type { ProductSales } from "@/types/dashboard";
 
 function TopProductsShowcaseContent({ data }: { data: ProductSales[] }) {
   if (!data.length) {

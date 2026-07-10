@@ -1,7 +1,7 @@
 import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
 import { categoryColor } from "@/utils/chartUtils";
-import type { CategorySales } from "../types";
+import type { CategorySales } from "@/types/dashboard";
 
 function CategoryRevenueLeaderboard({ data }: { data: CategorySales[] }) {
   if (!data.length) {

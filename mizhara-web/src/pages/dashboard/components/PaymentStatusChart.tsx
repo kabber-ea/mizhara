@@ -3,7 +3,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recha
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import ChartCard from "@/components/ChartCard";
 import { formatStatusLabel, paymentStatusColor } from "@/utils/chartUtils";
-import type { StatusCount } from "../types";
+import type { StatusCount } from "@/types/dashboard";
 
 export default function PaymentStatusChart({ data }: { data: StatusCount[] }) {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);

@@ -7,7 +7,7 @@ import {
   formatStatusLabel,
 } from "@/utils/chartUtils";
 import { renderChartTooltip } from "@/components/ChartTooltip";
-import type { StatusCount } from "../types";
+import type { StatusCount } from "@/types/dashboard";
 
 function splitStatusLabel(label: string): string[] {
   const words = label.split(" ");
