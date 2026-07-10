@@ -1,10 +1,6 @@
 package models
 
-import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
+import "time"
 
 type OfferType string
 type OfferScope string
@@ -18,22 +14,22 @@ const (
 )
 
 type Offer struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	Name         string             `bson:"name" json:"name"`
-	Description  string             `bson:"description" json:"description"`
-	Type         OfferType          `bson:"type" json:"type"`
-	Scope        OfferScope         `bson:"scope" json:"scope"`
-	Percentage   float64            `bson:"percentage,omitempty" json:"percentage,omitempty"`
-	FixedAmount  float64            `bson:"fixedAmount,omitempty" json:"fixedAmount,omitempty"`
-	MinPurchase  float64            `bson:"minPurchase,omitempty" json:"minPurchase,omitempty"`
-	MaxDiscount  float64            `bson:"maxDiscount,omitempty" json:"maxDiscount,omitempty"`
-	BuyQuantity  int                `bson:"buyQuantity,omitempty" json:"buyQuantity,omitempty"`
-	FreeQuantity int                `bson:"freeQuantity,omitempty" json:"freeQuantity,omitempty"`
-	ProductIDs   []string           `bson:"productIds,omitempty" json:"productIds,omitempty"`
-	Code         string             `bson:"code,omitempty" json:"code,omitempty"`
-	IsActive     *bool              `bson:"isActive,omitempty" json:"isActive"`
-	StartsAt     *time.Time         `bson:"startsAt,omitempty" json:"startsAt,omitempty"`
-	EndsAt       *time.Time         `bson:"endsAt,omitempty" json:"endsAt,omitempty"`
-	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt    time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	Description  string     `json:"description"`
+	Type         OfferType  `json:"type"`
+	Scope        OfferScope `json:"scope"`
+	Percentage   float64    `json:"percentage,omitempty"`
+	FixedAmount  float64    `json:"fixedAmount,omitempty"`
+	MinPurchase  float64    `json:"minPurchase,omitempty"`
+	MaxDiscount  float64    `json:"maxDiscount,omitempty"`
+	BuyQuantity  int        `json:"buyQuantity,omitempty"`
+	FreeQuantity int        `json:"freeQuantity,omitempty"`
+	ProductIDs   []string   `json:"productIds,omitempty"`
+	Code         string     `json:"code,omitempty"`
+	IsActive     *bool      `json:"isActive"`
+	StartsAt     *time.Time `json:"startsAt,omitempty"`
+	EndsAt       *time.Time `json:"endsAt,omitempty"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
 }

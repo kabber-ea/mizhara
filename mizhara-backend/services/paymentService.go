@@ -5,7 +5,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -13,11 +12,11 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
-	"mizhara-backend/utils"
 	"mizhara-backend/models"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"mizhara-backend/store"
+	"mizhara-backend/utils"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type PaymentVerifyInput struct {
@@ -55,9 +54,8 @@ type PaymentCreateInput struct {
 }
 
 func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateInput) (map[string]interface{}, error) {
-	uid, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return nil, err
+	if !lib.ValidID(userID) {
+		return nil, utils.BadRequest("invalid user")
 	}
 
 	stockItems := make([]struct {
@@ -92,15 +90,14 @@ func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateI
 	now := time.Now()
 
 	order := models.Order{
-		ID: primitive.NewObjectID(), UserID: uid, OrderNumber: orderNumber,
+		ID: lib.NewID(), UserID: userID, OrderNumber: orderNumber,
 		Items: orderItems, ShippingAddress: input.ShippingAddress,
 		Subtotal: subtotal, DiscountAmount: discount, OfferID: offerID, OfferName: offerName,
 		Shipping: 0, Total: total, Currency: "INR",
 		PaymentStatus: models.PaymentPending, DeliveryStatus: models.DeliveryProcessing,
 		CreatedAt: now, UpdatedAt: now,
 	}
-	_, err = lib.Orders().InsertOne(ctx, order)
-	if err != nil {
+	if err := store.InsertOrder(ctx, &order); err != nil {
 		return nil, err
 	}
 
@@ -111,7 +108,7 @@ func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateI
 	amount := utils.ToPaise(total)
 	rzpOrder, err := rzp.Order.Create(map[string]interface{}{
 		"amount": amount, "currency": "INR", "receipt": orderNumber,
-		"notes": map[string]string{"orderId": order.ID.Hex()},
+		"notes": map[string]string{"orderId": order.ID},
 	}, nil)
 	if err != nil {
 		return nil, err
@@ -120,19 +117,18 @@ func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateI
 	if !ok || rzpID == "" {
 		return nil, utils.BadRequest("failed to create payment order")
 	}
-	_, err = lib.Orders().UpdateOne(ctx, bson.M{"_id": order.ID}, bson.M{"$set": bson.M{"razorpayOrderId": rzpID, "updatedAt": time.Now()}})
-	if err != nil {
+	if err := store.UpdateOrderRazorpayID(ctx, order.ID, rzpID); err != nil {
 		return nil, err
 	}
 
 	return map[string]interface{}{
-		"orderId": order.ID.Hex(), "orderNumber": orderNumber,
+		"orderId": order.ID, "orderNumber": orderNumber,
 		"razorpayOrderId": rzpID, "amount": amount, "currency": "INR",
 		"key": lib.RazorpayPublicKey(),
 	}, nil
 }
 
-func VerifyPayment(ctx context.Context, userID string, rzpOrderID, rzpPaymentID, signature string) (map[string]string, error) {
+func VerifyPayment(ctx context.Context, userID, rzpOrderID, rzpPaymentID, signature string) (map[string]string, error) {
 	secret := os.Getenv("RAZORPAY_KEY_SECRET")
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(rzpOrderID + "|" + rzpPaymentID))
@@ -140,64 +136,19 @@ func VerifyPayment(ctx context.Context, userID string, rzpOrderID, rzpPaymentID,
 	if expected != signature {
 		return nil, utils.BadRequest("invalid payment signature")
 	}
-
-	uid, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
+	if !lib.ValidID(userID) {
 		return nil, utils.BadRequest("invalid user")
 	}
 
-	session, err := lib.DBClient().StartSession()
-	if err != nil {
-		return nil, err
+	order, err := store.VerifyAndPayOrder(ctx, userID, rzpOrderID, rzpPaymentID)
+	if err == pgx.ErrNoRows {
+		return nil, utils.ErrNotFound
 	}
-	defer session.EndSession(ctx)
-
-	var order models.Order
-	_, err = session.WithTransaction(ctx, func(sc mongo.SessionContext) (interface{}, error) {
-		err := lib.Orders().FindOneAndUpdate(sc,
-			bson.M{
-				"razorpayOrderId": rzpOrderID,
-				"userId":          uid,
-				"paymentStatus":   models.PaymentPending,
-			},
-			bson.M{"$set": bson.M{
-				"paymentStatus":     models.PaymentPaid,
-				"razorpayPaymentId": rzpPaymentID,
-				"updatedAt":         time.Now(),
-			}},
-		).Decode(&order)
-		if err != nil {
-			if errors.Is(err, mongo.ErrNoDocuments) {
-				var existing models.Order
-				findErr := lib.Orders().FindOne(sc, bson.M{
-					"razorpayOrderId": rzpOrderID,
-					"userId":          uid,
-					"paymentStatus":   models.PaymentPaid,
-				}).Decode(&existing)
-				if findErr == nil {
-					order = existing
-					return order, nil
-				}
-				return nil, utils.ErrNotFound
-			}
-			return nil, err
-		}
-
-		deductItems := make([]StockLineItem, len(order.Items))
-		for i, item := range order.Items {
-			deductItems[i] = StockLineItem{ProductID: item.ProductID, Quantity: item.Quantity}
-		}
-		if err := DeductStockForOrder(sc, deductItems); err != nil {
-			return nil, err
-		}
-		return order, nil
-	})
 	if err != nil {
-		if errors.Is(err, utils.ErrNotFound) {
-			return nil, utils.ErrNotFound
+		if err.Error() == "insufficient stock" {
+			return nil, utils.BadRequest("insufficient stock for one or more products")
 		}
 		return nil, err
 	}
-
 	return map[string]string{"orderNumber": order.OrderNumber}, nil
 }

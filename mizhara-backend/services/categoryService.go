@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
-	"mizhara-backend/utils"
 	"mizhara-backend/models"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"mizhara-backend/store"
+	"mizhara-backend/utils"
 )
 
 func boolPtr(v bool) *bool {
@@ -39,7 +37,7 @@ func categoryIsActive(c models.Category) bool {
 
 func serializeCategory(c models.Category) SerializedCategory {
 	return SerializedCategory{
-		ID: c.ID.Hex(), Name: c.Name, Slug: c.Slug,
+		ID: c.ID, Name: c.Name, Slug: c.Slug,
 		IsActive: categoryIsActive(c),
 	}
 }
@@ -60,56 +58,37 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	if err := RequireAdmin(session); err != nil {
 		return nil, err
 	}
-	id, err := primitive.ObjectIDFromHex(strings.TrimSpace(input.ID))
-	if err != nil {
+	id := strings.TrimSpace(input.ID)
+	if !lib.ValidID(id) {
 		return nil, utils.BadRequest("invalid category id")
 	}
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
 		return nil, utils.BadRequest("category name is required")
 	}
-	var existing models.Category
-	if err := lib.Categories().FindOne(ctx, bson.M{"_id": id}).Decode(&existing); err != nil {
+	existing, err := store.FindCategoryByID(ctx, id)
+	if err != nil || existing == nil {
 		return nil, utils.ErrNotFound
 	}
-	slug := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
-	var duplicate models.Category
-	dupErr := lib.Categories().FindOne(ctx, bson.M{"name": name, "_id": bson.M{"$ne": id}}).Decode(&duplicate)
-	if dupErr == nil {
+	if dup, _ := store.FindCategoryByNameExcluding(ctx, name, id); dup != nil {
 		return nil, utils.BadRequest("a category with this name already exists")
 	}
 	oldName := existing.Name
 	now := time.Now()
-	set := bson.M{"name": name, "slug": slug, "updatedAt": now}
+	existing.Name = name
+	existing.Slug = strings.ToLower(strings.ReplaceAll(name, " ", "-"))
+	existing.UpdatedAt = now
 	if input.IsActive != nil {
-		set["isActive"] = *input.IsActive
+		existing.IsActive = input.IsActive
 	}
-	res, err := lib.Categories().UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": set})
-	if err != nil {
+	if err := store.UpdateCategory(ctx, existing); err != nil {
 		return nil, err
-	}
-	if res.MatchedCount == 0 {
-		return nil, utils.ErrNotFound
 	}
 	if oldName != name {
-		_, _ = lib.Products().UpdateMany(ctx, bson.M{"categoryId": id}, bson.M{
-			"$set": bson.M{"category": name, "updatedAt": now},
-		})
-		_, _ = lib.Products().UpdateMany(ctx, bson.M{
-			"category": oldName,
-			"$or": bson.A{
-				bson.M{"categoryId": bson.M{"$exists": false}},
-				bson.M{"categoryId": primitive.NilObjectID},
-			},
-		}, bson.M{
-			"$set": bson.M{"category": name, "categoryId": id, "updatedAt": now},
-		})
+		_ = store.UpdateProductsCategoryName(ctx, id, name, now)
+		_ = store.UpdateProductsLegacyCategory(ctx, oldName, name, id, now)
 	}
-	var c models.Category
-	if err := lib.Categories().FindOne(ctx, bson.M{"_id": id}).Decode(&c); err != nil {
-		return nil, err
-	}
-	out := serializeCategory(c)
+	out := serializeCategory(*existing)
 	return &out, nil
 }
 
@@ -117,37 +96,26 @@ func DeleteCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, id
 	if err := RequireAdmin(session); err != nil {
 		return err
 	}
-	oid, err := primitive.ObjectIDFromHex(strings.TrimSpace(id))
-	if err != nil {
+	id = strings.TrimSpace(id)
+	if !lib.ValidID(id) {
 		return utils.BadRequest("invalid category id")
 	}
-	var cat models.Category
-	if err := lib.Categories().FindOne(ctx, bson.M{"_id": oid}).Decode(&cat); err != nil {
+	cat, err := store.FindCategoryByID(ctx, id)
+	if err != nil || cat == nil {
 		return utils.ErrNotFound
 	}
-	count, err := lib.Products().CountDocuments(ctx, bson.M{
-		"$or": bson.A{
-			bson.M{"categoryId": oid},
-			bson.M{
-				"category": cat.Name,
-				"$or": bson.A{
-					bson.M{"categoryId": bson.M{"$exists": false}},
-					bson.M{"categoryId": primitive.NilObjectID},
-				},
-			},
-		},
-	})
+	count, err := store.CountProductsInCategory(ctx, id, cat.Name)
 	if err != nil {
 		return err
 	}
 	if count > 0 {
 		return utils.BadRequest("cannot delete a category that still has products assigned")
 	}
-	res, err := lib.Categories().DeleteOne(ctx, bson.M{"_id": oid})
+	ok, err := store.DeleteCategory(ctx, id)
 	if err != nil {
 		return err
 	}
-	if res.DeletedCount == 0 {
+	if !ok {
 		return utils.ErrNotFound
 	}
 	return nil
@@ -161,39 +129,25 @@ func ListCategoriesForViewer(ctx context.Context, session *lib.SessionPayload) (
 }
 
 func ListCategories(ctx context.Context) ([]SerializedCategory, error) {
-	cur, err := lib.Categories().Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{Key: "name", Value: 1}}))
+	cats, err := store.ListCategories(ctx, false)
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
-	var out []SerializedCategory
-	for cur.Next(ctx) {
-		var c models.Category
-		_ = cur.Decode(&c)
+	out := make([]SerializedCategory, 0, len(cats))
+	for _, c := range cats {
 		out = append(out, serializeCategory(c))
-	}
-	if out == nil {
-		out = []SerializedCategory{}
 	}
 	return out, nil
 }
 
 func ListActiveCategories(ctx context.Context) ([]SerializedCategory, error) {
-	cur, err := lib.Categories().Find(ctx, bson.M{
-		"isActive": bson.M{"$ne": false},
-	}, options.Find().SetSort(bson.D{{Key: "name", Value: 1}}))
+	cats, err := store.ListCategories(ctx, true)
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
-	var out []SerializedCategory
-	for cur.Next(ctx) {
-		var c models.Category
-		_ = cur.Decode(&c)
+	out := make([]SerializedCategory, 0, len(cats))
+	for _, c := range cats {
 		out = append(out, serializeCategory(c))
-	}
-	if out == nil {
-		out = []SerializedCategory{}
 	}
 	return out, nil
 }
@@ -218,11 +172,11 @@ func createCategory(ctx context.Context, name string) (*models.Category, error) 
 	slug := strings.ToLower(strings.ReplaceAll(trimmed, " ", "-"))
 	now := time.Now()
 	doc := models.Category{
-		ID: primitive.NewObjectID(), Name: trimmed, Slug: slug,
+		ID: lib.NewID(), Name: trimmed, Slug: slug,
 		IsActive: boolPtr(true),
 		CreatedAt: now, UpdatedAt: now,
 	}
-	if _, err := lib.Categories().InsertOne(ctx, doc); err != nil {
+	if err := store.InsertCategory(ctx, &doc); err != nil {
 		return nil, err
 	}
 	return &doc, nil

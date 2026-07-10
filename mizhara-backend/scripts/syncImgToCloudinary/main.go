@@ -11,9 +11,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"mizhara-backend/lib"
-	"mizhara-backend/models"
 	"mizhara-backend/scripts/seed"
-	"go.mongodb.org/mongo-driver/bson"
+	"mizhara-backend/store"
 )
 
 var skipDirs = map[string]bool{
@@ -90,8 +89,8 @@ func syncProduct(ctx context.Context, imgDir, productName string, dryRun bool) e
 		return nil
 	}
 
-	var product models.Product
-	if err := lib.Products().FindOne(ctx, bson.M{"name": productName}).Decode(&product); err != nil {
+	product, err := store.FindProductByName(ctx, productName)
+	if err != nil || product == nil {
 		return fmt.Errorf("product not found in database")
 	}
 
@@ -101,23 +100,16 @@ func syncProduct(ctx context.Context, imgDir, productName string, dryRun bool) e
 		return err
 	}
 
-	set := bson.M{
-		"images":    urls.Images,
-		"updatedAt": time.Now(),
-	}
+	product.Images = urls.Images
+	product.UpdatedAt = time.Now()
 	if urls.BannerImage != "" {
-		set["bannerImage"] = urls.BannerImage
+		product.BannerImage = urls.BannerImage
 	}
 	if urls.BannerImageMobile != "" {
-		set["bannerImageMobile"] = urls.BannerImageMobile
+		product.BannerImageMobile = urls.BannerImageMobile
 	}
-
-	res, err := lib.Products().UpdateOne(ctx, bson.M{"_id": product.ID}, bson.M{"$set": set})
-	if err != nil {
+	if err := store.UpdateProduct(ctx, product); err != nil {
 		return fmt.Errorf("database update: %w", err)
-	}
-	if res.MatchedCount == 0 {
-		return fmt.Errorf("database update: product not matched")
 	}
 
 	fmt.Printf("  updated database (%d image URL(s))\n", len(urls.Images))

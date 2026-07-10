@@ -3,16 +3,16 @@ package seed
 import (
 	"time"
 
+	"mizhara-backend/lib"
 	"mizhara-backend/models"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func BuildOffers(now time.Time, seeds []OfferSeed, products []ProductSeed, productByName map[string]primitive.ObjectID) []models.Offer {
+func BuildOffers(now time.Time, seeds []OfferSeed, products []ProductSeed, productByName map[string]string) []models.Offer {
 	out := make([]models.Offer, 0, len(seeds))
 	for _, s := range seeds {
 		isActive := s.IsActive
 		o := models.Offer{
-			ID:           primitive.NewObjectID(),
+			ID:           lib.NewID(),
 			Name:         s.Name,
 			Description:  s.Description,
 			Type:         models.OfferType(s.Type),
@@ -36,7 +36,7 @@ func BuildOffers(now time.Time, seeds []OfferSeed, products []ProductSeed, produ
 	return out
 }
 
-func productIDsByCategories(products []ProductSeed, productByName map[string]primitive.ObjectID, categories []string, perCategory int) []string {
+func productIDsByCategories(products []ProductSeed, productByName map[string]string, categories []string, perCategory int) []string {
 	var ids []string
 	for _, cat := range categories {
 		n := 0
@@ -48,7 +48,7 @@ func productIDsByCategories(products []ProductSeed, productByName map[string]pri
 			if !ok {
 				continue
 			}
-			ids = append(ids, id.Hex())
+			ids = append(ids, id)
 			n++
 			if perCategory > 0 && n >= perCategory {
 				break

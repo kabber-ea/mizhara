@@ -236,6 +236,20 @@ export default function CartPage() {
           contact: shippingForm.phone,
         },
         theme: { color: "#3c342e" },
+        config: {
+          display: {
+            blocks: {
+              upiCard: {
+                name: "UPI & Card",
+                instruments: [{ method: "upi" }, { method: "card" }],
+              },
+            },
+            sequence: ["block.upiCard"],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
+        },
         handler: async (response: {
           razorpay_order_id: string;
           razorpay_payment_id: string;
@@ -487,8 +501,9 @@ export default function CartPage() {
 
         {step === "payment" && (
           <div className="max-w-lg mx-auto p-8 bg-white border border-border-custom rounded-2xl space-y-6 text-center">
-            <h3 className="font-serif text-xl font-bold text-primary-dark">Pay with Razorpay</h3>
-            <p className="text-xs text-muted-custom">Secure UPI, cards, netbanking — all in INR</p>
+            <h3 className="font-serif text-xl font-bold text-primary-dark">Pay with UPI or Card</h3>
+            <p className="text-xs text-muted-custom mt-1">Only UPI and card payments are accepted.</p>
+            <p className="text-xs text-muted-custom">Secure checkout in INR via Razorpay</p>
             <p className="text-2xl font-extrabold text-primary-dark">{formatINR(orderTotal)}</p>
             {discount > 0 && <p className="text-xs text-emerald-700">Includes {formatINR(discount)} savings</p>}
             {error && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl">{error}</div>}

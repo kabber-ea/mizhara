@@ -9,16 +9,16 @@ mizhara-backend/
 ├── main.go
 ├── models/
 ├── controllers/     # One file per domain (request/response only)
-│   ├── auth_controller.go
-│   ├── products_controller.go
-│   ├── categories_controller.go
-│   ├── account_controller.go
-│   ├── payment_controller.go
-│   ├── orders_controller.go
-│   ├── users_controller.go
-│   ├── dashboard_controller.go
-│   └── upload_controller.go
-├── services/        # Business logic & DB queries
+│   ├── authController.go
+│   ├── productsController.go
+│   ├── categoriesController.go
+│   ├── accountController.go
+│   ├── paymentController.go
+│   ├── ordersController.go
+│   ├── usersController.go
+│   ├── dashboardController.go
+│   └── uploadController.go
+├── services/        # Business logic (e.g. authService.go, productService.go)
 ├── lib/             # DB, auth, integrations
 ├── utils/           # Shared helpers (pagination, errors, tracking, …)
 ├── constants/       # App-wide constants
@@ -54,8 +54,9 @@ mizhara-backend/
 
 ```bash
 cp .env.example .env
+# Set DATABASE_URL and JWT_SECRET in .env
 go mod tidy
-# Requires MONGODB_URI + Cloudinary keys in .env; uploads scripts/seed/img/{Product Name}/*.webp per product
+# Seed requires Cloudinary keys for image uploads; product images in scripts/seed/img/{Product Name}/
 go run ./scripts/seed/cmd
 go run .
 ```

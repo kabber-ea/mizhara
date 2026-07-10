@@ -2,42 +2,41 @@ package lib
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"os"
 	"sync"
 	"time"
 
-	"mizhara-backend/constants"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+//go:embed schema.sql
+var schemaSQL string
+
 var (
-	client   *mongo.Client
-	database *mongo.Database
-	once     sync.Once
+	pool *pgxpool.Pool
+	once sync.Once
 )
 
 func ConnectDB() error {
 	var err error
 	once.Do(func() {
-		uri := os.Getenv("MONGODB_URI")
-		if uri == "" {
-			err = errors.New("MONGODB_URI is required")
+		dsn := os.Getenv("DATABASE_URL")
+		if dsn == "" {
+			err = errors.New("DATABASE_URL is required")
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
-		client, err = mongo.Connect(ctx, options.Client().ApplyURI(uri))
+		pool, err = pgxpool.New(ctx, dsn)
 		if err != nil {
 			return
 		}
-		err = client.Ping(ctx, nil)
-		if err != nil {
+		if err = pool.Ping(ctx); err != nil {
 			return
 		}
-		database = client.Database(constants.DatabaseName)
-		if err = EnsureIndexes(); err != nil {
+		if _, err = pool.Exec(ctx, schemaSQL); err != nil {
 			return
 		}
 		if err = EnsurePaidOrders(); err != nil {
@@ -47,16 +46,6 @@ func ConnectDB() error {
 	return err
 }
 
-func Collection(name string) *mongo.Collection {
-	return database.Collection(name)
+func DB() *pgxpool.Pool {
+	return pool
 }
-
-func DBClient() *mongo.Client {
-	return client
-}
-
-func Users() *mongo.Collection     { return Collection("users") }
-func Products() *mongo.Collection  { return Collection("products") }
-func Categories() *mongo.Collection { return Collection("categories") }
-func Orders() *mongo.Collection    { return Collection("orders") }
-func Offers() *mongo.Collection    { return Collection("offers") }

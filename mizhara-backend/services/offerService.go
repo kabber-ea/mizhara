@@ -2,21 +2,18 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"mizhara-backend/lib"
-	"mizhara-backend/utils"
 	"mizhara-backend/models"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"mizhara-backend/store"
+	"mizhara-backend/utils"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type SerializedOffer struct {
@@ -102,7 +99,7 @@ func serializeOffer(o models.Offer) SerializedOffer {
 		productIDs = []string{}
 	}
 	return SerializedOffer{
-		ID: o.ID.Hex(), Name: o.Name, Description: o.Description,
+		ID: o.ID, Name: o.Name, Description: o.Description,
 		Type: string(o.Type), Scope: string(o.Scope),
 		Percentage: o.Percentage, FixedAmount: o.FixedAmount,
 		MinPurchase: o.MinPurchase, MaxDiscount: o.MaxDiscount,
@@ -181,89 +178,30 @@ func ListOffersForAdmin(ctx context.Context, session *lib.SessionPayload) ([]Ser
 	if err := RequireAdmin(session); err != nil {
 		return nil, err
 	}
-	cur, err := lib.Offers().Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+	offers, err := store.ListOffers(ctx, false)
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
-	var out []SerializedOffer
-	for cur.Next(ctx) {
-		var o models.Offer
-		if err := cur.Decode(&o); err != nil {
-			return nil, err
-		}
+	out := make([]SerializedOffer, 0, len(offers))
+	for _, o := range offers {
 		out = append(out, serializeOffer(o))
-	}
-	if out == nil {
-		out = []SerializedOffer{}
 	}
 	return out, nil
 }
 
-// BuildProductFilterForOffers restricts products to those matching at least one offer.
-// Returns nil when any offer applies storewide (no extra filter needed).
-func BuildProductFilterForOffers(ctx context.Context, offerIDHexes []string) (bson.M, error) {
+// BuildProductFilterForOffers returns product IDs to filter by, nil if storewide, empty if none match.
+func BuildProductFilterForOffers(ctx context.Context, offerIDHexes []string) ([]string, error) {
 	var ids []string
 	for _, id := range offerIDHexes {
 		id = strings.TrimSpace(id)
-		if id != "" {
+		if id != "" && lib.ValidID(id) {
 			ids = append(ids, id)
 		}
 	}
 	if len(ids) == 0 {
 		return nil, nil
 	}
-
-	objectIDs := make([]primitive.ObjectID, 0, len(ids))
-	for _, id := range ids {
-		oid, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			continue
-		}
-		objectIDs = append(objectIDs, oid)
-	}
-	if len(objectIDs) == 0 {
-		return bson.M{"_id": bson.M{"$in": []primitive.ObjectID{}}}, nil
-	}
-
-	cur, err := lib.Offers().Find(ctx, bson.M{"_id": bson.M{"$in": objectIDs}})
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(ctx)
-
-	productIDs := make(map[string]struct{})
-	for cur.Next(ctx) {
-		var offer models.Offer
-		if err := cur.Decode(&offer); err != nil {
-			return nil, err
-		}
-		if offer.Scope == models.OfferScopeAll {
-			return nil, nil
-		}
-		for _, pid := range offer.ProductIDs {
-			if pid != "" {
-				productIDs[pid] = struct{}{}
-			}
-		}
-	}
-
-	if len(productIDs) == 0 {
-		return bson.M{"_id": bson.M{"$in": []primitive.ObjectID{}}}, nil
-	}
-
-	productObjectIDs := make([]primitive.ObjectID, 0, len(productIDs))
-	for pid := range productIDs {
-		oid, err := primitive.ObjectIDFromHex(pid)
-		if err != nil {
-			continue
-		}
-		productObjectIDs = append(productObjectIDs, oid)
-	}
-	if len(productObjectIDs) == 0 {
-		return bson.M{"_id": bson.M{"$in": []primitive.ObjectID{}}}, nil
-	}
-	return bson.M{"_id": bson.M{"$in": productObjectIDs}}, nil
+	return store.OfferProductFilter(ctx, ids)
 }
 
 func ListOffersForAdminPaginated(ctx context.Context, session *lib.SessionPayload, page, limit, search string) (map[string]interface{}, error) {
@@ -271,49 +209,19 @@ func ListOffersForAdminPaginated(ctx context.Context, session *lib.SessionPayloa
 		return nil, err
 	}
 	p := utils.ParsePagination(page, limit, search)
-	match := bson.M{}
-	if p.Search != "" {
-		escaped := regexp.QuoteMeta(p.Search)
-		match["$or"] = bson.A{
-			bson.M{"name": bson.M{"$regex": escaped, "$options": "i"}},
-			bson.M{"code": bson.M{"$regex": escaped, "$options": "i"}},
-		}
-	}
-
-	total, _ := lib.Offers().CountDocuments(ctx, match)
-	activeCount, _ := lib.Offers().CountDocuments(ctx, bson.M{"isActive": bson.M{"$ne": false}})
-	withCodeCount, _ := lib.Offers().CountDocuments(ctx, bson.M{"code": bson.M{"$exists": true, "$ne": ""}})
-
-	cur, err := lib.Offers().Find(ctx, match,
-		options.Find().
-			SetSort(bson.D{{Key: "createdAt", Value: -1}}).
-			SetSkip(int64(p.Skip)).
-			SetLimit(int64(p.Limit)),
-	)
+	offers, total, activeCount, withCodeCount, err := store.ListOffersPaginated(ctx, p.Search, p.Skip, p.Limit)
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
-
-	var items []SerializedOffer
-	for cur.Next(ctx) {
-		var o models.Offer
-		if err := cur.Decode(&o); err != nil {
-			return nil, err
-		}
+	items := make([]SerializedOffer, 0, len(offers))
+	for _, o := range offers {
 		items = append(items, serializeOffer(o))
 	}
-	if items == nil {
-		items = []SerializedOffer{}
-	}
-
 	return map[string]interface{}{
 		"items":      items,
 		"pagination": utils.BuildPaginationMeta(p.Page, p.Limit, int(total)),
 		"stats": map[string]int{
-			"total":         int(total),
-			"activeCount":   int(activeCount),
-			"withCodeCount": int(withCodeCount),
+			"total": int(total), "activeCount": int(activeCount), "withCodeCount": int(withCodeCount),
 		},
 	}, nil
 }
@@ -327,7 +235,7 @@ func CreateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	}
 	now := time.Now()
 	o := models.Offer{
-		ID: primitive.NewObjectID(), Name: strings.TrimSpace(input.Name),
+		ID: lib.NewID(), Name: strings.TrimSpace(input.Name),
 		Description: strings.TrimSpace(input.Description),
 		Type: models.OfferType(input.Type), Scope: models.OfferScope(input.Scope),
 		Percentage: input.Percentage, FixedAmount: input.FixedAmount,
@@ -337,7 +245,7 @@ func CreateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 		IsActive: boolPtr(input.IsActive), StartsAt: input.StartsAt, EndsAt: input.EndsAt,
 		CreatedAt: now, UpdatedAt: now,
 	}
-	if _, err := lib.Offers().InsertOne(ctx, o); err != nil {
+	if err := store.InsertOffer(ctx, &o); err != nil {
 		return nil, err
 	}
 	result := serializeOffer(o)
@@ -351,30 +259,36 @@ func UpdateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	if err := validateOfferInput(input); err != nil {
 		return nil, err
 	}
-	oid, err := primitive.ObjectIDFromHex(input.ID)
-	if err != nil {
+	if !lib.ValidID(input.ID) {
 		return nil, utils.ErrNotFound
 	}
-	update := bson.M{
-		"name": strings.TrimSpace(input.Name), "description": strings.TrimSpace(input.Description),
-		"type": input.Type, "scope": input.Scope,
-		"percentage": input.Percentage, "fixedAmount": input.FixedAmount,
-		"minPurchase": input.MinPurchase, "maxDiscount": input.MaxDiscount,
-		"buyQuantity": input.BuyQuantity, "freeQuantity": input.FreeQuantity,
-		"productIds": input.ProductIDs, "code": strings.ToUpper(strings.TrimSpace(input.Code)),
-		"isActive": input.IsActive, "startsAt": input.StartsAt, "endsAt": input.EndsAt,
-		"updatedAt": time.Now(),
-	}
-	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	var o models.Offer
-	err = lib.Offers().FindOneAndUpdate(ctx, bson.M{"_id": oid}, bson.M{"$set": update}, opts).Decode(&o)
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	existing, err := store.FindOfferByID(ctx, input.ID)
+	if err != nil || existing == nil {
 		return nil, utils.ErrNotFound
 	}
-	if err != nil {
+	existing.Name = strings.TrimSpace(input.Name)
+	existing.Description = strings.TrimSpace(input.Description)
+	existing.Type = models.OfferType(input.Type)
+	existing.Scope = models.OfferScope(input.Scope)
+	existing.Percentage = input.Percentage
+	existing.FixedAmount = input.FixedAmount
+	existing.MinPurchase = input.MinPurchase
+	existing.MaxDiscount = input.MaxDiscount
+	existing.BuyQuantity = input.BuyQuantity
+	existing.FreeQuantity = input.FreeQuantity
+	existing.ProductIDs = input.ProductIDs
+	existing.Code = strings.ToUpper(strings.TrimSpace(input.Code))
+	existing.IsActive = boolPtr(input.IsActive)
+	existing.StartsAt = input.StartsAt
+	existing.EndsAt = input.EndsAt
+	existing.UpdatedAt = time.Now()
+	if err := store.UpdateOffer(ctx, existing); err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, utils.ErrNotFound
+		}
 		return nil, err
 	}
-	result := serializeOffer(o)
+	result := serializeOffer(*existing)
 	return &result, nil
 }
 
@@ -382,15 +296,14 @@ func DeleteOfferForAdmin(ctx context.Context, session *lib.SessionPayload, id st
 	if err := RequireAdmin(session); err != nil {
 		return err
 	}
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
+	if !lib.ValidID(id) {
 		return utils.ErrNotFound
 	}
-	res, err := lib.Offers().DeleteOne(ctx, bson.M{"_id": oid})
+	ok, err := store.DeleteOffer(ctx, id)
 	if err != nil {
 		return err
 	}
-	if res.DeletedCount == 0 {
+	if !ok {
 		return utils.ErrNotFound
 	}
 	return nil
@@ -398,17 +311,12 @@ func DeleteOfferForAdmin(ctx context.Context, session *lib.SessionPayload, id st
 
 func ListActiveOffers(ctx context.Context) ([]SerializedOffer, error) {
 	now := time.Now()
-	cur, err := lib.Offers().Find(ctx, bson.M{"isActive": bson.M{"$ne": false}}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
+	offers, err := store.ListOffers(ctx, true)
 	if err != nil {
 		return []SerializedOffer{}, nil
 	}
-	defer cur.Close(ctx)
 	var out []SerializedOffer
-	for cur.Next(ctx) {
-		var o models.Offer
-		if err := cur.Decode(&o); err != nil {
-			continue
-		}
+	for _, o := range offers {
 		if offerIsLive(o, now) {
 			out = append(out, serializeOffer(o))
 		}
@@ -437,7 +345,7 @@ func PreviewOffer(ctx context.Context, input OfferPreviewInput) (*OfferPreviewRe
 	var offerID, offerName, offerLabel string
 	if offer != nil {
 		discount = calculateOfferDiscount(*offer, lines)
-		offerID = offer.ID.Hex()
+		offerID = offer.ID
 		offerName = offer.Name
 		offerLabel = describeOffer(*offer)
 	}
@@ -463,7 +371,7 @@ func ResolveOrderPricing(ctx context.Context, items []CartLineInput, offerID, of
 	var oid, oname string
 	if offer != nil {
 		discount = calculateOfferDiscount(*offer, lines)
-		oid = offer.ID.Hex()
+		oid = offer.ID
 		oname = offer.Name
 	}
 	total := math.Max(0, subtotal-discount)
@@ -485,13 +393,11 @@ func resolveCartLines(ctx context.Context, items []CartLineInput) ([]resolvedLin
 		if item.ProductID == "" || item.Quantity <= 0 {
 			continue
 		}
-		oid, err := primitive.ObjectIDFromHex(item.ProductID)
-		if err != nil {
+		if !lib.ValidID(item.ProductID) {
 			return nil, 0, utils.BadRequest("invalid product in cart")
 		}
-		var p models.Product
-		err = lib.Products().FindOne(ctx, bson.M{"_id": oid}).Decode(&p)
-		if err != nil {
+		p, err := store.FindProductByID(ctx, item.ProductID)
+		if err != nil || p == nil {
 			return nil, 0, utils.BadRequest("product no longer available")
 		}
 		price := p.Price
@@ -500,7 +406,7 @@ func resolveCartLines(ctx context.Context, items []CartLineInput) ([]resolvedLin
 			image = p.Images[0]
 		}
 		line := resolvedLine{
-			productID: p.ID.Hex(), name: p.Name, price: price,
+			productID: p.ID, name: p.Name, price: price,
 			quantity: item.Quantity, image: image, category: p.Category,
 		}
 		lines = append(lines, line)
@@ -517,61 +423,51 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 		if strings.TrimSpace(offerID) != "" {
 			return nil, utils.BadRequest("apply either a coupon code or an auto offer, not both")
 		}
-		var o models.Offer
-		err := lib.Offers().FindOne(ctx, bson.M{"code": code, "isActive": bson.M{"$ne": false}}).Decode(&o)
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, utils.BadRequest("invalid or expired offer code")
-		}
+		o, err := store.FindActiveOfferByCode(ctx, code)
 		if err != nil {
 			return nil, err
 		}
-		if !offerIsLive(o, now) {
+		if o == nil {
+			return nil, utils.BadRequest("invalid or expired offer code")
+		}
+		if !offerIsLive(*o, now) {
 			return nil, utils.BadRequest("this offer is no longer active")
 		}
-		if err := validateOfferMinPurchase(o, lines); err != nil {
+		if err := validateOfferMinPurchase(*o, lines); err != nil {
 			return nil, err
 		}
-		return &o, nil
+		return o, nil
 	}
 
 	if offerID != "" {
-		oid, err := primitive.ObjectIDFromHex(offerID)
-		if err != nil {
+		if !lib.ValidID(offerID) {
 			return nil, utils.BadRequest("invalid offer")
 		}
-		var o models.Offer
-		err = lib.Offers().FindOne(ctx, bson.M{"_id": oid, "isActive": bson.M{"$ne": false}}).Decode(&o)
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, utils.BadRequest("offer is no longer available")
-		}
+		o, err := store.FindActiveOfferByID(ctx, offerID)
 		if err != nil {
 			return nil, err
 		}
-		if !offerIsLive(o, now) {
+		if o == nil {
+			return nil, utils.BadRequest("offer is no longer available")
+		}
+		if !offerIsLive(*o, now) {
 			return nil, utils.BadRequest("offer is no longer active")
 		}
-		if err := validateOfferMinPurchase(o, lines); err != nil {
+		if err := validateOfferMinPurchase(*o, lines); err != nil {
 			return nil, err
 		}
-		return &o, nil
+		return o, nil
 	}
 
-	cur, err := lib.Offers().Find(ctx, bson.M{"isActive": bson.M{"$ne": false}, "$or": []bson.M{
-		{"code": ""}, {"code": bson.M{"$exists": false}},
-	}})
+	offers, err := store.ListOffers(ctx, true)
 	if err != nil {
 		return nil, nil
 	}
-	defer cur.Close(ctx)
 
 	var best *models.Offer
 	bestDiscount := 0.0
-	for cur.Next(ctx) {
-		var o models.Offer
-		if err := cur.Decode(&o); err != nil || !offerIsLive(o, now) {
-			continue
-		}
-		if strings.TrimSpace(o.Code) != "" {
+	for _, o := range offers {
+		if !offerIsLive(o, now) || strings.TrimSpace(o.Code) != "" {
 			continue
 		}
 		d := calculateOfferDiscount(o, lines)

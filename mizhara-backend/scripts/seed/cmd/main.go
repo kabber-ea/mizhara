@@ -14,8 +14,7 @@ import (
 	"mizhara-backend/lib"
 	"mizhara-backend/models"
 	"mizhara-backend/scripts/seed"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"mizhara-backend/store"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -33,12 +32,12 @@ func main() {
 	ctx := context.Background()
 
 	if *ifEmpty {
-		count, err := lib.Products().CountDocuments(ctx, bson.M{})
+		products, _, err := store.ListProducts(ctx, store.ProductFilter{}, 0, 1, "")
 		if err != nil {
 			log.Fatal(err)
 		}
-		if count > 0 {
-			log.Printf("Database already has %d product(s); skipping seed (--if-empty)", count)
+		if len(products) > 0 {
+			log.Printf("Database already has products; skipping seed (--if-empty)")
 			return
 		}
 	}
@@ -68,11 +67,7 @@ func main() {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	log.Println("Clearing existing data...")
-	_, _ = lib.Users().DeleteMany(ctx, bson.M{})
-	_, _ = lib.Categories().DeleteMany(ctx, bson.M{})
-	_, _ = lib.Products().DeleteMany(ctx, bson.M{})
-	_, _ = lib.Orders().DeleteMany(ctx, bson.M{})
-	_, _ = lib.Offers().DeleteMany(ctx, bson.M{})
+	_, _ = lib.DB().Exec(ctx, `TRUNCATE orders, offers, products, categories, users CASCADE`)
 
 	adminEmail := envOr("ADMIN_EMAIL", "admin@mizhara.in")
 	adminPassword := envOr("ADMIN_PASSWORD", "Admin@123")
@@ -83,48 +78,47 @@ func main() {
 	customerHash, _ := bcrypt.GenerateFromPassword([]byte(customerPassword), 10)
 
 	admin := models.User{
-		ID: primitive.NewObjectID(), Name: "Mizhara Admin", Email: strings.ToLower(adminEmail),
+		ID: lib.NewID(), Name: "Mizhara Admin", Email: strings.ToLower(adminEmail),
 		Password: string(adminHash), Role: models.RoleAdmin, CreatedAt: now, UpdatedAt: now,
 	}
-	_, _ = lib.Users().InsertOne(ctx, admin)
+	_ = store.InsertUser(ctx, &admin)
 
 	demoCustomerEmail := strings.ToLower(envOr("CUSTOMER_EMAIL", "customer@mizhara.in"))
 	demoCustomerPhone := envOr("CUSTOMER_PHONE", "9876543210")
-	demoCustomerID := primitive.NewObjectID()
+	demoCustomerID := lib.NewID()
 	demoCustomer := models.User{
 		ID: demoCustomerID, Name: "Demo Customer", Email: demoCustomerEmail,
 		Phone: demoCustomerPhone, Password: string(customerHash), Role: models.RoleCustomer,
 		CreatedAt: now, UpdatedAt: now,
 	}
 
-	customerDocs := []interface{}{demoCustomer}
-	customerIDs := []primitive.ObjectID{demoCustomerID}
-	customerProfiles := map[primitive.ObjectID]seed.CustomerSeed{
+	customerIDs := []string{demoCustomerID}
+	customerProfiles := map[string]seed.CustomerSeed{
 		demoCustomerID: {Name: "Demo Customer", Email: demoCustomerEmail, Phone: demoCustomerPhone},
 	}
+	_ = store.InsertUser(ctx, &demoCustomer)
 	log.Printf("Demo customer login: %s / %s", demoCustomerEmail, customerPassword)
 
 	for _, c := range customers {
 		if strings.ToLower(c.Email) == demoCustomerEmail {
 			continue
 		}
-		id := primitive.NewObjectID()
+		id := lib.NewID()
 		customerIDs = append(customerIDs, id)
 		customerProfiles[id] = c
 		createdAt := now.AddDate(0, 0, -rng.Intn(180))
-		customerDocs = append(customerDocs, models.User{
+		_ = store.InsertUser(ctx, &models.User{
 			ID: id, Name: c.Name, Email: strings.ToLower(c.Email),
 			Phone: c.Phone, Password: string(customerHash), Role: models.RoleCustomer,
 			CreatedAt: createdAt, UpdatedAt: createdAt,
 		})
 	}
-	_, _ = lib.Users().InsertMany(ctx, customerDocs)
 
-	categoryIDs := make(map[string]primitive.ObjectID)
+	categoryIDs := make(map[string]string)
 	for _, cat := range categories {
 		isActive := true
-		catID := primitive.NewObjectID()
-		_, _ = lib.Categories().InsertOne(ctx, models.Category{
+		catID := lib.NewID()
+		_ = store.InsertCategory(ctx, &models.Category{
 			ID: catID, Name: cat.Name,
 			Slug: strings.ToLower(strings.ReplaceAll(cat.Name, " ", "-")),
 			IsActive: &isActive, CreatedAt: now, UpdatedAt: now,
@@ -132,12 +126,12 @@ func main() {
 		categoryIDs[cat.Name] = catID
 	}
 
-	productIDs := make([]primitive.ObjectID, 0, len(products))
-	productByID := make(map[primitive.ObjectID]models.Product)
-	productByName := make(map[string]primitive.ObjectID)
+	productIDs := make([]string, 0, len(products))
+	productByID := make(map[string]models.Product)
+	productByName := make(map[string]string)
 
 	for _, p := range products {
-		id := primitive.NewObjectID()
+		id := lib.NewID()
 		productIDs = append(productIDs, id)
 		productByName[p.Name] = id
 		isActive := true
@@ -155,9 +149,6 @@ func main() {
 			images = urls.Images
 			bannerImage = urls.BannerImage
 			bannerImageMobile = urls.BannerImageMobile
-			if p.IsFeatured && (bannerImage == "" || bannerImageMobile == "") {
-				log.Printf("  warning: %q is featured but banner image(s) missing in img folder", p.Name)
-			}
 		}
 
 		doc := models.Product{
@@ -171,15 +162,13 @@ func main() {
 			CreatedAt: createdAt, UpdatedAt: now,
 		}
 		productByID[id] = doc
-		_, _ = lib.Products().InsertOne(ctx, doc)
+		_ = store.InsertProduct(ctx, &doc)
 	}
 
-	offerDocs := make([]interface{}, len(offers))
 	builtOffers := seed.BuildOffers(now, offers, products, productByName)
-	for i, o := range builtOffers {
-		offerDocs[i] = o
+	for _, o := range builtOffers {
+		_ = store.InsertOffer(ctx, &o)
 	}
-	_, _ = lib.Offers().InsertMany(ctx, offerDocs)
 
 	deliveryStatuses := []models.DeliveryStatus{
 		models.DeliveryProcessing, models.DeliveryShipped,
@@ -206,11 +195,6 @@ func main() {
 	fmt.Printf("  Customers:     %d\n", len(customerIDs))
 	fmt.Printf("  Orders:        %d\n", orderCount)
 	fmt.Printf("  Demo customer: %s / %s\n", demoCustomerEmail, customerPassword)
-	if *skipImages {
-		fmt.Println("  Images:        skipped (--skip-images)")
-	} else {
-		fmt.Printf("  Images:        uploaded from %s\n", resolvedImgDir)
-	}
 }
 
 func envOr(key, fallback string) string {
@@ -223,18 +207,18 @@ func envOr(key, fallback string) string {
 func paidOrdersForCustomer(customerIndex int, rng *rand.Rand) int {
 	switch {
 	case customerIndex < 8:
-		return 12 + rng.Intn(7) // top spenders: 12-18 paid orders
+		return 12 + rng.Intn(7)
 	case customerIndex < 20:
-		return 4 + rng.Intn(4) // 4-7 paid orders
+		return 4 + rng.Intn(4)
 	case customerIndex < 35:
-		return 1 + rng.Intn(3) // 1-3 paid orders
+		return 1 + rng.Intn(3)
 	default:
-		return rng.Intn(2) // 0-1 paid orders
+		return rng.Intn(2)
 	}
 }
 
-func sortedProductIDsByPrice(productByID map[primitive.ObjectID]models.Product, descending bool) []primitive.ObjectID {
-	ids := make([]primitive.ObjectID, 0, len(productByID))
+func sortedProductIDsByPrice(productByID map[string]models.Product, descending bool) []string {
+	ids := make([]string, 0, len(productByID))
 	for id := range productByID {
 		ids = append(ids, id)
 	}
@@ -254,58 +238,46 @@ func sortedProductIDsByPrice(productByID map[primitive.ObjectID]models.Product, 
 	return ids
 }
 
-func pickProductForTier(
-	customerIndex int,
-	rng *rand.Rand,
-	expensiveProductIDs, affordableProductIDs, allProductIDs []primitive.ObjectID,
-) primitive.ObjectID {
+func pickProductForTier(customerIndex int, rng *rand.Rand, expensive, affordable, all []string) string {
 	switch {
 	case customerIndex < 8:
-		limit := min(8, len(expensiveProductIDs))
-		return expensiveProductIDs[rng.Intn(limit)]
+		limit := min(8, len(expensive))
+		return expensive[rng.Intn(limit)]
 	case customerIndex < 20:
-		if rng.Intn(3) == 0 && len(affordableProductIDs) > 0 {
-			limit := min(12, len(affordableProductIDs))
-			return affordableProductIDs[rng.Intn(limit)]
+		if rng.Intn(3) == 0 && len(affordable) > 0 {
+			limit := min(12, len(affordable))
+			return affordable[rng.Intn(limit)]
 		}
-		return allProductIDs[rng.Intn(len(allProductIDs))]
+		return all[rng.Intn(len(all))]
 	default:
-		return allProductIDs[rng.Intn(len(allProductIDs))]
+		return all[rng.Intn(len(all))]
 	}
 }
 
 func orderQuantityForTier(customerIndex int, rng *rand.Rand) int {
 	switch {
 	case customerIndex < 8:
-		return 1 + rng.Intn(3) // 1-3 units
+		return 1 + rng.Intn(3)
 	case customerIndex < 20:
-		return 1 + rng.Intn(2) // 1-2 units
+		return 1 + rng.Intn(2)
 	default:
 		return 1
 	}
 }
 
 func insertSeedOrder(
-	ctx context.Context,
-	rng *rand.Rand,
-	orderCount int,
-	customerID primitive.ObjectID,
-	customerProfiles map[primitive.ObjectID]seed.CustomerSeed,
-	productByID map[primitive.ObjectID]models.Product,
-	productID primitive.ObjectID,
-	customerIndex int,
-	now time.Time,
-	paymentStatus models.PaymentStatus,
-	deliveryStatuses []models.DeliveryStatus,
+	ctx context.Context, rng *rand.Rand, orderCount int,
+	customerID string, customerProfiles map[string]seed.CustomerSeed,
+	productByID map[string]models.Product, productID string,
+	customerIndex int, now time.Time,
+	paymentStatus models.PaymentStatus, deliveryStatuses []models.DeliveryStatus,
 ) int {
 	product := productByID[productID]
 	qty := orderQuantityForTier(customerIndex, rng)
 	subtotal := product.Price * float64(qty)
 	daysAgo := rng.Intn(90)
 	createdAt := now.AddDate(0, 0, -daysAgo).Add(-time.Duration(rng.Intn(86400)) * time.Second)
-
 	deliveryStatus := deliveryStatuses[rng.Intn(len(deliveryStatuses))]
-
 	customer := customerProfiles[customerID]
 	itemImage := ""
 	if len(product.Images) > 0 {
@@ -317,10 +289,10 @@ func insertSeedOrder(
 	}
 
 	order := models.Order{
-		ID: primitive.NewObjectID(), UserID: customerID,
+		ID: lib.NewID(), UserID: customerID,
 		OrderNumber: fmt.Sprintf("MIZ-%06d", 100000+orderCount),
 		Items: []models.OrderItem{{
-			ProductID: productID.Hex(), Name: product.Name, Price: product.Price,
+			ProductID: productID, Name: product.Name, Price: product.Price,
 			Quantity: qty, Size: itemSize, Image: itemImage, Category: product.Category,
 		}},
 		ShippingAddress: models.ShippingAddress{
@@ -336,6 +308,6 @@ func insertSeedOrder(
 		delivered := createdAt.AddDate(0, 0, 3+rng.Intn(5))
 		order.DeliveredAt = &delivered
 	}
-	_, _ = lib.Orders().InsertOne(ctx, order)
+	_ = store.InsertOrder(ctx, &order)
 	return 1
 }

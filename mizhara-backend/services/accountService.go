@@ -2,19 +2,15 @@ package services
 
 import (
 	"context"
-	"errors"
 	"regexp"
 	"strings"
 	"time"
 
 	"mizhara-backend/constants"
 	"mizhara-backend/lib"
-	"mizhara-backend/utils"
 	"mizhara-backend/models"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"mizhara-backend/store"
+	"mizhara-backend/utils"
 )
 
 type SavedAddress struct {
@@ -28,12 +24,12 @@ type SavedAddress struct {
 }
 
 type CustomerProfile struct {
-	ID              string         `json:"id"`
-	Name            string         `json:"name"`
-	Email           string         `json:"email,omitempty"`
-	Phone           string         `json:"phone,omitempty"`
-	SavedAddress    *SavedAddress  `json:"savedAddress,omitempty"`
-	SavedAddresses  []SavedAddress `json:"savedAddresses,omitempty"`
+	ID             string         `json:"id"`
+	Name           string         `json:"name"`
+	Email          string         `json:"email,omitempty"`
+	Phone          string         `json:"phone,omitempty"`
+	SavedAddress   *SavedAddress  `json:"savedAddress,omitempty"`
+	SavedAddresses []SavedAddress `json:"savedAddresses,omitempty"`
 }
 
 type CustomerOrder struct {
@@ -108,20 +104,15 @@ func ListCustomerOrdersForSession(ctx context.Context, session *lib.SessionPaylo
 }
 
 func GetCustomerProfile(ctx context.Context, userID string) (*CustomerProfile, error) {
-	oid, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return nil, err
-	}
-	var user models.User
-	err = lib.Users().FindOne(ctx, bson.M{"_id": oid, "role": models.RoleCustomer}).Decode(&user)
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	if !lib.ValidID(userID) {
 		return nil, nil
 	}
-	if err != nil {
+	user, err := store.FindUserByID(ctx, userID)
+	if err != nil || user == nil || user.Role != models.RoleCustomer {
 		return nil, err
 	}
-	profile := &CustomerProfile{ID: user.ID.Hex(), Name: user.Name, Email: user.Email, Phone: user.Phone}
-	addrs := normalizeSavedAddresses(user)
+	profile := &CustomerProfile{ID: user.ID, Name: user.Name, Email: user.Email, Phone: user.Phone}
+	addrs := normalizeSavedAddresses(*user)
 	profile.SavedAddresses = toAPISavedAddresses(addrs)
 	if defaultAddr := defaultSavedAddress(addrs); defaultAddr != nil {
 		profile.SavedAddress = toAPISavedAddress(*defaultAddr)
@@ -143,7 +134,7 @@ func normalizeSavedAddresses(user models.User) []models.SavedAddress {
 	}
 	id := strings.TrimSpace(legacy.ID)
 	if id == "" {
-		id = primitive.NewObjectID().Hex()
+		id = lib.NewID()
 	}
 	return []models.SavedAddress{{
 		ID: id, Label: legacy.Label, Address: legacy.Address, City: legacy.City,
@@ -179,7 +170,7 @@ func toAPISavedAddresses(addrs []models.SavedAddress) []SavedAddress {
 }
 
 func normalizeSavedAddressInput(addrs []SavedAddress) ([]models.SavedAddress, error) {
-		if len(addrs) > constants.MaxSavedAddresses {
+	if len(addrs) > constants.MaxSavedAddresses {
 		return nil, utils.BadRequest("you can save up to 5 addresses")
 	}
 	out := make([]models.SavedAddress, 0, len(addrs))
@@ -194,7 +185,7 @@ func normalizeSavedAddressInput(addrs []SavedAddress) ([]models.SavedAddress, er
 		}
 		id := strings.TrimSpace(item.ID)
 		if id == "" {
-			id = primitive.NewObjectID().Hex()
+			id = lib.NewID()
 		}
 		if item.IsDefault {
 			defaultCount++
@@ -222,22 +213,20 @@ func normalizeSavedAddressInput(addrs []SavedAddress) ([]models.SavedAddress, er
 }
 
 func UpdateCustomerProfile(ctx context.Context, userID string, data ProfileUpdate) (*lib.SessionPayload, error) {
-	oid, err := primitive.ObjectIDFromHex(userID)
-	if err != nil {
-		return nil, err
-	}
-	var user models.User
-	err = lib.Users().FindOne(ctx, bson.M{"_id": oid}).Decode(&user)
-	if errors.Is(err, mongo.ErrNoDocuments) || user.Role != models.RoleCustomer {
+	if !lib.ValidID(userID) {
 		return nil, nil
+	}
+	user, err := store.FindUserByID(ctx, userID)
+	if err != nil || user == nil || user.Role != models.RoleCustomer {
+		return nil, err
 	}
 	if strings.TrimSpace(data.Name) != "" {
 		user.Name = strings.TrimSpace(data.Name)
 	}
 	if data.Phone != "" {
-		normalized := regexp.MustCompile(`\D`).ReplaceAllString(data.Phone, "")
+		normalized := regexpDigitsOnly(data.Phone)
 		if normalized != "" {
-			count, _ := lib.Users().CountDocuments(ctx, bson.M{"phone": normalized, "_id": bson.M{"$ne": oid}})
+			count, _ := store.CountUsersByPhoneExcluding(ctx, normalized, userID)
 			if count > 0 {
 				return nil, utils.BadRequest("mobile number already in use")
 			}
@@ -260,32 +249,32 @@ func UpdateCustomerProfile(ctx context.Context, userID string, data ProfileUpdat
 		user.SavedAddress = nil
 	}
 	user.UpdatedAt = time.Now()
-	_, err = lib.Users().ReplaceOne(ctx, bson.M{"_id": oid}, user)
-	if err != nil {
+	if err := store.ReplaceUser(ctx, user); err != nil {
 		return nil, err
 	}
 	return &lib.SessionPayload{
-		UserID: user.ID.Hex(), Role: lib.RoleCustomer, Name: user.Name,
+		UserID: user.ID, Role: lib.RoleCustomer, Name: user.Name,
 		Email: user.Email, Phone: user.Phone,
 	}, nil
 }
 
+func regexpDigitsOnly(phone string) string {
+	re := regexp.MustCompile(`\D`)
+	return re.ReplaceAllString(phone, "")
+}
+
 func ListCustomerOrders(ctx context.Context, userID string) ([]CustomerOrder, error) {
-	oid, err := primitive.ObjectIDFromHex(userID)
+	if !lib.ValidID(userID) {
+		return nil, nil
+	}
+	orders, err := store.ListOrdersByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	cur, err := lib.Orders().Find(ctx, bson.M{"userId": oid})
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(ctx)
-	var out []CustomerOrder
-	for cur.Next(ctx) {
-		var o models.Order
-		_ = cur.Decode(&o)
+	out := make([]CustomerOrder, 0, len(orders))
+	for _, o := range orders {
 		out = append(out, CustomerOrder{
-			ID: o.ID.Hex(), OrderNumber: o.OrderNumber, Items: o.Items, ItemCount: sumOrderItemQuantities(o.Items),
+			ID: o.ID, OrderNumber: o.OrderNumber, Items: o.Items, ItemCount: sumOrderItemQuantities(o.Items),
 			Total: o.Total, PaymentStatus: string(o.PaymentStatus), DeliveryStatus: string(o.DeliveryStatus),
 			TrackingURL: o.TrackingURL, TrackingNumber: o.TrackingNumber,
 			TrackingProvider: string(o.TrackingProvider),

@@ -5,18 +5,15 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"mizhara-backend/lib"
-	"mizhara-backend/utils"
 	"mizhara-backend/models"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
+	"mizhara-backend/store"
+	"mizhara-backend/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -81,27 +78,25 @@ func GetUserByToken(token string) (*UserDTO, error) {
 
 func Authenticate(ctx context.Context, identifier, password string) (*lib.SessionPayload, error) {
 	trimmed := strings.TrimSpace(identifier)
-	filter := bson.M{}
+	var user *models.User
+	var err error
 	if strings.Contains(trimmed, "@") {
-		filter["email"] = strings.ToLower(trimmed)
+		user, err = store.FindUserByEmail(ctx, strings.ToLower(trimmed))
 	} else {
 		re := regexp.MustCompile(`\D`)
-		filter["phone"] = re.ReplaceAllString(trimmed, "")
+		user, err = store.FindUserByPhone(ctx, re.ReplaceAllString(trimmed, ""))
 	}
-
-	var user models.User
-	err := lib.Users().FindOne(ctx, filter).Decode(&user)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
 		return nil, err
+	}
+	if user == nil {
+		return nil, nil
 	}
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) != nil {
 		return nil, nil
 	}
 	return &lib.SessionPayload{
-		UserID: user.ID.Hex(),
+		UserID: user.ID,
 		Role:   lib.UserRole(user.Role),
 		Name:   user.Name,
 		Email:  user.Email,
@@ -121,13 +116,13 @@ func RegisterUser(ctx context.Context, name, email, phone, password string) erro
 	normalizedPhone := regexp.MustCompile(`\D`).ReplaceAllString(phone, "")
 
 	if normalizedEmail != "" {
-		count, _ := lib.Users().CountDocuments(ctx, bson.M{"email": normalizedEmail})
+		count, _ := store.CountUsersByEmail(ctx, normalizedEmail)
 		if count > 0 {
 			return utils.BadRequest("email already registered")
 		}
 	}
 	if normalizedPhone != "" {
-		count, _ := lib.Users().CountDocuments(ctx, bson.M{"phone": normalizedPhone})
+		count, _ := store.CountUsersByPhone(ctx, normalizedPhone)
 		if count > 0 {
 			return utils.BadRequest("mobile number already registered")
 		}
@@ -139,17 +134,12 @@ func RegisterUser(ctx context.Context, name, email, phone, password string) erro
 	}
 
 	user := models.User{
-		ID:        primitive.NewObjectID(),
-		Name:      strings.TrimSpace(name),
-		Email:     normalizedEmail,
-		Phone:     normalizedPhone,
-		Password:  string(hashed),
-		Role:      models.RoleCustomer,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID: lib.NewID(), Name: strings.TrimSpace(name),
+		Email: normalizedEmail, Phone: normalizedPhone,
+		Password: string(hashed), Role: models.RoleCustomer,
+		CreatedAt: now, UpdatedAt: now,
 	}
-	_, err = lib.Users().InsertOne(ctx, user)
-	return err
+	return store.InsertUser(ctx, &user)
 }
 
 func RequestPasswordReset(ctx context.Context, email string) (map[string]string, error) {
@@ -157,13 +147,12 @@ func RequestPasswordReset(ctx context.Context, email string) (map[string]string,
 		return nil, utils.BadRequest("email is required")
 	}
 	generic := "If an account exists with this email, you will receive a password reset link shortly."
-	var user models.User
-	err := lib.Users().FindOne(ctx, bson.M{"email": strings.ToLower(strings.TrimSpace(email))}).Decode(&user)
+	user, err := store.FindUserByEmail(ctx, strings.ToLower(strings.TrimSpace(email)))
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return map[string]string{"message": generic}, nil
-		}
 		return nil, err
+	}
+	if user == nil {
+		return map[string]string{"message": generic}, nil
 	}
 
 	raw := make([]byte, 32)
@@ -172,14 +161,7 @@ func RequestPasswordReset(ctx context.Context, email string) (map[string]string,
 	}
 	rawToken := hex.EncodeToString(raw)
 	expires := time.Now().Add(time.Hour)
-	_, err = lib.Users().UpdateOne(ctx, bson.M{"_id": user.ID}, bson.M{
-		"$set": bson.M{
-			"resetPasswordToken":   hashToken(rawToken),
-			"resetPasswordExpires": expires,
-			"updatedAt":            time.Now(),
-		},
-	})
-	if err != nil {
+	if err := store.UpdateUserPasswordReset(ctx, user.ID, hashToken(rawToken), expires); err != nil {
 		return nil, err
 	}
 
@@ -203,12 +185,11 @@ func ResetPassword(ctx context.Context, token, password string) error {
 	if len(password) < 6 {
 		return utils.BadRequest("password must be at least 6 characters")
 	}
-	var user models.User
-	err := lib.Users().FindOne(ctx, bson.M{
-		"resetPasswordToken":   hashToken(token),
-		"resetPasswordExpires": bson.M{"$gt": time.Now()},
-	}).Decode(&user)
+	user, err := store.FindUserByResetToken(ctx, hashToken(token))
 	if err != nil {
+		return err
+	}
+	if user == nil {
 		return utils.BadRequest("invalid or expired reset link")
 	}
 
@@ -216,16 +197,5 @@ func ResetPassword(ctx context.Context, token, password string) error {
 	if err != nil {
 		return err
 	}
-
-	_, err = lib.Users().UpdateOne(ctx, bson.M{"_id": user.ID}, bson.M{
-		"$set": bson.M{
-			"password":  string(hashed),
-			"updatedAt": time.Now(),
-		},
-		"$unset": bson.M{
-			"resetPasswordToken":   "",
-			"resetPasswordExpires": "",
-		},
-	})
-	return err
+	return store.ClearUserPasswordReset(ctx, user.ID, string(hashed))
 }

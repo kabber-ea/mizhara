@@ -1,10 +1,6 @@
 package models
 
-import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
+import "time"
 
 type DeliveryStatus string
 type PaymentStatus string
@@ -14,53 +10,53 @@ const (
 	DeliveryProcessing DeliveryStatus = "processing"
 	DeliveryShipped    DeliveryStatus = "shipped"
 	DeliveryDelivered  DeliveryStatus = "delivered"
-	PaymentPending            PaymentStatus  = "pending"
-	PaymentPaid               PaymentStatus  = "paid"
-	PaymentFailed             PaymentStatus  = "failed"
+	PaymentPending     PaymentStatus  = "pending"
+	PaymentPaid        PaymentStatus  = "paid"
+	PaymentFailed      PaymentStatus  = "failed"
 )
 
 type OrderItem struct {
-	ProductID string  `bson:"productId" json:"productId"`
-	Name      string  `bson:"name" json:"name"`
-	Price     float64 `bson:"price" json:"price"`
-	Quantity  int     `bson:"quantity" json:"quantity"`
-	Size      string  `bson:"size" json:"size"`
-	Image     string  `bson:"image" json:"image"`
-	Category  string  `bson:"category,omitempty" json:"category,omitempty"`
+	ProductID string  `json:"productId"`
+	Name      string  `json:"name"`
+	Price     float64 `json:"price"`
+	Quantity  int     `json:"quantity"`
+	Size      string  `json:"size"`
+	Image     string  `json:"image"`
+	Category  string  `json:"category,omitempty"`
 }
 
 type ShippingAddress struct {
-	Name    string `bson:"name" json:"name"`
-	Email   string `bson:"email" json:"email"`
-	Phone   string `bson:"phone" json:"phone"`
-	Address string `bson:"address" json:"address"`
-	City    string `bson:"city" json:"city"`
-	State   string `bson:"state" json:"state"`
-	Pincode string `bson:"pincode" json:"pincode"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Phone   string `json:"phone"`
+	Address string `json:"address"`
+	City    string `json:"city"`
+	State   string `json:"state"`
+	Pincode string `json:"pincode"`
 }
 
 type Order struct {
-	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	UserID            primitive.ObjectID `bson:"userId" json:"userId"`
-	OrderNumber       string             `bson:"orderNumber" json:"orderNumber"`
-	Items             []OrderItem        `bson:"items" json:"items"`
-	ShippingAddress   ShippingAddress    `bson:"shippingAddress" json:"shippingAddress"`
-	Subtotal          float64            `bson:"subtotal" json:"subtotal"`
-	DiscountAmount    float64            `bson:"discountAmount,omitempty" json:"discountAmount,omitempty"`
-	OfferID           string             `bson:"offerId,omitempty" json:"offerId,omitempty"`
-	OfferName         string             `bson:"offerName,omitempty" json:"offerName,omitempty"`
-	Shipping          float64            `bson:"shipping" json:"shipping"`
-	Total             float64            `bson:"total" json:"total"`
-	Currency          string             `bson:"currency" json:"currency"`
-	PaymentStatus     PaymentStatus      `bson:"paymentStatus" json:"paymentStatus"`
-	DeliveryStatus    DeliveryStatus     `bson:"deliveryStatus" json:"deliveryStatus"`
-	TrackingProvider  TrackingProvider   `bson:"trackingProvider,omitempty" json:"trackingProvider,omitempty"`
-	TrackingNumber    string             `bson:"trackingNumber,omitempty" json:"trackingNumber,omitempty"`
-	TrackingURL       string             `bson:"trackingUrl,omitempty" json:"trackingUrl,omitempty"`
-	ShippedAt         *time.Time         `bson:"shippedAt,omitempty" json:"shippedAt,omitempty"`
-	DeliveredAt       *time.Time         `bson:"deliveredAt,omitempty" json:"deliveredAt,omitempty"`
-	RazorpayOrderID   string             `bson:"razorpayOrderId,omitempty" json:"razorpayOrderId,omitempty"`
-	RazorpayPaymentID string             `bson:"razorpayPaymentId,omitempty" json:"razorpayPaymentId,omitempty"`
-	CreatedAt         time.Time          `bson:"createdAt" json:"createdAt"`
-	UpdatedAt         time.Time          `bson:"updatedAt" json:"updatedAt"`
+	ID                string           `json:"id"`
+	UserID            string           `json:"userId"`
+	OrderNumber       string           `json:"orderNumber"`
+	Items             []OrderItem      `json:"items"`
+	ShippingAddress   ShippingAddress  `json:"shippingAddress"`
+	Subtotal          float64          `json:"subtotal"`
+	DiscountAmount    float64          `json:"discountAmount,omitempty"`
+	OfferID           string           `json:"offerId,omitempty"`
+	OfferName         string           `json:"offerName,omitempty"`
+	Shipping          float64          `json:"shipping"`
+	Total             float64          `json:"total"`
+	Currency          string           `json:"currency"`
+	PaymentStatus     PaymentStatus    `json:"paymentStatus"`
+	DeliveryStatus    DeliveryStatus   `json:"deliveryStatus"`
+	TrackingProvider  TrackingProvider `json:"trackingProvider,omitempty"`
+	TrackingNumber    string           `json:"trackingNumber,omitempty"`
+	TrackingURL       string           `json:"trackingUrl,omitempty"`
+	ShippedAt         *time.Time       `json:"shippedAt,omitempty"`
+	DeliveredAt       *time.Time       `json:"deliveredAt,omitempty"`
+	RazorpayOrderID   string           `json:"razorpayOrderId,omitempty"`
+	RazorpayPaymentID string           `json:"razorpayPaymentId,omitempty"`
+	CreatedAt         time.Time        `json:"createdAt"`
+	UpdatedAt         time.Time        `json:"updatedAt"`
 }

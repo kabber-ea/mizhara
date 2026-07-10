@@ -6,23 +6,21 @@ import (
 	"time"
 
 	"mizhara-backend/models"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func EnsurePaidOrders() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	res, err := Orders().UpdateMany(ctx, bson.M{
-		"paymentStatus": bson.M{"$ne": models.PaymentPaid},
-	}, bson.M{
-		"$set": bson.M{"paymentStatus": models.PaymentPaid},
-	})
+	tag, err := DB().Exec(ctx, `
+		UPDATE orders SET payment_status = $1, updated_at = $2
+		WHERE payment_status <> $1
+	`, string(models.PaymentPaid), time.Now())
 	if err != nil {
 		return err
 	}
-	if res.ModifiedCount > 0 {
-		log.Printf("marked %d orders as paid", res.ModifiedCount)
+	if tag.RowsAffected() > 0 {
+		log.Printf("marked %d orders as paid", tag.RowsAffected())
 	}
 	return nil
 }
