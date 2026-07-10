@@ -294,7 +294,11 @@ func GetFeaturedProducts(ctx context.Context, limit int64) ([]SerializedProduct,
 	activeCats, _ := ListActiveCategoryNames(ctx)
 	filter := customerFilter(activeCats)
 	filter.FeaturedOnly = true
-	products, _, err := store.ListProducts(ctx, filter, 0, int(limit), "created_at DESC")
+	queryLimit := int(limit)
+	if queryLimit <= 0 {
+		queryLimit = 100
+	}
+	products, _, err := store.ListProducts(ctx, filter, 0, queryLimit, "is_featured DESC, rating DESC, created_at DESC")
 	if err != nil {
 		return []SerializedProduct{}, nil
 	}

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -11,18 +12,29 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+func optionalString(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
+}
+
 func scanUser(row pgx.Row) (*models.User, error) {
 	var u models.User
 	var addrsJSON []byte
+	var email, phone, resetToken sql.NullString
 	var resetExpires *time.Time
 	err := row.Scan(
-		&u.ID, &u.Name, &u.Email, &u.Phone, &u.Password, &u.Role,
-		&addrsJSON, &u.ResetPasswordToken, &resetExpires,
+		&u.ID, &u.Name, &email, &phone, &u.Password, &u.Role,
+		&addrsJSON, &resetToken, &resetExpires,
 		&u.CreatedAt, &u.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
+	u.Email = optionalString(email)
+	u.Phone = optionalString(phone)
+	u.ResetPasswordToken = optionalString(resetToken)
 	u.ResetPasswordExpires = resetExpires
 	_ = scanJSON(addrsJSON, &u.SavedAddresses)
 	return &u, nil
@@ -205,15 +217,19 @@ func ListCustomers(ctx context.Context, search string, skip, limit int, sortFiel
 	for rows.Next() {
 		var row CustomerListRow
 		var addrsJSON []byte
+		var email, phone, resetToken sql.NullString
 		var resetExpires *time.Time
 		if err := rows.Scan(
-			&row.User.ID, &row.User.Name, &row.User.Email, &row.User.Phone, &row.User.Password, &row.User.Role,
-			&addrsJSON, &row.User.ResetPasswordToken, &resetExpires,
+			&row.User.ID, &row.User.Name, &email, &phone, &row.User.Password, &row.User.Role,
+			&addrsJSON, &resetToken, &resetExpires,
 			&row.User.CreatedAt, &row.User.UpdatedAt,
 			&row.OrderCount, &row.TotalSpent,
 		); err != nil {
 			return nil, 0, err
 		}
+		row.User.Email = optionalString(email)
+		row.User.Phone = optionalString(phone)
+		row.User.ResetPasswordToken = optionalString(resetToken)
 		row.User.ResetPasswordExpires = resetExpires
 		_ = scanJSON(addrsJSON, &row.User.SavedAddresses)
 		out = append(out, row)
@@ -240,13 +256,4 @@ func customerOrderBy(field string, dir int) string {
 	default:
 		return "u.created_at " + dirSQL
 	}
-}
-
-func UserOrderStats(ctx context.Context, userID string) (orderCount int64, totalSpent float64, err error) {
-	err = lib.DB().QueryRow(ctx, `
-		SELECT COUNT(*) FILTER (WHERE payment_status='paid'),
-			COALESCE(SUM(total) FILTER (WHERE payment_status='paid'), 0)
-		FROM orders WHERE user_id=$1
-	`, userID).Scan(&orderCount, &totalSpent)
-	return
 }

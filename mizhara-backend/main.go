@@ -23,7 +23,7 @@ func main() {
 
 	r := routes.Setup()
 	log.Printf("Mizhara API listening on :%s", port)
-	if err := r.Run(":" + port); err != nil {
+	if err := r.Run("localhost:" + port); err != nil {
 		log.Fatal(err)
 	}
 }

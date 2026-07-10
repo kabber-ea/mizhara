@@ -151,11 +151,18 @@ func ListProducts(ctx context.Context, filter ProductFilter, skip, limit int, so
 	if sortSQL == "" {
 		sortSQL = "created_at DESC"
 	}
-	argN := len(args) + 1
-	q := `SELECT ` + productCols + ` FROM products WHERE ` + where +
-		` ORDER BY ` + sortSQL + fmt.Sprintf(` OFFSET $%d LIMIT $%d`, argN, argN+1)
-	args = append(args, skip, limit)
-	return queryProducts(ctx, q, args...)
+	q := `SELECT ` + productCols + ` FROM products WHERE ` + where + ` ORDER BY ` + sortSQL
+	if limit > 0 {
+		argN := len(args) + 1
+		q += fmt.Sprintf(` OFFSET $%d LIMIT $%d`, argN, argN+1)
+		args = append(args, skip, limit)
+	} else if skip > 0 {
+		argN := len(args) + 1
+		q += fmt.Sprintf(` OFFSET $%d`, argN)
+		args = append(args, skip)
+	}
+	items, _, err := queryProducts(ctx, q, args...)
+	return items, total, err
 }
 
 func ListAllProducts(ctx context.Context, sortSQL string) ([]models.Product, error) {

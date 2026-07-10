@@ -38,27 +38,15 @@ func (OffersController) Preview(c *gin.Context) {
 
 func (OffersController) List(c *gin.Context) {
 	session := middleware.GetSession(c)
-	if c.Query("page") != "" {
-		result, err := services.ListOffersForAdminPaginated(
-			c.Request.Context(), session,
-			c.Query("page"), c.Query("limit"), c.Query("search"),
-		)
-		if err != nil {
-			respondError(c, err)
-			return
-		}
-		c.JSON(http.StatusOK, result)
-		return
-	}
-	items, err := services.ListOffersForAdmin(c.Request.Context(), session)
+	result, err := services.ListOffersForAdminPaginated(
+		c.Request.Context(), session,
+		c.Query("page"), c.Query("limit"), c.Query("search"),
+	)
 	if err != nil {
 		respondError(c, err)
 		return
 	}
-	if items == nil {
-		items = []services.SerializedOffer{}
-	}
-	c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, result)
 }
 
 func (OffersController) Create(c *gin.Context) {

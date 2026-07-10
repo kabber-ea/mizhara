@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
-	"mizhara-backend/models"
 	"mizhara-backend/store"
 	"mizhara-backend/utils"
 )
@@ -53,29 +52,4 @@ func ListUsers(ctx context.Context, page, limit, skip int, search, sortBy, sortD
 		"items":      items,
 		"pagination": utils.BuildPaginationMeta(page, limit, int(total)),
 	}, nil
-}
-
-func serializeUserWithStats(ctx context.Context, u models.User) SerializedUser {
-	orderCount, totalSpent, _ := store.UserOrderStats(ctx, u.ID)
-	return SerializedUser{
-		ID: u.ID, Name: u.Name, Email: u.Email, Phone: u.Phone,
-		CreatedAt: u.CreatedAt.Format(time.RFC3339),
-		OrderCount: int(orderCount), TotalSpent: totalSpent,
-	}
-}
-
-func GetRecentUsers(ctx context.Context, limit int64) ([]SerializedUser, error) {
-	rows, _, err := store.ListCustomers(ctx, "", 0, int(limit), "createdAt", -1)
-	if err != nil {
-		return []SerializedUser{}, err
-	}
-	out := make([]SerializedUser, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, SerializedUser{
-			ID: row.User.ID, Name: row.User.Name, Email: row.User.Email, Phone: row.User.Phone,
-			CreatedAt: row.User.CreatedAt.Format(time.RFC3339),
-			OrderCount: row.OrderCount, TotalSpent: row.TotalSpent,
-		})
-	}
-	return out, nil
 }

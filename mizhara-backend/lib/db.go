@@ -39,9 +39,6 @@ func ConnectDB() error {
 		if _, err = pool.Exec(ctx, schemaSQL); err != nil {
 			return
 		}
-		if err = EnsurePaidOrders(); err != nil {
-			return
-		}
 	})
 	return err
 }

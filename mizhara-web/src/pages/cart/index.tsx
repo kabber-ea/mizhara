@@ -14,12 +14,8 @@ import type { CustomerProfile, SavedAddress } from "@/types/account";
 import { getDefaultSavedAddress } from "@/types/account";
 import type { OfferPreview } from "@/types/offer";
 
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
-
+import type { PaymentSession } from "@/utils/razorpayCheckout";
+import { openRazorpayCheckout } from "@/utils/razorpayCheckout";
 export default function CartPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -190,96 +186,75 @@ export default function CartPage() {
     setStep("payment");
   };
 
-  const handleRazorpayPayment = async () => {
+  const createPaymentSession = async (): Promise<PaymentSession> => {
+    const items = cartItems.map((item) => ({
+      productId: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      size: "Standard",
+      image: item.image,
+    }));
+
+    const { data } = await api.post<PaymentSession & { key: string; razorpayOrderId: string }>("/api/payment", {
+      items,
+      shippingAddress: shippingForm,
+      subtotal,
+      total: orderTotal,
+      discountAmount: discount,
+      offerId: appliedCoupon ? "" : offerPreview?.offerId ?? "",
+      offerCode: appliedCoupon,
+    });
+
+    return {
+      key: data.key,
+      amount: data.amount,
+      currency: data.currency,
+      razorpayOrderId: data.razorpayOrderId,
+      orderId: data.orderId,
+    };
+  };
+
+  const handlePaymentSuccess = (orderNumber: string) => {
+    setOrderId(orderNumber);
+    clearCart();
+    setStep("success");
+    setPaying(false);
+  };
+
+  const handlePay = async () => {
     setError("");
     setPaying(true);
-
     try {
-      const items = cartItems.map((item) => ({
-        productId: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        size: "Standard",
-        image: item.image,
-      }));
-
-      const { data } = await api.post<{
-        key: string;
-        amount: number;
-        currency: string;
-        razorpayOrderId: string;
-      }>("/api/payment", {
-        items,
-        shippingAddress: shippingForm,
-        subtotal,
-        total: orderTotal,
-        discountAmount: discount,
-        offerId: appliedCoupon ? "" : offerPreview?.offerId ?? "",
-        offerCode: appliedCoupon,
-      });
-
-      if (!window.Razorpay) {
-        throw new Error("Razorpay script not loaded. Check your connection.");
-      }
-
-      const options = {
-        key: data.key,
-        amount: data.amount,
-        currency: data.currency,
-        name: "Mizhara",
-        description: "Fancy Ornaments Order",
-        order_id: data.razorpayOrderId,
-        prefill: {
+      const session = await createPaymentSession();
+      openRazorpayCheckout({
+        session,
+        contact: {
           name: shippingForm.name,
           email: shippingForm.email,
-          contact: shippingForm.phone,
+          phone: shippingForm.phone,
         },
-        theme: { color: "#3c342e" },
-        config: {
-          display: {
-            blocks: {
-              upiCard: {
-                name: "UPI & Card",
-                instruments: [{ method: "upi" }, { method: "card" }],
-              },
-            },
-            sequence: ["block.upiCard"],
-            preferences: {
-              show_default_blocks: false,
-            },
-          },
-        },
-        handler: async (response: {
-          razorpay_order_id: string;
-          razorpay_payment_id: string;
-          razorpay_signature: string;
-        }) => {
+        onSuccess: async (response) => {
           try {
-            const { data: verifyData } = await api.put<{ orderNumber: string }>("/api/payment", {
+            const { data } = await api.put<{ orderNumber: string }>("/api/payment", {
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
             });
-
-            setOrderId(verifyData.orderNumber);
-            clearCart();
-            setStep("success");
-            setPaying(false);
-          } catch (verifyError) {
-            setError(apiErrorMessage(verifyError, "Payment verification failed"));
+            handlePaymentSuccess(data.orderNumber);
+          } catch (err: unknown) {
+            setError(apiErrorMessage(err, "Payment verification failed"));
             setPaying(false);
           }
         },
-        modal: {
-          ondismiss: () => setPaying(false),
+        onDismiss: () => setPaying(false),
+        onFailure: (message) => {
+          setError(message);
+          setPaying(false);
         },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      });
     } catch (err: unknown) {
-      setError(apiErrorMessage(err, "Payment failed"));
+      setError(apiErrorMessage(err, "Could not start payment"));
       setPaying(false);
     }
   };
@@ -501,16 +476,24 @@ export default function CartPage() {
 
         {step === "payment" && (
           <div className="max-w-lg mx-auto p-8 bg-white border border-border-custom rounded-2xl space-y-6 text-center">
-            <h3 className="font-serif text-xl font-bold text-primary-dark">Pay with UPI or Card</h3>
-            <p className="text-xs text-muted-custom mt-1">Only UPI and card payments are accepted.</p>
-            <p className="text-xs text-muted-custom">Secure checkout in INR via Razorpay</p>
+            <h3 className="font-serif text-xl font-bold text-primary-dark">Complete Payment</h3>
+            <p className="text-xs text-muted-custom">
+              UPI, cards, netbanking, wallets &amp; more — powered by Razorpay
+            </p>
             <p className="text-2xl font-extrabold text-primary-dark">{formatINR(orderTotal)}</p>
             {discount > 0 && <p className="text-xs text-emerald-700">Includes {formatINR(discount)} savings</p>}
             {error && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-xl">{error}</div>}
-            <button onClick={handleRazorpayPayment} disabled={paying} className="w-full py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl shine-sweep disabled:opacity-60">
-              {paying ? "Opening Razorpay..." : `Pay ${formatINR(orderTotal)}`}
+            <button
+              type="button"
+              onClick={handlePay}
+              disabled={paying}
+              className="w-full py-3 bg-primary text-white text-xs font-bold uppercase rounded-xl shine-sweep disabled:opacity-60"
+            >
+              {paying ? "Opening checkout..." : `Pay ${formatINR(orderTotal)}`}
             </button>
-            <button type="button" onClick={() => setStep("shipping")} className="text-xs text-muted-custom hover:text-primary">Back to shipping</button>
+            <button type="button" onClick={() => setStep("shipping")} className="text-xs text-muted-custom hover:text-primary">
+              Back to shipping
+            </button>
           </div>
         )}
 

@@ -174,21 +174,6 @@ func validateOfferInput(input OfferInput) error {
 	return nil
 }
 
-func ListOffersForAdmin(ctx context.Context, session *lib.SessionPayload) ([]SerializedOffer, error) {
-	if err := RequireAdmin(session); err != nil {
-		return nil, err
-	}
-	offers, err := store.ListOffers(ctx, false)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]SerializedOffer, 0, len(offers))
-	for _, o := range offers {
-		out = append(out, serializeOffer(o))
-	}
-	return out, nil
-}
-
 // BuildProductFilterForOffers returns product IDs to filter by, nil if storewide, empty if none match.
 func BuildProductFilterForOffers(ctx context.Context, offerIDHexes []string) ([]string, error) {
 	var ids []string
