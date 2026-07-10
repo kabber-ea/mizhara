@@ -1,7 +1,7 @@
-import { TRACKING_PROVIDERS } from "@/constants/tracking";
+import { TRACKING_PROVIDERS, TRACKING_URLS } from "@/constants/tracking";
 import type { TrackingProvider } from "@/types/order";
 
-export { TRACKING_PROVIDERS } from "@/constants/tracking";
+export { TRACKING_PROVIDERS, DEFAULT_TRACKING_PROVIDER } from "@/constants/tracking";
 
 export function getProviderLabel(provider?: TrackingProvider): string {
   if (!provider) return "—";
@@ -15,19 +15,6 @@ export function buildTrackingUrl(provider: TrackingProvider, trackingNumber: str
   if (custom) return custom;
   if (provider === "other") return "";
 
-  const encoded = encodeURIComponent(trimmed);
-  switch (provider) {
-    case "delhivery":
-      return `https://www.delhivery.com/track/package/${encoded}`;
-    case "bluedart":
-      return `https://www.bluedart.com/web/guest/trackdartresultthirdparty?trackFor=0&trackNo=${encoded}`;
-    case "dtdc":
-      return `https://www.dtdc.in/tracking.asp?strCnno=${encoded}`;
-    case "indiapost":
-      return `https://www.indiapost.gov.in/_layouts/15/DOP.Portal.Tracking/TrackConsignment.aspx?consignmentnumber=${encoded}`;
-    case "shiprocket":
-      return `https://shiprocket.co/tracking/${encoded}`;
-    default:
-      return "";
-  }
+  const build = TRACKING_URLS[provider];
+  return build ? build(trimmed) : "";
 }

@@ -5,16 +5,9 @@ import ProductGrid from "@/pages/shop/components/ProductGrid";
 import SortDropdown from "@/pages/shop/components/SortDropdown";
 import { api } from "@/lib/api";
 import { offerAppliesToProduct } from "@/utils/offerLabel";
+import { DEFAULT_MAX_PRICE, SHOP_SORT_OPTIONS } from "@/constants/shop";
 import type { Offer } from "@/types/offer";
 import type { Category, SerializedProduct } from "@/types/catalog";
-
-const SORT_OPTIONS = [
-  { value: "popular", label: "Featured" },
-  { value: "rating", label: "Best Selling" },
-  { value: "price-low", label: "Price, Low to High" },
-  { value: "price-high", label: "Price, High to Low" },
-  { value: "newest", label: "Date, New to Old" },
-] as const;
 
 function FilterIcon() {
   return (
@@ -37,8 +30,8 @@ function CatalogContent() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [priceRange, setPriceRange] = useState(10000);
-  const [maxPrice, setMaxPrice] = useState(10000);
+  const [priceRange, setPriceRange] = useState(DEFAULT_MAX_PRICE);
+  const [maxPrice, setMaxPrice] = useState(DEFAULT_MAX_PRICE);
   const [sortBy, setSortBy] = useState(initialSort);
   const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
 
@@ -202,7 +195,7 @@ function CatalogContent() {
           Showing {loading ? "…" : filteredProducts.length} Products
         </p>
 
-        <SortDropdown value={sortBy} options={SORT_OPTIONS} onChange={handleSortChange} />
+        <SortDropdown value={sortBy} options={SHOP_SORT_OPTIONS} onChange={handleSortChange} />
       </div>
 
       <div className={`grid gap-8 ${filtersOpen ? "lg:grid-cols-4" : "grid-cols-1"}`}>

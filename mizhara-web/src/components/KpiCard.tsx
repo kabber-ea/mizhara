@@ -1,11 +1,5 @@
 import type { ReactNode } from "react";
-
-const KPI_ACCENTS = [
-  { bg: "from-[#f8f3ed] to-white", accent: "text-primary", ring: "ring-primary/15" },
-  { bg: "from-[#f0f5f2] to-white", accent: "text-[#5c9e7a]", ring: "ring-[#5c9e7a]/15" },
-  { bg: "from-[#f5f0f3] to-white", accent: "text-[#8b5a6b]", ring: "ring-[#8b5a6b]/15" },
-  { bg: "from-[#f8f4ee] to-white", accent: "text-accent-gold", ring: "ring-accent-gold/20" },
-] as const;
+import { KPI_ACCENTS } from "@/constants/kpi";
 
 export type KpiIconType =
   | "revenue"
@@ -14,7 +8,10 @@ export type KpiIconType =
   | "shipments"
   | "products"
   | "featured"
-  | "categories";
+  | "categories"
+  | "offers"
+  | "active"
+  | "coupon";
 
 function KpiIcon({ type }: { type: KpiIconType }) {
   const paths: Record<KpiIconType, ReactNode> = {
@@ -67,6 +64,27 @@ function KpiIcon({ type }: { type: KpiIconType }) {
         d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
       />
     ),
+    offers: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"
+      />
+    ),
+    active: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    ),
+    coupon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+      />
+    ),
   };
 
   return (
@@ -83,6 +101,43 @@ type KpiCardProps = {
   icon: KpiIconType;
   accentIndex?: number;
 };
+
+export function KpiCardSkeleton({ accentIndex = 0 }: { accentIndex?: number }) {
+  const accent = KPI_ACCENTS[accentIndex % KPI_ACCENTS.length];
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl border border-border-custom/70 bg-gradient-to-br ${accent.bg} p-5 shadow-sm`}
+      aria-hidden="true"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="h-3 w-20 animate-pulse rounded bg-accent-pink/40" />
+          <div className="h-8 w-24 animate-pulse rounded bg-accent-pink/60" />
+        </div>
+        <div className="h-9 w-9 shrink-0 animate-pulse rounded-xl bg-white/80 ring-1 ring-border-custom/40" />
+      </div>
+    </div>
+  );
+}
+
+type KpiCardGridProps = {
+  count: number;
+  columns?: "2-4" | "1-3";
+};
+
+export function KpiCardGrid({ count, columns = "2-4" }: KpiCardGridProps) {
+  const gridClass =
+    columns === "1-3" ? "grid grid-cols-1 gap-4 sm:grid-cols-3" : "grid grid-cols-2 gap-4 lg:grid-cols-4";
+
+  return (
+    <div className={gridClass}>
+      {Array.from({ length: count }).map((_, i) => (
+        <KpiCardSkeleton key={i} accentIndex={i} />
+      ))}
+    </div>
+  );
+}
 
 export default function KpiCard({ label, value, sub, icon, accentIndex = 0 }: KpiCardProps) {
   const accent = KPI_ACCENTS[accentIndex % KPI_ACCENTS.length];

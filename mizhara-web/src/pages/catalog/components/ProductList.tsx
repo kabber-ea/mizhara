@@ -10,9 +10,9 @@ import TableSkeleton from "@/components/TableSkeleton";
 import { TableDeleteButton, TableEditButton } from "@/components/TableIconButtons";
 import { DEFAULT_SORT, nextSort, type SortState } from "@/utils/sort";
 import type { AdminProduct } from "@/types/catalog";
+import { DEFAULT_PAGE_LIMIT } from "@/constants/pagination";
 import type { PaginationMeta } from "@/utils/pagination";
-
-const PAGE_SIZE = 10;
+import { EMPTY_PAGINATION } from "@/utils/pagination";
 
 interface ProductListProps {
   onEdit: (product: AdminProduct) => void;
@@ -25,12 +25,7 @@ export default function ProductList({ onEdit, onMeta }: ProductListProps) {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const [items, setItems] = useState<AdminProduct[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta>({
-    page: 1,
-    limit: PAGE_SIZE,
-    total: 0,
-    totalPages: 1,
-  });
+  const [pagination, setPagination] = useState<PaginationMeta>(EMPTY_PAGINATION);
   const [loading, setLoading] = useState(true);
   const [featuredError, setFeaturedError] = useState("");
 
@@ -41,7 +36,7 @@ export default function ProductList({ onEdit, onMeta }: ProductListProps) {
     try {
       const params = new URLSearchParams({
         page: String(page),
-        limit: String(PAGE_SIZE),
+        limit: String(DEFAULT_PAGE_LIMIT),
         search: debouncedSearch,
         sortBy: sort.column,
         sortDir: sort.direction,

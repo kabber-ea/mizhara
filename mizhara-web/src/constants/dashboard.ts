@@ -1,2 +1,7 @@
 export const DASHBOARD_PANEL_MIN_HEIGHT = 280;
 export const TOP_CATEGORY_LIMIT = 10;
+export const DASHBOARD_LOOKBACK_DAYS = 30;
+export const DASHBOARD_LOOKBACK_LABEL = "Last 30 days";
+export const DASHBOARD_LOOKBACK_LABEL_LOWER = "last 30 days";
+export const DASHBOARD_TRENDING_LIMIT = 8;
+export const DASHBOARD_RECENT_ORDERS_LIMIT = 5;

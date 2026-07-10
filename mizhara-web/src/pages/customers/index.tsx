@@ -4,7 +4,7 @@ import { formatINR } from "@/utils/format";
 import { api } from "@/lib/api";
 import type { SerializedCustomer } from "@/types/admin";
 import type { PaginationMeta } from "@/utils/pagination";
-import { EMPTY_PAGINATION, parseListResponse } from "@/utils/pagination";
+import { EMPTY_PAGINATION, pageLimitParams, parseListResponse } from "@/utils/pagination";
 import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -27,8 +27,7 @@ export default function AdminCustomersPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: String(page),
-        limit: "10",
+        ...pageLimitParams(page),
         search: debouncedSearch,
         sortBy: sort.column,
         sortDir: sort.direction,

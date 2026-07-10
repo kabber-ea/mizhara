@@ -1,10 +1,13 @@
-export default function PageSkeleton({ rows = 6 }: { rows?: number }) {
+import { KpiCardGrid } from "@/components/KpiCard";
+
+export default function PageSkeleton({ rows = 6, kpiCount = 0 }: { rows?: number; kpiCount?: number }) {
   return (
     <div className="space-y-6 animate-pulse" aria-hidden="true">
       <div className="space-y-2">
         <div className="h-8 w-44 rounded-lg bg-white/80"  />
         <div className="h-3 w-64 rounded bg-white/60"  />
       </div>
+      {kpiCount > 0 && <KpiCardGrid count={kpiCount} columns="1-3" />}
       <div className="bg-white border border-border-custom rounded-2xl p-6 space-y-4">
         <div className="flex justify-between items-center gap-4">
           <div className="h-5 w-36 rounded bg-accent-pink/20"  />

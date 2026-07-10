@@ -6,11 +6,11 @@ import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TableDeleteButton, TableEditButton } from "@/components/TableIconButtons";
 import { getOfferLabel } from "@/utils/offerLabel";
+import { DEFAULT_PAGE_LIMIT } from "@/constants/pagination";
 import type { PaginationMeta } from "@/utils/pagination";
+import { EMPTY_PAGINATION } from "@/utils/pagination";
 import type { Offer } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
-
-const PAGE_SIZE = 10;
 
 interface OfferListProps {
   products: AdminProduct[];
@@ -23,12 +23,7 @@ export default function OfferList({ products, onEdit, onMeta }: OfferListProps) 
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<Offer[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta>({
-    page: 1,
-    limit: PAGE_SIZE,
-    total: 0,
-    totalPages: 1,
-  });
+  const [pagination, setPagination] = useState<PaginationMeta>(EMPTY_PAGINATION);
   const [loading, setLoading] = useState(true);
 
   const debouncedSearch = useDebounce(searchTerm);
@@ -40,7 +35,7 @@ export default function OfferList({ products, onEdit, onMeta }: OfferListProps) 
     try {
       const params = new URLSearchParams({
         page: String(page),
-        limit: String(PAGE_SIZE),
+        limit: String(DEFAULT_PAGE_LIMIT),
         search: debouncedSearch,
       });
       const { data } = await api.get<{

@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"mizhara-backend/constants"
 	"mizhara-backend/lib"
 	"mizhara-backend/store"
 )
@@ -18,24 +19,24 @@ func GetDashboardDataForAdmin(ctx context.Context, session *lib.SessionPayload) 
 
 func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 	now := time.Now()
-	thirtyDaysAgo := now.AddDate(0, 0, -30)
+	lookbackStart := now.AddDate(0, 0, -constants.DashboardLookbackDays)
 
-	newCustomers, _ := store.CountCustomersSince(ctx, thirtyDaysAgo)
-	pendingShipments, _ := store.CountPendingShipments(ctx, thirtyDaysAgo)
+	newCustomers, _ := store.CountCustomersSince(ctx, lookbackStart)
+	pendingShipments, _ := store.CountPendingShipments(ctx, lookbackStart)
 	lowStockCount, _ := store.CountLowStockProducts(ctx)
 
-	kpis, _ := store.PaidOrderKPIsSince(ctx, thirtyDaysAgo)
+	kpis, _ := store.PaidOrderKPIsSince(ctx, lookbackStart)
 
 	recentOrdersList := []SerializedOrder{}
 	if result, err := ListOrders(ctx, OrderListParams{
-		Page: 1, Limit: 5, CreatedAfter: &thirtyDaysAgo,
+		Page: 1, Limit: constants.RecentOrdersLimit, CreatedAfter: &lookbackStart,
 	}); err == nil && result != nil {
 		if items, ok := result["items"].([]SerializedOrder); ok {
 			recentOrdersList = items
 		}
 	}
 
-	revenueRows, _ := store.RevenueByDaySince(ctx, thirtyDaysAgo)
+	revenueRows, _ := store.RevenueByDaySince(ctx, lookbackStart)
 	revenueByDay := make([]map[string]interface{}, 0, len(revenueRows))
 	for _, r := range revenueRows {
 		revenueByDay = append(revenueByDay, map[string]interface{}{
@@ -43,7 +44,7 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 		})
 	}
 
-	deliveryRows, _ := store.DeliveryStatusCountsSince(ctx, &thirtyDaysAgo)
+	deliveryRows, _ := store.DeliveryStatusCountsSince(ctx, &lookbackStart)
 	deliveryStatus := make([]map[string]interface{}, 0, len(deliveryRows))
 	for _, r := range deliveryRows {
 		deliveryStatus = append(deliveryStatus, map[string]interface{}{
@@ -51,7 +52,7 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 		})
 	}
 
-	catRows, _ := store.TopCategoriesSince(ctx, thirtyDaysAgo)
+	catRows, _ := store.TopCategoriesSince(ctx, lookbackStart)
 	topCategories := make([]map[string]interface{}, 0, len(catRows))
 	for _, r := range catRows {
 		topCategories = append(topCategories, map[string]interface{}{
@@ -59,7 +60,7 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 		})
 	}
 
-	trendingRows, _ := store.TopProductsSince(ctx, &thirtyDaysAgo, 8)
+	trendingRows, _ := store.TopProductsSince(ctx, &lookbackStart, constants.TrendingProductsLimit)
 	trendingProducts := productSalesToMaps(trendingRows)
 	topProductsOverall := trendingProducts
 

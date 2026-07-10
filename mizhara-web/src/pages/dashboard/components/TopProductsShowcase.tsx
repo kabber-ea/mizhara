@@ -1,7 +1,7 @@
 import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
 import { categoryColor } from "@/utils/chartUtils";
-import { DASHBOARD_PANEL_MIN_HEIGHT } from "@/constants/dashboard";
+import { DASHBOARD_PANEL_MIN_HEIGHT, DASHBOARD_LOOKBACK_LABEL } from "@/constants/dashboard";
 import type { ProductSales } from "@/types/dashboard";
 
 function BestSellingLeaderboard({ data }: { data: ProductSales[] }) {
@@ -61,7 +61,7 @@ function BestSellingLeaderboard({ data }: { data: ProductSales[] }) {
 
 export default function TopProductsShowcase({ data }: { data: ProductSales[] }) {
   return (
-    <ChartCard title="Best Selling" subtitle="Last 30 days">
+    <ChartCard title="Best Selling" subtitle={DASHBOARD_LOOKBACK_LABEL}>
       <BestSellingLeaderboard data={data} />
     </ChartCard>
   );

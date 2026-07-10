@@ -3,6 +3,7 @@ import { api } from "@/lib/api";
 import OfferForm from "./components/OfferForm";
 import OfferList from "./components/OfferList";
 import PageSkeleton from "@/components/PageSkeleton";
+import KpiCard from "@/components/KpiCard";
 import type { Offer } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 
@@ -37,7 +38,7 @@ export default function OffersPage() {
     setListKey((k) => k + 1);
   };
 
-  if (loading) return <PageSkeleton />;
+  if (loading) return <PageSkeleton kpiCount={3} />;
 
   return (
     <div className="space-y-6">
@@ -59,19 +60,10 @@ export default function OffersPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 bg-white border border-border-custom rounded-2xl">
-          <span className="text-[10px] font-bold text-muted-custom uppercase">Total Offers</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{stats.total}</p>
-        </div>
-        <div className="p-5 bg-white border border-border-custom rounded-2xl">
-          <span className="text-[10px] font-bold text-muted-custom uppercase">Active Now</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{stats.activeCount}</p>
-        </div>
-        <div className="p-5 bg-white border border-border-custom rounded-2xl">
-          <span className="text-[10px] font-bold text-muted-custom uppercase">With Coupon Code</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{stats.withCodeCount}</p>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <KpiCard label="Total Offers" value={String(stats.total)} icon="offers" accentIndex={0} />
+        <KpiCard label="Active Now" value={String(stats.activeCount)} icon="active" accentIndex={1} />
+        <KpiCard label="With Coupon Code" value={String(stats.withCodeCount)} icon="coupon" accentIndex={2} />
       </div>
 
       {showForm ? (

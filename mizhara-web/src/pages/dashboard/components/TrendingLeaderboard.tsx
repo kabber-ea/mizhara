@@ -1,6 +1,6 @@
 import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
-import { DASHBOARD_PANEL_MIN_HEIGHT } from "@/constants/dashboard";
+import { DASHBOARD_PANEL_MIN_HEIGHT, DASHBOARD_LOOKBACK_LABEL_LOWER } from "@/constants/dashboard";
 import type { ProductSales } from "@/types/dashboard";
 
 function TrendingLeaderboardContent({ data }: { data: ProductSales[] }) {
@@ -56,7 +56,7 @@ function TrendingLeaderboardContent({ data }: { data: ProductSales[] }) {
 
 export default function TrendingLeaderboard({ data }: { data: ProductSales[] }) {
   return (
-    <ChartCard title="Trending" subtitle="Best sellers in the last 30 days">
+    <ChartCard title="Trending" subtitle={`Best sellers in the ${DASHBOARD_LOOKBACK_LABEL_LOWER}`}>
       <TrendingLeaderboardContent data={data} />
     </ChartCard>
   );

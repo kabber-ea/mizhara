@@ -10,6 +10,10 @@ import RevenueTrendChart from "@/pages/dashboard/components/RevenueTrendChart";
 import TopProductsShowcase from "@/pages/dashboard/components/TopProductsShowcase";
 import TrendingLeaderboard from "@/pages/dashboard/components/TrendingLeaderboard";
 import type { DashboardData } from "@/types/dashboard";
+import {
+  DASHBOARD_LOOKBACK_LABEL,
+  DASHBOARD_LOOKBACK_LABEL_LOWER,
+} from "@/constants/dashboard";
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -57,7 +61,7 @@ export default function DashboardPage() {
           <p className="mt-1.5 text-xs text-muted-custom">Sales performance, customers, and fulfillment at a glance</p>
         </div>
         <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-custom">
-          Last 30 days
+          {DASHBOARD_LOOKBACK_LABEL}
         </p>
       </div>
 
@@ -65,14 +69,14 @@ export default function DashboardPage() {
         <KpiCard
           label="Revenue"
           value={formatINR(kpis.totalRevenue)}
-          sub={`${kpis.totalPaidOrders} orders · last 30 days`}
+          sub={`${kpis.totalPaidOrders} orders · ${DASHBOARD_LOOKBACK_LABEL_LOWER}`}
           icon="revenue"
           accentIndex={0}
         />
         <KpiCard
           label="Orders"
           value={String(kpis.totalPaidOrders)}
-          sub="Last 30 days"
+          sub={DASHBOARD_LOOKBACK_LABEL}
           icon="orders"
           accentIndex={1}
         />

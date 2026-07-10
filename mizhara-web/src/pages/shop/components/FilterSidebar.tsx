@@ -1,4 +1,5 @@
 import type { Offer } from "@/types/offer";
+import { DEFAULT_MAX_PRICE } from "@/constants/shop";
 import { getOfferCardHeadline } from "@/utils/offerLabel";
 
 interface FilterSidebarProps {
@@ -116,7 +117,7 @@ export default function FilterSidebar({
         />
         <div className="flex justify-between text-[10px] text-muted-custom mt-1">
           <span>₹0</span>
-          <span>₹{(maxPrice || 10000).toLocaleString("en-IN")}</span>
+          <span>₹{(maxPrice || DEFAULT_MAX_PRICE).toLocaleString("en-IN")}</span>
         </div>
       </div>
 

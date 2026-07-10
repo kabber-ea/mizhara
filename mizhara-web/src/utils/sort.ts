@@ -1,9 +1,11 @@
-export type SortDirection = "asc" | "desc";
+import {
+  DEFAULT_SORT,
+  type SortDirection,
+  type SortState,
+} from "@/constants/pagination";
 
-export type SortState = {
-  column: string;
-  direction: SortDirection;
-};
+export type { SortDirection, SortState } from "@/constants/pagination";
+export { DEFAULT_SORT } from "@/constants/pagination";
 
 export function nextSort(current: SortState, column: string): SortState {
   if (current.column !== column) {
@@ -11,5 +13,3 @@ export function nextSort(current: SortState, column: string): SortState {
   }
   return { column, direction: current.direction === "asc" ? "desc" : "asc" };
 }
-
-export const DEFAULT_SORT: SortState = { column: "createdAt", direction: "desc" };

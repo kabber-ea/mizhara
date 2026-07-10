@@ -3,7 +3,7 @@ import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
 import { CHART_COLORS, axisTick, chartMargin } from "@/utils/chartUtils";
 import { renderChartTooltip } from "@/components/ChartTooltip";
-import { DASHBOARD_PANEL_MIN_HEIGHT } from "@/constants/dashboard";
+import { DASHBOARD_PANEL_MIN_HEIGHT, DASHBOARD_LOOKBACK_DAYS } from "@/constants/dashboard";
 
 type RevenueTrendChartProps = {
   data: { date: string; revenue: number; orders: number }[];
@@ -12,7 +12,7 @@ type RevenueTrendChartProps = {
 
 export default function RevenueTrendChart({ data, revenueTotal }: RevenueTrendChartProps) {
   return (
-    <ChartCard title="Revenue Trend" subtitle={`${formatINR(revenueTotal)} over 30 days`}>
+    <ChartCard title="Revenue Trend" subtitle={`${formatINR(revenueTotal)} over ${DASHBOARD_LOOKBACK_DAYS} days`}>
       <div className="h-full min-h-0 flex-1" style={{ minHeight: DASHBOARD_PANEL_MIN_HEIGHT }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={chartMargin}>

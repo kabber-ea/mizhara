@@ -4,11 +4,12 @@ import { formatINR, formatOrderDateTime } from "@/utils/format";
 import { api, apiErrorMessage } from "@/lib/api";
 import { TRACKING_PROVIDERS, buildTrackingUrl } from "@/utils/tracking";
 import { DELIVERY_FILTERS, DELIVERY_LABELS, DELIVERY_OPTIONS } from "@/constants/delivery";
+import { DEFAULT_FULFILLMENT_FORM, type FulfillmentForm } from "@/constants/order";
 import type { TrackingProvider } from "@/types/order";
 import type { SerializedOrder } from "@/types/admin";
 import type { DeliveryStatus } from "@/types/order";
 import type { PaginationMeta } from "@/utils/pagination";
-import { EMPTY_PAGINATION, parseListResponse } from "@/utils/pagination";
+import { EMPTY_PAGINATION, pageLimitParams, parseListResponse } from "@/utils/pagination";
 import { DEFAULT_SORT, nextSort, type SortState } from "@/utils/sort";
 import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
@@ -30,12 +31,7 @@ export default function AdminOrdersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [editForm, setEditForm] = useState({
-    deliveryStatus: "processing" as DeliveryStatus,
-    trackingProvider: "delhivery",
-    trackingNumber: "",
-    trackingUrl: "",
-  });
+  const [editForm, setEditForm] = useState({ ...DEFAULT_FULFILLMENT_FORM });
 
   const debouncedSearch = useDebounce(search);
 
@@ -43,8 +39,7 @@ export default function AdminOrdersPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: String(page),
-        limit: "10",
+        ...pageLimitParams(page),
         search: debouncedSearch,
         deliveryStatus: deliveryFilter,
         sortBy: sort.column,
@@ -82,7 +77,7 @@ export default function AdminOrdersPage() {
     setEditingId(order.id);
     const baseForm = {
       deliveryStatus: order.deliveryStatus,
-      trackingProvider: order.trackingProvider ?? "delhivery",
+      trackingProvider: order.trackingProvider ?? DEFAULT_FULFILLMENT_FORM.trackingProvider,
       trackingNumber: order.trackingNumber ?? "",
       trackingUrl: order.trackingUrl ?? "",
     };
@@ -244,19 +239,14 @@ function OrderRow({
   order: SerializedOrder;
   expanded: boolean;
   editing: boolean;
-  editForm: {
-    deliveryStatus: DeliveryStatus;
-    trackingProvider: string;
-    trackingNumber: string;
-    trackingUrl: string;
-  };
+  editForm: FulfillmentForm;
   saving: boolean;
   saveError: string;
   onToggleExpand: () => void;
   onEdit: () => void;
   onCancelEdit: () => void;
   onSave: () => void;
-  onFormChange: (f: typeof editForm) => void;
+  onFormChange: (f: FulfillmentForm) => void;
 }) {
   return (
     <>
@@ -365,13 +355,6 @@ const fulfillmentFieldClass =
 
 const fulfillmentLabelClass = "mb-1 block text-[10px] font-bold uppercase tracking-[0.1em] text-muted-custom";
 
-type FulfillmentForm = {
-  deliveryStatus: DeliveryStatus;
-  trackingProvider: string;
-  trackingNumber: string;
-  trackingUrl: string;
-};
-
 function withTrackingUrl(form: FulfillmentForm, updates: Partial<FulfillmentForm>): FulfillmentForm {
   const next = { ...form, ...updates };
   if (next.deliveryStatus !== "shipped") return next;
@@ -410,7 +393,7 @@ function OrderFulfillmentEditor({
     if (status !== "shipped") {
       onFormChange({
         deliveryStatus: status,
-        trackingProvider: "delhivery",
+        trackingProvider: DEFAULT_FULFILLMENT_FORM.trackingProvider,
         trackingNumber: "",
         trackingUrl: "",
       });
@@ -443,7 +426,9 @@ function OrderFulfillmentEditor({
               <select
                 value={editForm.trackingProvider}
                 onChange={(e) =>
-                  onFormChange(withTrackingUrl(editForm, { trackingProvider: e.target.value }))
+                  onFormChange(
+                    withTrackingUrl(editForm, { trackingProvider: e.target.value as TrackingProvider })
+                  )
                 }
                 className={fulfillmentFieldClass}
               >

@@ -5,6 +5,7 @@ import { useFieldErrors } from "@/hooks/useFieldErrors";
 import { api, apiErrorMessage } from "@/lib/api";
 import { fieldInputClass, fieldSectionClass } from "@/utils/formStyles";
 import { isNonNegativeAmount, isNonNegativeInt, isPositiveNumber, parseAmountInput, parseNonNegativeAmountInput } from "@/utils/formValidation";
+import { OFFER_FORM_DEFAULTS } from "@/constants/offers";
 import type { Offer, OfferInput, OfferType } from "@/types/offer";
 import type { AdminProduct } from "@/types/catalog";
 
@@ -31,14 +32,14 @@ interface OfferFormProps {
 export default function OfferForm({ products, editingOffer, onSuccess, onCancel }: OfferFormProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<OfferType>("percentage");
-  const [scope, setScope] = useState<"all" | "selected">("all");
-  const [percentage, setPercentage] = useState("20");
-  const [fixedAmount, setFixedAmount] = useState("500");
+  const [type, setType] = useState<OfferType>(OFFER_FORM_DEFAULTS.type);
+  const [scope, setScope] = useState<"all" | "selected">(OFFER_FORM_DEFAULTS.scope);
+  const [percentage, setPercentage] = useState(OFFER_FORM_DEFAULTS.percentage);
+  const [fixedAmount, setFixedAmount] = useState(OFFER_FORM_DEFAULTS.fixedAmount);
   const [minPurchase, setMinPurchase] = useState("");
   const [maxDiscount, setMaxDiscount] = useState("");
-  const [buyQuantity, setBuyQuantity] = useState("2");
-  const [freeQuantity, setFreeQuantity] = useState("1");
+  const [buyQuantity, setBuyQuantity] = useState(OFFER_FORM_DEFAULTS.buyQuantity);
+  const [freeQuantity, setFreeQuantity] = useState(OFFER_FORM_DEFAULTS.freeQuantity);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [code, setCode] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -53,12 +54,12 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
       setDescription(editingOffer.description || "");
       setType(editingOffer.type);
       setScope(editingOffer.scope);
-      setPercentage(String(editingOffer.percentage ?? 20));
-      setFixedAmount(String(editingOffer.fixedAmount ?? 500));
+      setPercentage(String(editingOffer.percentage ?? Number(OFFER_FORM_DEFAULTS.percentage)));
+      setFixedAmount(String(editingOffer.fixedAmount ?? Number(OFFER_FORM_DEFAULTS.fixedAmount)));
       setMinPurchase(editingOffer.minPurchase ? String(editingOffer.minPurchase) : "");
       setMaxDiscount(editingOffer.maxDiscount ? String(editingOffer.maxDiscount) : "");
-      setBuyQuantity(String(editingOffer.buyQuantity ?? 2));
-      setFreeQuantity(String(editingOffer.freeQuantity ?? 1));
+      setBuyQuantity(String(editingOffer.buyQuantity ?? Number(OFFER_FORM_DEFAULTS.buyQuantity)));
+      setFreeQuantity(String(editingOffer.freeQuantity ?? Number(OFFER_FORM_DEFAULTS.freeQuantity)));
       setProductIds(editingOffer.productIds || []);
       setCode(editingOffer.code || "");
       setIsActive(editingOffer.isActive);
@@ -67,17 +68,17 @@ export default function OfferForm({ products, editingOffer, onSuccess, onCancel 
     } else {
       setName("");
       setDescription("");
-      setType("percentage");
-      setScope("all");
-      setPercentage("20");
-      setFixedAmount("500");
+      setType(OFFER_FORM_DEFAULTS.type);
+      setScope(OFFER_FORM_DEFAULTS.scope);
+      setPercentage(OFFER_FORM_DEFAULTS.percentage);
+      setFixedAmount(OFFER_FORM_DEFAULTS.fixedAmount);
       setMinPurchase("");
       setMaxDiscount("");
-      setBuyQuantity("2");
-      setFreeQuantity("1");
+      setBuyQuantity(OFFER_FORM_DEFAULTS.buyQuantity);
+      setFreeQuantity(OFFER_FORM_DEFAULTS.freeQuantity);
       setProductIds([]);
       setCode("");
-      setIsActive(true);
+      setIsActive(OFFER_FORM_DEFAULTS.isActive);
       setStartsAt("");
       setEndsAt("");
     }

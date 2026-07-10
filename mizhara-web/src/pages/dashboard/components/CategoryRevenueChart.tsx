@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import ChartCard from "@/components/ChartCard";
 import { formatINR } from "@/utils/format";
 import { categoryColor } from "@/utils/chartUtils";
-import { DASHBOARD_PANEL_MIN_HEIGHT, TOP_CATEGORY_LIMIT } from "@/constants/dashboard";
+import { DASHBOARD_PANEL_MIN_HEIGHT, TOP_CATEGORY_LIMIT, DASHBOARD_LOOKBACK_LABEL_LOWER } from "@/constants/dashboard";
 import type { CategorySales } from "@/types/dashboard";
 
 function ProportionStrip({ items, total }: { items: CategorySales[]; total: number }) {
@@ -134,7 +134,7 @@ function CategoryRevenuePanel({ data }: { data: CategorySales[] }) {
 
 export default function CategoryRevenueChart({ data }: { data: CategorySales[] }) {
   return (
-    <ChartCard title="Top Categories" subtitle="Revenue mix · last 30 days">
+    <ChartCard title="Top Categories" subtitle={`Revenue mix · ${DASHBOARD_LOOKBACK_LABEL_LOWER}`}>
       <CategoryRevenuePanel data={data} />
     </ChartCard>
   );

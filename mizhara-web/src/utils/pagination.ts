@@ -1,20 +1,20 @@
-export type PaginationMeta = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-};
+import type { PaginationMeta } from "@/types/pagination";
+import {
+  DEFAULT_PAGE,
+  DEFAULT_PAGE_LIMIT,
+  EMPTY_PAGINATION,
+} from "@/constants/pagination";
 
-export const EMPTY_PAGINATION: PaginationMeta = {
-  page: 1,
-  limit: 10,
-  total: 0,
-  totalPages: 1,
-};
+export type { PaginationMeta } from "@/types/pagination";
+export { DEFAULT_PAGE, DEFAULT_PAGE_LIMIT, EMPTY_PAGINATION } from "@/constants/pagination";
 
 export function parseListResponse<T>(data?: { items?: T[]; pagination?: PaginationMeta }) {
   return {
     items: data?.items ?? [],
     pagination: data?.pagination ?? EMPTY_PAGINATION,
   };
+}
+
+export function pageLimitParams(page: number, limit = DEFAULT_PAGE_LIMIT) {
+  return { page: String(page), limit: String(limit) };
 }

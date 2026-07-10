@@ -3,7 +3,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recha
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import ChartCard from "@/components/ChartCard";
 import { deliveryStatusColor, formatStatusLabel } from "@/utils/chartUtils";
-import { DASHBOARD_PANEL_MIN_HEIGHT } from "@/constants/dashboard";
+import { DASHBOARD_PANEL_MIN_HEIGHT, DASHBOARD_LOOKBACK_LABEL } from "@/constants/dashboard";
 import { DELIVERY_STATUS_ORDER } from "@/constants/delivery";
 import type { StatusCount } from "@/types/dashboard";
 
@@ -167,7 +167,7 @@ export default function DeliveryStatusChart({ data }: { data: StatusCount[] }) {
   })();
 
   return (
-    <ChartCard title="Delivery Status" subtitle="Last 30 days">
+    <ChartCard title="Delivery Status" subtitle={DASHBOARD_LOOKBACK_LABEL}>
       <div className="flex h-full min-h-0 flex-1 flex-col">{chart}</div>
     </ChartCard>
   );
