@@ -71,6 +71,8 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 	deliveryStatus := aggregateStatusCounts(ctx, "$deliveryStatus")
 	paymentStatus := aggregateStatusCounts(ctx, "$paymentStatus")
 	topCategories := aggregateTopCategories(ctx)
+	trendingProducts := aggregateTopProducts(ctx, &thirtyDaysAgo)
+	topProductsOverall := aggregateTopProducts(ctx, nil)
 
 	return map[string]interface{}{
 		"kpis": map[string]interface{}{
@@ -80,10 +82,12 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 			"lowStockCount": lowStockCount,
 		},
 		"charts": map[string]interface{}{
-			"revenueByDay":   revenueByDay,
-			"deliveryStatus": deliveryStatus,
-			"paymentStatus":  paymentStatus,
-			"topCategories":  topCategories,
+			"revenueByDay":       revenueByDay,
+			"deliveryStatus":     deliveryStatus,
+			"paymentStatus":      paymentStatus,
+			"topCategories":      topCategories,
+			"trendingProducts":   trendingProducts,
+			"topProductsOverall": topProductsOverall,
 		},
 		"recentOrders":    recentOrdersList,
 		"recentCustomers": recentCustomers,
@@ -178,6 +182,48 @@ func aggregateTopCategories(ctx context.Context) []map[string]interface{} {
 			"category": category,
 			"revenue":  num(row["revenue"]),
 			"units":    int(num(row["units"])),
+		})
+	}
+	return out
+}
+
+func aggregateTopProducts(ctx context.Context, since *time.Time) []map[string]interface{} {
+	out := []map[string]interface{}{}
+	match := bson.M{"paymentStatus": models.PaymentPaid}
+	if since != nil {
+		match["createdAt"] = bson.M{"$gte": *since}
+	}
+
+	cur, err := lib.Orders().Aggregate(ctx, bson.A{
+		bson.M{"$match": match},
+		bson.M{"$unwind": "$items"},
+		bson.M{"$group": bson.M{
+			"_id":     "$items.productId",
+			"name":    bson.M{"$first": "$items.name"},
+			"units":   bson.M{"$sum": "$items.quantity"},
+			"revenue": bson.M{"$sum": bson.M{"$multiply": bson.A{"$items.price", "$items.quantity"}}},
+		}},
+		bson.M{"$sort": bson.M{"units": -1}},
+		bson.M{"$limit": 8},
+	})
+	if err != nil {
+		return out
+	}
+	defer cur.Close(ctx)
+	for cur.Next(ctx) {
+		var row bson.M
+		if cur.Decode(&row) != nil {
+			continue
+		}
+		name := str(row["name"])
+		if name == "" {
+			name = "Unknown product"
+		}
+		out = append(out, map[string]interface{}{
+			"productId": str(row["_id"]),
+			"name":      name,
+			"units":     int(num(row["units"])),
+			"revenue":   num(row["revenue"]),
 		})
 	}
 	return out
