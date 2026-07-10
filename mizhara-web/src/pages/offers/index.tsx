@@ -42,22 +42,11 @@ export default function OffersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-primary-dark">Offers</h1>
-          <p className="text-xs text-muted-custom mt-1">
-            Percentage discounts, buy-X-get-Y deals — all items or selected products
-          </p>
-        </div>
-        {!showForm && (
-          <button
-            type="button"
-            onClick={() => { setEditingOffer(null); setShowForm(true); }}
-            className="px-5 py-2.5 bg-primary-dark text-white text-xs font-bold uppercase tracking-wider rounded-xl shine-sweep"
-          >
-            Create Offer
-          </button>
-        )}
+      <div className="flex flex-col gap-1">
+        <h1 className="font-serif text-3xl font-bold text-primary-dark">Offers</h1>
+        <p className="text-xs text-muted-custom mt-1">
+          Percentage discounts, buy-X-get-Y deals — all items or selected products
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -78,6 +67,7 @@ export default function OffersPage() {
           key={listKey}
           products={products ?? []}
           onEdit={(offer) => { setEditingOffer(offer); setShowForm(true); }}
+          onCreate={() => { setEditingOffer(null); setShowForm(true); }}
           onMeta={setStats}
         />
       )}

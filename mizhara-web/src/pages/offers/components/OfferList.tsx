@@ -6,6 +6,7 @@ import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import { TableDeleteButton, TableEditButton } from "@/components/TableIconButtons";
 import { getOfferLabel } from "@/utils/offerLabel";
+import SearchInput from "@/components/SearchInput";
 import { DEFAULT_PAGE_LIMIT } from "@/constants/pagination";
 import type { PaginationMeta } from "@/utils/pagination";
 import { EMPTY_PAGINATION } from "@/utils/pagination";
@@ -15,10 +16,11 @@ import type { AdminProduct } from "@/types/catalog";
 interface OfferListProps {
   products: AdminProduct[];
   onEdit: (offer: Offer) => void;
+  onCreate: () => void;
   onMeta?: (stats: { total: number; activeCount: number; withCodeCount: number }) => void;
 }
 
-export default function OfferList({ products, onEdit, onMeta }: OfferListProps) {
+export default function OfferList({ products, onEdit, onCreate, onMeta }: OfferListProps) {
   const { confirm, dialog } = useConfirmDialog();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -101,26 +103,33 @@ export default function OfferList({ products, onEdit, onMeta }: OfferListProps) 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-hidden rounded-2xl border border-border-custom bg-white p-5 shadow-xs sm:p-6">
       {dialog}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <input
-          type="search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search offers by name or code…"
-          className="flex-1 px-4 py-2.5 text-xs border border-border-custom rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
+      <div className="flex flex-col gap-3 border-b border-border-custom/50 pb-4 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search offers by name or code…"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={onCreate}
+          className="shrink-0 px-5 py-2.5 bg-primary-dark text-white text-xs font-bold uppercase tracking-wider rounded-xl shine-sweep whitespace-nowrap"
+        >
+          Create Offer
+        </button>
       </div>
 
       {items.length === 0 ? (
-        <div className="p-12 bg-white border border-border-custom rounded-2xl text-center">
+        <div className="py-12 text-center">
           <p className="text-sm text-muted-custom">
-            {debouncedSearch ? "No offers match your search." : "No offers yet. Create your first promotion above."}
+            {debouncedSearch ? "No offers match your search." : "No offers yet. Create your first promotion."}
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-border-custom rounded-2xl overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-border-custom/70">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
