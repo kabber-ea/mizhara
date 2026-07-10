@@ -134,7 +134,7 @@ function CategoryRevenuePanel({ data }: { data: CategorySales[] }) {
 
 export default function CategoryRevenueChart({ data }: { data: CategorySales[] }) {
   return (
-    <ChartCard title="Top Categories" subtitle="Revenue mix">
+    <ChartCard title="Top Categories" subtitle="Revenue mix · last 30 days">
       <CategoryRevenuePanel data={data} />
     </ChartCard>
   );

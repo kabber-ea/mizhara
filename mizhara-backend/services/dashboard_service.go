@@ -22,13 +22,19 @@ func GetDashboardDataForAdmin(ctx context.Context, session *lib.SessionPayload) 
 
 func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 	now := time.Now()
-	startOfToday := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	thirtyDaysAgo := now.AddDate(0, 0, -30)
+	paidWindow := bson.M{
+		"paymentStatus": models.PaymentPaid,
+		"createdAt":     bson.M{"$gte": thirtyDaysAgo},
+	}
 
-	totalCustomers, _ := lib.Users().CountDocuments(ctx, bson.M{"role": models.RoleCustomer})
-	ordersToday, _ := lib.Orders().CountDocuments(ctx, bson.M{"createdAt": bson.M{"$gte": startOfToday}})
+	newCustomers, _ := lib.Users().CountDocuments(ctx, bson.M{
+		"role":      models.RoleCustomer,
+		"createdAt": bson.M{"$gte": thirtyDaysAgo},
+	})
 	pendingShipments, _ := lib.Orders().CountDocuments(ctx, bson.M{
 		"paymentStatus": models.PaymentPaid,
+		"createdAt":     bson.M{"$gte": thirtyDaysAgo},
 		"deliveryStatus": bson.M{"$in": bson.A{
 			models.DeliveryProcessing, models.DeliveryShipped,
 		}},
@@ -40,7 +46,7 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 
 	var paidAgg []bson.M
 	cur, err := lib.Orders().Aggregate(ctx, bson.A{
-		bson.M{"$match": bson.M{"paymentStatus": models.PaymentPaid}},
+		bson.M{"$match": paidWindow},
 		bson.M{"$group": bson.M{
 			"_id": nil, "totalRevenue": bson.M{"$sum": "$total"},
 			"orderCount": bson.M{"$sum": 1}, "avgOrderValue": bson.M{"$avg": "$total"},
@@ -59,24 +65,25 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 	}
 
 	recentOrdersList := []SerializedOrder{}
-	if result, err := ListOrders(ctx, OrderListParams{Page: 1, Limit: 5}); err == nil && result != nil {
+	if result, err := ListOrders(ctx, OrderListParams{
+		Page: 1, Limit: 5, CreatedAfter: &thirtyDaysAgo,
+	}); err == nil && result != nil {
 		if items, ok := result["items"].([]SerializedOrder); ok {
 			recentOrdersList = items
 		}
 	}
 
 	revenueByDay := aggregateRevenueByDay(ctx, thirtyDaysAgo)
-	deliveryStatus := aggregateStatusCounts(ctx, "$deliveryStatus")
-	topCategories := aggregateTopCategories(ctx)
+	deliveryStatus := aggregateStatusCounts(ctx, "$deliveryStatus", &thirtyDaysAgo)
+	topCategories := aggregateTopCategories(ctx, thirtyDaysAgo)
 	trendingProducts := aggregateTopProducts(ctx, &thirtyDaysAgo)
-	topProductsOverall := aggregateTopProducts(ctx, nil)
+	topProductsOverall := aggregateTopProducts(ctx, &thirtyDaysAgo)
 
 	return map[string]interface{}{
 		"kpis": map[string]interface{}{
 			"totalRevenue": totalRevenue, "totalPaidOrders": totalPaidOrders,
-			"avgOrderValue": int(math.Round(avgOrderValue)), "totalCustomers": totalCustomers,
-			"ordersToday": ordersToday, "pendingShipments": pendingShipments,
-			"lowStockCount": lowStockCount,
+			"avgOrderValue": int(math.Round(avgOrderValue)), "newCustomers": newCustomers,
+			"pendingShipments": pendingShipments, "lowStockCount": lowStockCount,
 		},
 		"charts": map[string]interface{}{
 			"revenueByDay":       revenueByDay,
@@ -121,15 +128,20 @@ func aggregateRevenueByDay(ctx context.Context, since time.Time) []map[string]in
 	return out
 }
 
-func aggregateStatusCounts(ctx context.Context, field string) []map[string]interface{} {
+func aggregateStatusCounts(ctx context.Context, field string, since *time.Time) []map[string]interface{} {
 	out := []map[string]interface{}{}
-	cur, err := lib.Orders().Aggregate(ctx, bson.A{
+	pipeline := bson.A{}
+	if since != nil {
+		pipeline = append(pipeline, bson.M{"$match": bson.M{"createdAt": bson.M{"$gte": *since}}})
+	}
+	pipeline = append(pipeline,
 		bson.M{"$group": bson.M{
 			"_id":   field,
 			"count": bson.M{"$sum": 1},
 		}},
 		bson.M{"$sort": bson.M{"count": -1}},
-	})
+	)
+	cur, err := lib.Orders().Aggregate(ctx, pipeline)
 	if err != nil {
 		return out
 	}
@@ -147,12 +159,15 @@ func aggregateStatusCounts(ctx context.Context, field string) []map[string]inter
 	return out
 }
 
-func aggregateTopCategories(ctx context.Context) []map[string]interface{} {
+func aggregateTopCategories(ctx context.Context, since time.Time) []map[string]interface{} {
 	out := []map[string]interface{}{}
 
 	revenueByCategory := map[string]float64{}
 	cur, err := lib.Orders().Aggregate(ctx, bson.A{
-		bson.M{"$match": bson.M{"paymentStatus": models.PaymentPaid}},
+		bson.M{"$match": bson.M{
+			"paymentStatus": models.PaymentPaid,
+			"createdAt":     bson.M{"$gte": since},
+		}},
 		bson.M{"$unwind": "$items"},
 		bson.M{"$group": bson.M{
 			"_id":     "$items.category",

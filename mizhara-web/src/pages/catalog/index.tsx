@@ -4,6 +4,7 @@ import ProductList from "@/pages/catalog/components/ProductList";
 import CategoryManager from "@/pages/catalog/components/CategoryManager";
 import PageSkeleton from "@/components/PageSkeleton";
 import KpiCard from "@/components/KpiCard";
+import AdminPageHeader from "@/components/AdminPageHeader";
 import { api } from "@/lib/api";
 import type { AdminProduct, Category } from "@/types/catalog";
 
@@ -40,10 +41,10 @@ export default function AdminCatalogPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-primary-dark">Catalog</h1>
-        <p className="text-xs text-muted-custom mt-1">Manage ornaments, categories, and product images</p>
-      </div>
+      <AdminPageHeader
+        title="Catalog"
+        description="Manage ornaments, categories, and product images"
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <KpiCard

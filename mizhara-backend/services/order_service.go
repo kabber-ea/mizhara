@@ -22,6 +22,7 @@ type OrderListParams struct {
 	PaymentStatus     string
 	SortBy            string
 	SortDir           string
+	CreatedAfter      *time.Time
 }
 
 var orderSortFields = map[string]string{
@@ -264,6 +265,9 @@ func ListOrders(ctx context.Context, params OrderListParams) (map[string]interfa
 
 func orderListMatch(params OrderListParams) bson.M {
 	match := bson.M{}
+	if params.CreatedAfter != nil {
+		match["createdAt"] = bson.M{"$gte": *params.CreatedAfter}
+	}
 	if params.DeliveryStatus != "" && params.DeliveryStatus != "all" {
 		match["deliveryStatus"] = params.DeliveryStatus
 	}

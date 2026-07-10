@@ -61,7 +61,7 @@ function BestSellingLeaderboard({ data }: { data: ProductSales[] }) {
 
 export default function TopProductsShowcase({ data }: { data: ProductSales[] }) {
   return (
-    <ChartCard title="Best Selling" subtitle="Lifetime best sellers">
+    <ChartCard title="Best Selling" subtitle="Last 30 days">
       <BestSellingLeaderboard data={data} />
     </ChartCard>
   );

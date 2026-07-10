@@ -9,6 +9,7 @@ import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import SortableTableHeader from "@/components/SortableTableHeader";
+import AdminPageHeader from "@/components/AdminPageHeader";
 import { DEFAULT_SORT, nextSort, type SortState } from "@/utils/sort";
 
 export default function AdminCustomersPage() {
@@ -61,13 +62,13 @@ export default function AdminCustomersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-primary-dark">Customers</h1>
-        <p className="text-xs text-muted-custom mt-1">All registered customers and their order activity</p>
-      </div>
+      <AdminPageHeader
+        title="Customers"
+        description="All registered customers and their order activity"
+      />
 
-      <div className="bg-white border border-border-custom rounded-2xl p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="space-y-4 overflow-hidden rounded-2xl border border-border-custom bg-white p-6 shadow-xs">
+        <div className="flex flex-col items-start justify-between gap-4 border-b border-border-custom/50 pb-4 sm:flex-row sm:items-center">
           <h3 className="font-serif text-base font-bold text-primary-dark">Customer Directory</h3>
           <SearchInput
             value={search}

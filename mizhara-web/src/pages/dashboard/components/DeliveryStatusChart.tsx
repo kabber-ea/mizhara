@@ -167,7 +167,7 @@ export default function DeliveryStatusChart({ data }: { data: StatusCount[] }) {
   })();
 
   return (
-    <ChartCard title="Delivery Status" subtitle="Order fulfillment breakdown">
+    <ChartCard title="Delivery Status" subtitle="Last 30 days">
       <div className="flex h-full min-h-0 flex-1 flex-col">{chart}</div>
     </ChartCard>
   );

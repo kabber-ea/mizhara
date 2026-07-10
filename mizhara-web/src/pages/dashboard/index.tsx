@@ -63,16 +63,22 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
-          label="Total Revenue"
+          label="Revenue"
           value={formatINR(kpis.totalRevenue)}
-          sub={`${kpis.totalPaidOrders} paid orders`}
+          sub={`${kpis.totalPaidOrders} orders · last 30 days`}
           icon="revenue"
           accentIndex={0}
         />
-        <KpiCard label="Orders Today" value={String(kpis.ordersToday)} icon="orders" accentIndex={1} />
         <KpiCard
-          label="Customers"
-          value={String(kpis.totalCustomers)}
+          label="Orders"
+          value={String(kpis.totalPaidOrders)}
+          sub="Last 30 days"
+          icon="orders"
+          accentIndex={1}
+        />
+        <KpiCard
+          label="New Customers"
+          value={String(kpis.newCustomers)}
           sub={`Avg order ${formatINR(kpis.avgOrderValue)}`}
           icon="customers"
           accentIndex={2}

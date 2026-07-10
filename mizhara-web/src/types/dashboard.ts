@@ -5,8 +5,7 @@ export type DashboardData = {
     totalRevenue: number;
     totalPaidOrders: number;
     avgOrderValue: number;
-    totalCustomers: number;
-    ordersToday: number;
+    newCustomers: number;
     pendingShipments: number;
     lowStockCount: number;
   };

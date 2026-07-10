@@ -40,6 +40,9 @@ func ConnectDB() error {
 		if err = EnsureIndexes(); err != nil {
 			return
 		}
+		if err = EnsurePaidOrders(); err != nil {
+			return
+		}
 	})
 	return err
 }

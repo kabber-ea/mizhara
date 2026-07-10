@@ -15,6 +15,7 @@ import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import StatusBadge from "@/components/StatusBadge";
 import SortableTableHeader from "@/components/SortableTableHeader";
+import AdminPageHeader from "@/components/AdminPageHeader";
 import { TableEditButton } from "@/components/TableIconButtons";
 
 export default function AdminOrdersPage() {
@@ -146,13 +147,13 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-primary-dark">Orders</h1>
-        <p className="text-xs text-muted-custom mt-1">Manage fulfillment, delivery status, and tracking</p>
-      </div>
+      <AdminPageHeader
+        title="Orders"
+        description="Manage fulfillment, delivery status, and tracking"
+      />
 
-      <div className="bg-white border border-border-custom rounded-2xl p-6 space-y-4">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div className="space-y-4 overflow-hidden rounded-2xl border border-border-custom bg-white p-6 shadow-xs">
+        <div className="flex flex-col items-start justify-between gap-4 border-b border-border-custom/50 pb-4 lg:flex-row lg:items-center">
           <h3 className="font-serif text-base font-bold text-primary-dark">Order Management</h3>
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             <select
@@ -421,23 +422,22 @@ function OrderFulfillmentEditor({
   return (
     <>
       <div className="space-y-3">
-        <div className="w-full sm:w-48">
-          <label className={fulfillmentLabelClass}>Delivery status</label>
-          <select
-            value={editForm.deliveryStatus}
-            onChange={(e) => handleStatusChange(e.target.value as DeliveryStatus)}
-            className={fulfillmentFieldClass}
-          >
-            {DELIVERY_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {DELIVERY_LABELS[status]}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {showTracking && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {showTracking ? (
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className={fulfillmentLabelClass}>Delivery status</label>
+              <select
+                value={editForm.deliveryStatus}
+                onChange={(e) => handleStatusChange(e.target.value as DeliveryStatus)}
+                className={fulfillmentFieldClass}
+              >
+                {DELIVERY_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {DELIVERY_LABELS[status]}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className={fulfillmentLabelClass}>Courier</label>
               <select
@@ -481,6 +481,21 @@ function OrderFulfillmentEditor({
                 required={isOtherProvider}
               />
             </div>
+          </div>
+        ) : (
+          <div className="w-full sm:w-48">
+            <label className={fulfillmentLabelClass}>Delivery status</label>
+            <select
+              value={editForm.deliveryStatus}
+              onChange={(e) => handleStatusChange(e.target.value as DeliveryStatus)}
+              className={fulfillmentFieldClass}
+            >
+              {DELIVERY_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {DELIVERY_LABELS[status]}
+                </option>
+              ))}
+            </select>
           </div>
         )}
       </div>
