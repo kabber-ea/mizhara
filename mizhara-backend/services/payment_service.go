@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -84,7 +85,7 @@ func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateI
 		return nil, err
 	}
 	if input.Total > 0 && math.Abs(total-input.Total) > 0.02 {
-		return nil, lib.BadRequest("order total changed — please refresh your bag")
+		return nil, utils.BadRequest("order total changed — please refresh your bag")
 	}
 
 	orderNumber := generateOrderNumber()
@@ -107,7 +108,7 @@ func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateI
 	if err != nil {
 		return nil, err
 	}
-	amount := lib.ToPaise(total)
+	amount := utils.ToPaise(total)
 	rzpOrder, err := rzp.Order.Create(map[string]interface{}{
 		"amount": amount, "currency": "INR", "receipt": orderNumber,
 		"notes": map[string]string{"orderId": order.ID.Hex()},
@@ -117,7 +118,7 @@ func CreatePaymentOrder(ctx context.Context, userID string, input PaymentCreateI
 	}
 	rzpID, ok := rzpOrder["id"].(string)
 	if !ok || rzpID == "" {
-		return nil, lib.BadRequest("failed to create payment order")
+		return nil, utils.BadRequest("failed to create payment order")
 	}
 	_, err = lib.Orders().UpdateOne(ctx, bson.M{"_id": order.ID}, bson.M{"$set": bson.M{"razorpayOrderId": rzpID, "updatedAt": time.Now()}})
 	if err != nil {
@@ -137,12 +138,12 @@ func VerifyPayment(ctx context.Context, userID string, rzpOrderID, rzpPaymentID,
 	mac.Write([]byte(rzpOrderID + "|" + rzpPaymentID))
 	expected := hex.EncodeToString(mac.Sum(nil))
 	if expected != signature {
-		return nil, lib.BadRequest("invalid payment signature")
+		return nil, utils.BadRequest("invalid payment signature")
 	}
 
 	uid, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return nil, lib.BadRequest("invalid user")
+		return nil, utils.BadRequest("invalid user")
 	}
 
 	session, err := lib.DBClient().StartSession()
@@ -177,7 +178,7 @@ func VerifyPayment(ctx context.Context, userID string, rzpOrderID, rzpPaymentID,
 					order = existing
 					return order, nil
 				}
-				return nil, lib.ErrNotFound
+				return nil, utils.ErrNotFound
 			}
 			return nil, err
 		}
@@ -192,8 +193,8 @@ func VerifyPayment(ctx context.Context, userID string, rzpOrderID, rzpPaymentID,
 		return order, nil
 	})
 	if err != nil {
-		if errors.Is(err, lib.ErrNotFound) {
-			return nil, lib.ErrNotFound
+		if errors.Is(err, utils.ErrNotFound) {
+			return nil, utils.ErrNotFound
 		}
 		return nil, err
 	}

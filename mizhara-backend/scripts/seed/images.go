@@ -6,14 +6,15 @@ import (
 	"os"
 	"path/filepath"
 
+	"mizhara-backend/constants"
 	"mizhara-backend/lib"
 )
 
 const (
-	ProductImage1 = "product1.webp"
-	ProductImage2 = "product2.webp"
-	BannerDesktop = "banner-desktop.webp"
-	BannerMobile  = "banner-mobile.webp"
+	ProductImage1 = constants.SeedProductImage1
+	ProductImage2 = constants.SeedProductImage2
+	BannerDesktop = constants.SeedBannerDesktop
+	BannerMobile  = constants.SeedBannerMobile
 )
 
 type ProductImageURLs struct {

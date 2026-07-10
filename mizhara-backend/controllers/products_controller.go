@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/middleware"
 	"mizhara-backend/services"
 )
@@ -85,7 +86,7 @@ func (ProductsController) GetByID(c *gin.Context) {
 		return
 	}
 	if item == nil {
-		respondError(c, lib.ErrNotFound)
+		respondError(c, utils.ErrNotFound)
 		return
 	}
 	c.JSON(http.StatusOK, item)

@@ -7,9 +7,3 @@ export const WHATSAPP_NUMBER = (
 
 export const SUPPORT_EMAIL =
   import.meta.env.VITE_SUPPORT_EMAIL || "support@mizhara.in";
-
-export function whatsappUrl(message = "Hi Mizhara, I have a question about your jewellery.") {
-  if (!WHATSAPP_NUMBER) return "";
-  const params = new URLSearchParams({ text: message });
-  return `https://wa.me/${WHATSAPP_NUMBER}?${params.toString()}`;
-}

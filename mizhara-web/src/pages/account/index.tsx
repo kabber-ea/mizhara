@@ -13,7 +13,8 @@ import { fieldInputClass } from "@/utils/formStyles";
 import { isValidPincode } from "@/utils/formValidation";
 import { getProviderLabel } from "@/utils/tracking";
 import type { CustomerOrder, CustomerProfile, SavedAddress } from "@/types/account";
-import { MAX_SAVED_ADDRESSES, getDefaultSavedAddress, newSavedAddressId } from "@/types/account";
+import { MAX_SAVED_ADDRESSES } from "@/constants/account";
+import { getDefaultSavedAddress, newSavedAddressId } from "@/types/account";
 
 type Tab = "profile" | "address" | "orders";
 

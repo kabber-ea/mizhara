@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -128,49 +129,49 @@ func offerIsLive(o models.Offer, now time.Time) bool {
 func validateOfferInput(input OfferInput) error {
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
-		return lib.BadRequest("offer name is required")
+		return utils.BadRequest("offer name is required")
 	}
 	typ := models.OfferType(input.Type)
 	if typ != models.OfferTypePercentage && typ != models.OfferTypeFixed && typ != models.OfferTypeBogo {
-		return lib.BadRequest("offer type must be percentage, fixed, or bogo")
+		return utils.BadRequest("offer type must be percentage, fixed, or bogo")
 	}
 	scope := models.OfferScope(input.Scope)
 	if scope != models.OfferScopeAll && scope != models.OfferScopeSelected {
-		return lib.BadRequest("scope must be all or selected")
+		return utils.BadRequest("scope must be all or selected")
 	}
 	if scope == models.OfferScopeSelected && len(input.ProductIDs) == 0 {
-		return lib.BadRequest("select at least one product for this offer")
+		return utils.BadRequest("select at least one product for this offer")
 	}
 	if typ == models.OfferTypePercentage {
 		if input.Percentage <= 0 || input.Percentage > 100 {
-			return lib.BadRequest("percentage must be between 1 and 100")
+			return utils.BadRequest("percentage must be between 1 and 100")
 		}
 	}
 	if typ == models.OfferTypeFixed {
 		if input.FixedAmount <= 0 {
-			return lib.BadRequest("fixed discount amount must be greater than 0")
+			return utils.BadRequest("fixed discount amount must be greater than 0")
 		}
 	}
 	if typ == models.OfferTypeBogo {
 		if input.BuyQuantity <= 0 || input.FreeQuantity <= 0 {
-			return lib.BadRequest("buy and free quantities must be at least 1")
+			return utils.BadRequest("buy and free quantities must be at least 1")
 		}
 	}
 	if input.MinPurchase < 0 {
-		return lib.BadRequest("minimum purchase cannot be negative")
+		return utils.BadRequest("minimum purchase cannot be negative")
 	}
 	if input.MaxDiscount < 0 {
-		return lib.BadRequest("maximum discount cannot be negative")
+		return utils.BadRequest("maximum discount cannot be negative")
 	}
 	if typ != models.OfferTypePercentage && input.MaxDiscount > 0 {
-		return lib.BadRequest("maximum discount applies to percentage offers only")
+		return utils.BadRequest("maximum discount applies to percentage offers only")
 	}
 	if typ == models.OfferTypeBogo {
 		if input.MinPurchase > 0 {
-			return lib.BadRequest("minimum purchase applies to percentage and fixed offers only")
+			return utils.BadRequest("minimum purchase applies to percentage and fixed offers only")
 		}
 		if input.MaxDiscount > 0 {
-			return lib.BadRequest("maximum discount applies to percentage offers only")
+			return utils.BadRequest("maximum discount applies to percentage offers only")
 		}
 	}
 	return nil
@@ -269,7 +270,7 @@ func ListOffersForAdminPaginated(ctx context.Context, session *lib.SessionPayloa
 	if err := RequireAdmin(session); err != nil {
 		return nil, err
 	}
-	p := lib.ParsePagination(page, limit, search)
+	p := utils.ParsePagination(page, limit, search)
 	match := bson.M{}
 	if p.Search != "" {
 		escaped := regexp.QuoteMeta(p.Search)
@@ -308,7 +309,7 @@ func ListOffersForAdminPaginated(ctx context.Context, session *lib.SessionPayloa
 
 	return map[string]interface{}{
 		"items":      items,
-		"pagination": lib.BuildPaginationMeta(p.Page, p.Limit, int(total)),
+		"pagination": utils.BuildPaginationMeta(p.Page, p.Limit, int(total)),
 		"stats": map[string]int{
 			"total":         int(total),
 			"activeCount":   int(activeCount),
@@ -352,7 +353,7 @@ func UpdateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	}
 	oid, err := primitive.ObjectIDFromHex(input.ID)
 	if err != nil {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	update := bson.M{
 		"name": strings.TrimSpace(input.Name), "description": strings.TrimSpace(input.Description),
@@ -368,7 +369,7 @@ func UpdateOfferForAdmin(ctx context.Context, session *lib.SessionPayload, input
 	var o models.Offer
 	err = lib.Offers().FindOneAndUpdate(ctx, bson.M{"_id": oid}, bson.M{"$set": update}, opts).Decode(&o)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -383,14 +384,14 @@ func DeleteOfferForAdmin(ctx context.Context, session *lib.SessionPayload, id st
 	}
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return lib.ErrNotFound
+		return utils.ErrNotFound
 	}
 	res, err := lib.Offers().DeleteOne(ctx, bson.M{"_id": oid})
 	if err != nil {
 		return err
 	}
 	if res.DeletedCount == 0 {
-		return lib.ErrNotFound
+		return utils.ErrNotFound
 	}
 	return nil
 }
@@ -486,12 +487,12 @@ func resolveCartLines(ctx context.Context, items []CartLineInput) ([]resolvedLin
 		}
 		oid, err := primitive.ObjectIDFromHex(item.ProductID)
 		if err != nil {
-			return nil, 0, lib.BadRequest("invalid product in cart")
+			return nil, 0, utils.BadRequest("invalid product in cart")
 		}
 		var p models.Product
 		err = lib.Products().FindOne(ctx, bson.M{"_id": oid}).Decode(&p)
 		if err != nil {
-			return nil, 0, lib.BadRequest("product no longer available")
+			return nil, 0, utils.BadRequest("product no longer available")
 		}
 		price := p.Price
 		image := ""
@@ -514,18 +515,18 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 
 	if code != "" {
 		if strings.TrimSpace(offerID) != "" {
-			return nil, lib.BadRequest("apply either a coupon code or an auto offer, not both")
+			return nil, utils.BadRequest("apply either a coupon code or an auto offer, not both")
 		}
 		var o models.Offer
 		err := lib.Offers().FindOne(ctx, bson.M{"code": code, "isActive": bson.M{"$ne": false}}).Decode(&o)
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, lib.BadRequest("invalid or expired offer code")
+			return nil, utils.BadRequest("invalid or expired offer code")
 		}
 		if err != nil {
 			return nil, err
 		}
 		if !offerIsLive(o, now) {
-			return nil, lib.BadRequest("this offer is no longer active")
+			return nil, utils.BadRequest("this offer is no longer active")
 		}
 		if err := validateOfferMinPurchase(o, lines); err != nil {
 			return nil, err
@@ -536,18 +537,18 @@ func pickOffer(ctx context.Context, offerID, offerCode string, lines []resolvedL
 	if offerID != "" {
 		oid, err := primitive.ObjectIDFromHex(offerID)
 		if err != nil {
-			return nil, lib.BadRequest("invalid offer")
+			return nil, utils.BadRequest("invalid offer")
 		}
 		var o models.Offer
 		err = lib.Offers().FindOne(ctx, bson.M{"_id": oid, "isActive": bson.M{"$ne": false}}).Decode(&o)
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, lib.BadRequest("offer is no longer available")
+			return nil, utils.BadRequest("offer is no longer available")
 		}
 		if err != nil {
 			return nil, err
 		}
 		if !offerIsLive(o, now) {
-			return nil, lib.BadRequest("offer is no longer active")
+			return nil, utils.BadRequest("offer is no longer active")
 		}
 		if err := validateOfferMinPurchase(o, lines); err != nil {
 			return nil, err
@@ -614,7 +615,7 @@ func validateOfferMinPurchase(o models.Offer, lines []resolvedLine) error {
 	}
 	eligible := eligibleSubtotal(o, lines)
 	if eligible < o.MinPurchase {
-		return lib.BadRequest(fmt.Sprintf("minimum eligible purchase of ₹%.0f required for this offer", o.MinPurchase))
+		return utils.BadRequest(fmt.Sprintf("minimum eligible purchase of ₹%.0f required for this offer", o.MinPurchase))
 	}
 	return nil
 }

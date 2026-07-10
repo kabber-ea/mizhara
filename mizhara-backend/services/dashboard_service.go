@@ -3,12 +3,14 @@ package services
 import (
 	"context"
 	"math"
+	"sort"
 	"time"
 
+	"mizhara-backend/constants"
 	"mizhara-backend/lib"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func GetDashboardDataForAdmin(ctx context.Context, session *lib.SessionPayload) (map[string]interface{}, error) {
@@ -66,8 +68,6 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 	revenueByDay := aggregateRevenueByDay(ctx, thirtyDaysAgo)
 	deliveryStatus := aggregateStatusCounts(ctx, "$deliveryStatus")
 	topCategories := aggregateTopCategories(ctx)
-	topCustomers := aggregateTopCustomers(ctx, "revenue")
-	topCustomersByOrders := aggregateTopCustomers(ctx, "orders")
 	trendingProducts := aggregateTopProducts(ctx, &thirtyDaysAgo)
 	topProductsOverall := aggregateTopProducts(ctx, nil)
 
@@ -81,9 +81,7 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 		"charts": map[string]interface{}{
 			"revenueByDay":       revenueByDay,
 			"deliveryStatus":     deliveryStatus,
-			"topCategories":         topCategories,
-			"topCustomers":            topCustomers,
-			"topCustomersByOrders":    topCustomersByOrders,
+			"topCategories":      topCategories,
 			"trendingProducts":   trendingProducts,
 			"topProductsOverall": topProductsOverall,
 		},
@@ -151,6 +149,8 @@ func aggregateStatusCounts(ctx context.Context, field string) []map[string]inter
 
 func aggregateTopCategories(ctx context.Context) []map[string]interface{} {
 	out := []map[string]interface{}{}
+
+	revenueByCategory := map[string]float64{}
 	cur, err := lib.Orders().Aggregate(ctx, bson.A{
 		bson.M{"$match": bson.M{"paymentStatus": models.PaymentPaid}},
 		bson.M{"$unwind": "$items"},
@@ -158,76 +158,62 @@ func aggregateTopCategories(ctx context.Context) []map[string]interface{} {
 			"_id":     "$items.category",
 			"revenue": bson.M{"$sum": bson.M{"$multiply": bson.A{"$items.price", "$items.quantity"}}},
 		}},
-		bson.M{"$sort": bson.M{"revenue": -1}},
-		bson.M{"$limit": 8},
 	})
+	if err == nil {
+		defer cur.Close(ctx)
+		for cur.Next(ctx) {
+			var row bson.M
+			if cur.Decode(&row) != nil {
+				continue
+			}
+			category := str(row["_id"])
+			if category == "" {
+				category = "Uncategorized"
+			}
+			revenueByCategory[category] = num(row["revenue"])
+		}
+	}
+
+	type categoryRevenue struct {
+		name    string
+		revenue float64
+	}
+	entries := []categoryRevenue{}
+
+	catCur, err := lib.Categories().Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{Key: "name", Value: 1}}))
 	if err != nil {
 		return out
 	}
-	defer cur.Close(ctx)
-	for cur.Next(ctx) {
-		var row bson.M
-		if cur.Decode(&row) != nil {
+	defer catCur.Close(ctx)
+	for catCur.Next(ctx) {
+		var cat models.Category
+		if catCur.Decode(&cat) != nil || cat.Name == "" {
 			continue
 		}
-		category := str(row["_id"])
-		if category == "" {
-			category = "Uncategorized"
-		}
-		out = append(out, map[string]interface{}{
-			"category": category,
-			"revenue":  num(row["revenue"]),
+		entries = append(entries, categoryRevenue{
+			name:    cat.Name,
+			revenue: revenueByCategory[cat.Name],
 		})
 	}
-	return out
-}
 
-func aggregateTopCustomers(ctx context.Context, sortBy string) []map[string]interface{} {
-	out := []map[string]interface{}{}
-	sort := bson.D{{Key: "revenue", Value: -1}}
-	if sortBy == "orders" {
-		sort = bson.D{{Key: "orders", Value: -1}}
-	}
-
-	cur, err := lib.Orders().Aggregate(ctx, bson.A{
-		bson.M{"$match": bson.M{"paymentStatus": models.PaymentPaid}},
-		bson.M{"$group": bson.M{
-			"_id":     "$userId",
-			"name":    bson.M{"$first": "$shippingAddress.name"},
-			"revenue": bson.M{"$sum": "$total"},
-			"orders":  bson.M{"$sum": 1},
-		}},
-		bson.M{"$sort": sort},
-		bson.M{"$limit": 8},
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].revenue != entries[j].revenue {
+			return entries[i].revenue > entries[j].revenue
+		}
+		return entries[i].name < entries[j].name
 	})
-	if err != nil {
-		return out
+
+	if len(entries) > constants.TopCategoryLimit {
+		entries = entries[:constants.TopCategoryLimit]
 	}
-	defer cur.Close(ctx)
-	for cur.Next(ctx) {
-		var row bson.M
-		if cur.Decode(&row) != nil {
-			continue
-		}
-		name := str(row["name"])
-		if name == "" {
-			name = "Unknown customer"
-		}
+
+	for _, entry := range entries {
 		out = append(out, map[string]interface{}{
-			"customerId": objectIDStr(row["_id"]),
-			"name":       name,
-			"revenue":    num(row["revenue"]),
-			"orders":     int(num(row["orders"])),
+			"category": entry.name,
+			"revenue":  entry.revenue,
 		})
 	}
 	return out
-}
-
-func objectIDStr(v interface{}) string {
-	if oid, ok := v.(primitive.ObjectID); ok {
-		return oid.Hex()
-	}
-	return str(v)
 }
 
 func aggregateTopProducts(ctx context.Context, since *time.Time) []map[string]interface{} {

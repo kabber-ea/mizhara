@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"mizhara-backend/constants"
 )
 
-const CookieName = "mizhara_session"
+const CookieName = constants.SessionCookieName
 
 type UserRole string
 

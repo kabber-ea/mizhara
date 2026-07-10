@@ -1,21 +1,14 @@
-package lib
+package utils
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"mizhara-backend/constants"
 )
 
 type TrackingProvider string
-
-const (
-	ProviderDelhivery  TrackingProvider = "delhivery"
-	ProviderBlueDart   TrackingProvider = "bluedart"
-	ProviderDTDC       TrackingProvider = "dtdc"
-	ProviderIndiaPost  TrackingProvider = "indiapost"
-	ProviderShiprocket TrackingProvider = "shiprocket"
-	ProviderOther      TrackingProvider = "other"
-)
 
 func BuildTrackingURL(provider TrackingProvider, trackingNumber, customURL string) string {
 	trimmed := strings.TrimSpace(trackingNumber)
@@ -25,20 +18,20 @@ func BuildTrackingURL(provider TrackingProvider, trackingNumber, customURL strin
 	if strings.TrimSpace(customURL) != "" {
 		return strings.TrimSpace(customURL)
 	}
-	if provider == ProviderOther {
+	if string(provider) == constants.TrackingOther {
 		return ""
 	}
 	enc := url.QueryEscape(trimmed)
-	switch provider {
-	case ProviderDelhivery:
+	switch string(provider) {
+	case constants.TrackingDelhivery:
 		return fmt.Sprintf("https://www.delhivery.com/track/package/%s", enc)
-	case ProviderBlueDart:
+	case constants.TrackingBlueDart:
 		return fmt.Sprintf("https://www.bluedart.com/web/guest/trackdartresultthirdparty?trackFor=0&trackNo=%s", enc)
-	case ProviderDTDC:
+	case constants.TrackingDTDC:
 		return fmt.Sprintf("https://www.dtdc.in/tracking.asp?strCnno=%s", enc)
-	case ProviderIndiaPost:
+	case constants.TrackingIndiaPost:
 		return fmt.Sprintf("https://www.indiapost.gov.in/_layouts/15/DOP.Portal.Tracking/TrackConsignment.aspx?consignmentnumber=%s", enc)
-	case ProviderShiprocket:
+	case constants.TrackingShiprocket:
 		return fmt.Sprintf("https://shiprocket.co/tracking/%s", enc)
 	default:
 		return ""

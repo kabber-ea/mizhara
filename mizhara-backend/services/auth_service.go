@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -50,14 +51,14 @@ func Login(ctx context.Context, identifier, email, password string) (*LoginResul
 		id = strings.TrimSpace(email)
 	}
 	if id == "" || password == "" {
-		return nil, lib.BadRequest("identifier and password are required")
+		return nil, utils.BadRequest("identifier and password are required")
 	}
 	session, err := Authenticate(ctx, id, password)
 	if err != nil {
 		return nil, err
 	}
 	if session == nil {
-		return nil, lib.ErrInvalidCredentials
+		return nil, utils.ErrInvalidCredentials
 	}
 	token, err := lib.SignToken(*session)
 	if err != nil {
@@ -110,10 +111,10 @@ func Authenticate(ctx context.Context, identifier, password string) (*lib.Sessio
 
 func RegisterUser(ctx context.Context, name, email, phone, password string) error {
 	if strings.TrimSpace(name) == "" || password == "" {
-		return lib.BadRequest("name and password are required")
+		return utils.BadRequest("name and password are required")
 	}
 	if len(password) < 6 {
-		return lib.BadRequest("password must be at least 6 characters")
+		return utils.BadRequest("password must be at least 6 characters")
 	}
 	now := time.Now()
 	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
@@ -122,13 +123,13 @@ func RegisterUser(ctx context.Context, name, email, phone, password string) erro
 	if normalizedEmail != "" {
 		count, _ := lib.Users().CountDocuments(ctx, bson.M{"email": normalizedEmail})
 		if count > 0 {
-			return lib.BadRequest("email already registered")
+			return utils.BadRequest("email already registered")
 		}
 	}
 	if normalizedPhone != "" {
 		count, _ := lib.Users().CountDocuments(ctx, bson.M{"phone": normalizedPhone})
 		if count > 0 {
-			return lib.BadRequest("mobile number already registered")
+			return utils.BadRequest("mobile number already registered")
 		}
 	}
 
@@ -153,7 +154,7 @@ func RegisterUser(ctx context.Context, name, email, phone, password string) erro
 
 func RequestPasswordReset(ctx context.Context, email string) (map[string]string, error) {
 	if strings.TrimSpace(email) == "" {
-		return nil, lib.BadRequest("email is required")
+		return nil, utils.BadRequest("email is required")
 	}
 	generic := "If an account exists with this email, you will receive a password reset link shortly."
 	var user models.User
@@ -197,10 +198,10 @@ func RequestPasswordReset(ctx context.Context, email string) (map[string]string,
 
 func ResetPassword(ctx context.Context, token, password string) error {
 	if strings.TrimSpace(token) == "" || password == "" {
-		return lib.BadRequest("token and new password are required")
+		return utils.BadRequest("token and new password are required")
 	}
 	if len(password) < 6 {
-		return lib.BadRequest("password must be at least 6 characters")
+		return utils.BadRequest("password must be at least 6 characters")
 	}
 	var user models.User
 	err := lib.Users().FindOne(ctx, bson.M{
@@ -208,7 +209,7 @@ func ResetPassword(ctx context.Context, token, password string) error {
 		"resetPasswordExpires": bson.M{"$gt": time.Now()},
 	}).Decode(&user)
 	if err != nil {
-		return lib.BadRequest("invalid or expired reset link")
+		return utils.BadRequest("invalid or expired reset link")
 	}
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), 10)

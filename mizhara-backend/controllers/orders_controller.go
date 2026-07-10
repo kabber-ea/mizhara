@@ -15,6 +15,7 @@ func (OrdersController) List(c *gin.Context) {
 		c.Request.Context(), middleware.GetSession(c),
 		c.Query("page"), c.Query("limit"), c.Query("search"),
 		c.Query("deliveryStatus"), c.Query("paymentStatus"),
+		c.Query("sortBy"), c.Query("sortDir"),
 	)
 	if err != nil {
 		respondError(c, err)

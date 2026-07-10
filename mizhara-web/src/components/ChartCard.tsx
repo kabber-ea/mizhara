@@ -11,7 +11,7 @@ export default function ChartCard({ title, subtitle, children }: ChartCardProps)
         <h3 className="font-serif text-sm font-semibold text-primary-dark">{title}</h3>
         {subtitle && <p className="mt-0.5 text-[10px] text-muted-custom">{subtitle}</p>}
       </div>
-      <div className="overflow-hidden p-5 pt-4">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-5 pt-4">{children}</div>
     </div>
   );
 }

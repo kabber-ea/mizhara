@@ -1,39 +1,19 @@
-export const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
-export const IMAGE_ACCEPT_LABEL = "JPG, PNG or WebP";
-export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
-export const MAX_IMAGE_SIZE_LABEL = "10 MB";
+import {
+  CROP_PRESETS,
+  IMAGE_ACCEPT,
+  IMAGE_ACCEPT_LABEL,
+  MAX_IMAGE_SIZE_BYTES,
+  MAX_IMAGE_SIZE_LABEL,
+} from "@/constants/imageUpload";
 
-export type CropPreset = {
-  id: "card" | "bannerDesktop" | "bannerMobile";
-  aspect: number;
-  outputWidth: number;
-  outputHeight: number;
-  label: string;
-};
-
-export const CROP_PRESETS = {
-  card: {
-    id: "card",
-    aspect: 1,
-    outputWidth: 800,
-    outputHeight: 800,
-    label: "800×800 square",
-  },
-  bannerDesktop: {
-    id: "bannerDesktop",
-    aspect: 21 / 9,
-    outputWidth: 1680,
-    outputHeight: 720,
-    label: "1680×720 desktop",
-  },
-  bannerMobile: {
-    id: "bannerMobile",
-    aspect: 5 / 6,
-    outputWidth: 1000,
-    outputHeight: 1200,
-    label: "1000×1200 mobile",
-  },
-} as const satisfies Record<string, CropPreset>;
+export type { CropPreset } from "@/constants/imageUpload";
+export {
+  CROP_PRESETS,
+  IMAGE_ACCEPT,
+  IMAGE_ACCEPT_LABEL,
+  MAX_IMAGE_SIZE_BYTES,
+  MAX_IMAGE_SIZE_LABEL,
+} from "@/constants/imageUpload";
 
 export function validateImageFile(file: File): string | null {
   const allowed = IMAGE_ACCEPT.split(",");

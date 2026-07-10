@@ -1,7 +1,5 @@
 import type { SerializedOrder } from "@/types/admin";
 
-export const MAX_SAVED_ADDRESSES = 5;
-
 export type SavedAddress = {
   id: string;
   label?: string;

@@ -3,6 +3,7 @@ import ProductForm from "@/pages/catalog/components/ProductForm";
 import ProductList from "@/pages/catalog/components/ProductList";
 import CategoryManager from "@/pages/catalog/components/CategoryManager";
 import PageSkeleton from "@/components/PageSkeleton";
+import KpiCard from "@/components/KpiCard";
 import { api } from "@/lib/api";
 import type { AdminProduct, Category } from "@/types/catalog";
 
@@ -44,19 +45,25 @@ export default function AdminCatalogPage() {
         <p className="text-xs text-muted-custom mt-1">Manage ornaments, categories, and product images</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 bg-white border border-border-custom rounded-2xl">
-          <span className="text-[10px] font-bold text-muted-custom uppercase">Total Ornaments</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{productMeta.total}</p>
-        </div>
-        <div className="p-5 bg-white border border-border-custom rounded-2xl">
-          <span className="text-[10px] font-bold text-muted-custom uppercase">Featured</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{productMeta.featuredCount}</p>
-        </div>
-        <div className="p-5 bg-white border border-border-custom rounded-2xl">
-          <span className="text-[10px] font-bold text-muted-custom uppercase">Categories</span>
-          <p className="text-2xl font-extrabold text-primary-dark mt-1">{totalCategories}</p>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <KpiCard
+          label="Total Ornaments"
+          value={String(productMeta.total)}
+          icon="products"
+          accentIndex={0}
+        />
+        <KpiCard
+          label="Featured"
+          value={String(productMeta.featuredCount)}
+          icon="featured"
+          accentIndex={1}
+        />
+        <KpiCard
+          label="Categories"
+          value={String(totalCategories)}
+          icon="categories"
+          accentIndex={2}
+        />
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border-custom/50 gap-4 pb-2">

@@ -13,14 +13,9 @@ export default function DashboardSkeleton() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:auto-rows-fr">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-72 animate-pulse rounded-2xl border border-border-custom/60 bg-white" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="h-72 animate-pulse rounded-2xl border border-border-custom/60 bg-white" />
+          <div key={i} className="min-h-[280px] animate-pulse rounded-2xl border border-border-custom/60 bg-white" />
         ))}
       </div>
     </div>

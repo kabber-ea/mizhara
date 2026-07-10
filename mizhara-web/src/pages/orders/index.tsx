@@ -1,38 +1,29 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { formatINR } from "@/utils/format";
+import { formatINR, formatOrderDateTime } from "@/utils/format";
 import { api, apiErrorMessage } from "@/lib/api";
 import { TRACKING_PROVIDERS, buildTrackingUrl } from "@/utils/tracking";
+import { DELIVERY_FILTERS, DELIVERY_LABELS, DELIVERY_OPTIONS } from "@/constants/delivery";
 import type { TrackingProvider } from "@/types/order";
 import type { SerializedOrder } from "@/types/admin";
 import type { DeliveryStatus } from "@/types/order";
 import type { PaginationMeta } from "@/utils/pagination";
+import { EMPTY_PAGINATION, parseListResponse } from "@/utils/pagination";
+import { DEFAULT_SORT, nextSort, type SortState } from "@/utils/sort";
 import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
 import StatusBadge from "@/components/StatusBadge";
+import SortableTableHeader from "@/components/SortableTableHeader";
 import { TableEditButton } from "@/components/TableIconButtons";
-
-const DELIVERY_FILTERS: { value: string; label: string }[] = [
-  { value: "all", label: "All statuses" },
-  { value: "processing", label: "Processing" },
-  { value: "shipped", label: "Shipped" },
-  { value: "delivered", label: "Delivered" },
-];
-
-const DELIVERY_OPTIONS: DeliveryStatus[] = ["processing", "shipped", "delivered"];
 
 export default function AdminOrdersPage() {
   const [search, setSearch] = useState("");
   const [deliveryFilter, setDeliveryFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const [items, setItems] = useState<SerializedOrder[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta>({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 1,
-  });
+  const [pagination, setPagination] = useState<PaginationMeta>(EMPTY_PAGINATION);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -55,18 +46,23 @@ export default function AdminOrdersPage() {
         limit: "10",
         search: debouncedSearch,
         deliveryStatus: deliveryFilter,
+        sortBy: sort.column,
+        sortDir: sort.direction,
       });
       const { data } = await api.get<{ items: SerializedOrder[]; pagination: PaginationMeta }>(
         `/api/orders?${params}`
       );
-      setItems(data.items);
-      setPagination(data.pagination);
+      const parsed = parseListResponse(data);
+      setItems(parsed.items);
+      setPagination(parsed.pagination);
     } catch (e) {
       console.error(e);
+      setItems([]);
+      setPagination(EMPTY_PAGINATION);
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, deliveryFilter]);
+  }, [page, debouncedSearch, deliveryFilter, sort.column, sort.direction]);
 
   useEffect(() => {
     loadOrders();
@@ -74,7 +70,11 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, deliveryFilter]);
+  }, [debouncedSearch, deliveryFilter, sort.column, sort.direction]);
+
+  const handleSort = (column: string) => {
+    setSort((prev) => nextSort(prev, column));
+  };
 
   const openEdit = (order: SerializedOrder) => {
     setSaveError("");
@@ -182,14 +182,15 @@ export default function AdminOrdersPage() {
           <div className={loading ? "opacity-60 pointer-events-none transition-opacity duration-150" : "transition-opacity duration-150"}>
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs min-w-[800px]">
+              <table className="w-full text-xs min-w-[920px]">
                 <thead>
                   <tr className="text-left text-[10px] text-muted-custom uppercase border-b border-border-custom">
-                    <th className="pb-3 pr-3">Order #</th>
-                    <th className="pb-3 pr-3">Customer</th>
-                    <th className="pb-3 pr-3">Items</th>
-                    <th className="pb-3 pr-3">Total</th>
-                    <th className="pb-3 pr-3">Delivery</th>
+                    <SortableTableHeader label="Order #" column="orderNumber" sort={sort} onSort={handleSort} className="pb-3 pr-3 !px-0" />
+                    <SortableTableHeader label="Customer" column="customerName" sort={sort} onSort={handleSort} className="pb-3 pr-3 !px-0" />
+                    <SortableTableHeader label="Order Date" column="createdAt" sort={sort} onSort={handleSort} className="pb-3 pr-3 !px-0" />
+                    <SortableTableHeader label="Items" column="itemCount" sort={sort} onSort={handleSort} className="pb-3 pr-3 !px-0" />
+                    <SortableTableHeader label="Total" column="total" sort={sort} onSort={handleSort} className="pb-3 pr-3 !px-0" />
+                    <SortableTableHeader label="Delivery" column="deliveryStatus" sort={sort} onSort={handleSort} className="pb-3 pr-3 !px-0" />
                     <th className="pb-3 pr-3">Tracking</th>
                     <th className="pb-3">Actions</th>
                   </tr>
@@ -264,6 +265,9 @@ function OrderRow({
           <div className="font-semibold">{order.customerName}</div>
           <div className="text-[10px] text-muted-custom">{order.customerEmail}</div>
         </td>
+        <td className="py-3 pr-3 whitespace-nowrap text-[10px] tabular-nums text-muted-custom">
+          {formatOrderDateTime(order.createdAt)}
+        </td>
         <td className="py-3 pr-3">{order.itemCount}</td>
         <td className="py-3 pr-3 font-semibold">{formatINR(order.total)}</td>
         <td className="py-3 pr-3">
@@ -303,21 +307,23 @@ function OrderRow({
 
       {expanded && (
         <tr className="bg-accent-mint/5">
-          <td colSpan={7} className="px-4 py-4">
+          <td colSpan={8} className="px-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px]">
               <div>
                 <p className="font-bold text-primary-dark mb-1">Shipping Address</p>
-                <p>{order.shippingAddress.name}</p>
-                <p className="text-muted-custom">{order.shippingAddress.address}</p>
+                <p>{order.shippingAddress?.name ?? "—"}</p>
+                <p className="text-muted-custom">{order.shippingAddress?.address ?? "—"}</p>
                 <p className="text-muted-custom">
-                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.pincode}
+                  {[order.shippingAddress?.city, order.shippingAddress?.state, order.shippingAddress?.pincode]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
                 </p>
-                <p className="text-muted-custom">{order.shippingAddress.phone}</p>
+                <p className="text-muted-custom">{order.shippingAddress?.phone ?? "—"}</p>
               </div>
               <div>
                 <p className="font-bold text-primary-dark mb-1">Line Items</p>
                 <ul className="space-y-1">
-                  {order.items.map((item, i) => (
+                  {order.items?.map((item, i) => (
                     <li key={i} className="flex justify-between">
                       <span>
                         {item.name} × {item.quantity} ({item.size})
@@ -327,7 +333,7 @@ function OrderRow({
                   ))}
                 </ul>
                 <p className="mt-2 text-muted-custom">
-                  Placed: {new Date(order.createdAt).toLocaleString("en-IN")}
+                  Placed: {formatOrderDateTime(order.createdAt)}
                 </p>
               </div>
             </div>
@@ -337,7 +343,7 @@ function OrderRow({
 
       {editing && (
         <tr className="bg-accent-pink/10">
-          <td colSpan={7} className="px-4 py-3">
+          <td colSpan={8} className="px-4 py-3">
             <OrderFulfillmentEditor
               editForm={editForm}
               saving={saving}
@@ -357,12 +363,6 @@ const fulfillmentFieldClass =
   "w-full rounded-xl border border-border-custom/80 bg-white px-3 py-2 text-xs text-primary-dark shadow-sm shadow-primary-dark/[0.02] transition focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10";
 
 const fulfillmentLabelClass = "mb-1 block text-[10px] font-bold uppercase tracking-[0.1em] text-muted-custom";
-
-const DELIVERY_LABELS: Record<DeliveryStatus, string> = {
-  processing: "Processing",
-  shipped: "Shipped",
-  delivered: "Delivered",
-};
 
 type FulfillmentForm = {
   deliveryStatus: DeliveryStatus;

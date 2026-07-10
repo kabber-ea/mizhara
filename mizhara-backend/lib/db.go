@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"mizhara-backend/constants"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -35,7 +36,7 @@ func ConnectDB() error {
 		if err != nil {
 			return
 		}
-		database = client.Database("mizhara")
+		database = client.Database(constants.DatabaseName)
 		if err = EnsureIndexes(); err != nil {
 			return
 		}

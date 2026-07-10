@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -71,13 +72,13 @@ func productIsActive(p models.Product) bool {
 func resolveProductCategory(ctx context.Context, categoryName string) (primitive.ObjectID, string, error) {
 	name := strings.TrimSpace(categoryName)
 	if name == "" {
-		return primitive.NilObjectID, "", lib.BadRequest("category is required")
+		return primitive.NilObjectID, "", utils.BadRequest("category is required")
 	}
 	var cat models.Category
 	err := lib.Categories().FindOne(ctx, bson.M{"name": name}).Decode(&cat)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return primitive.NilObjectID, "", lib.BadRequest("invalid category")
+			return primitive.NilObjectID, "", utils.BadRequest("invalid category")
 		}
 		return primitive.NilObjectID, "", err
 	}
@@ -163,7 +164,7 @@ func UpdateProductForAdmin(ctx context.Context, session *lib.SessionPayload, inp
 		return nil, err
 	}
 	if item == nil {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	return item, nil
 }
@@ -177,7 +178,7 @@ func DeleteProductForAdmin(ctx context.Context, session *lib.SessionPayload, id 
 		return nil, err
 	}
 	if item == nil {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	return item, nil
 }
@@ -226,7 +227,7 @@ func ListCustomerProductsPaginated(ctx context.Context, pageStr, limitStr, searc
 		return nil, err
 	}
 	baseFilter := customerProductBaseFilter(activeCats)
-	p := lib.ParsePagination(pageStr, limitStr, search)
+	p := utils.ParsePagination(pageStr, limitStr, search)
 
 	match := bson.M{"$and": bson.A{baseFilter}}
 	if category != "" && category != "All" {
@@ -284,7 +285,7 @@ func ListCustomerProductsPaginated(ctx context.Context, pageStr, limitStr, searc
 
 	return map[string]interface{}{
 		"items": items,
-		"pagination": lib.BuildPaginationMeta(p.Page, p.Limit, int(total)),
+		"pagination": utils.BuildPaginationMeta(p.Page, p.Limit, int(total)),
 		"maxPrice": maxPrice,
 	}, nil
 }
@@ -342,7 +343,7 @@ func ListAdminProductsPaginated(ctx context.Context, session *lib.SessionPayload
 	if err := RequireAdmin(session); err != nil {
 		return nil, err
 	}
-	p := lib.ParsePagination(page, limit, search)
+	p := utils.ParsePagination(page, limit, search)
 	match := bson.M{}
 	if p.Search != "" {
 		escaped := regexp.QuoteMeta(p.Search)
@@ -352,7 +353,7 @@ func ListAdminProductsPaginated(ctx context.Context, session *lib.SessionPayload
 		}
 	}
 
-	sort := lib.ParseSort(sortBy, sortDir, adminProductSortFields, "createdAt")
+	sort := utils.ParseSort(sortBy, sortDir, adminProductSortFields, "createdAt")
 	total, _ := lib.Products().CountDocuments(ctx, match)
 	featuredCount, _ := lib.Products().CountDocuments(ctx, bson.M{"isFeatured": true})
 
@@ -369,12 +370,12 @@ func ListAdminProductsPaginated(ctx context.Context, session *lib.SessionPayload
 
 	return map[string]interface{}{
 		"items":         items,
-		"pagination":    lib.BuildPaginationMeta(p.Page, p.Limit, int(total)),
+		"pagination":    utils.BuildPaginationMeta(p.Page, p.Limit, int(total)),
 		"featuredCount": int(featuredCount),
 	}, nil
 }
 
-func listAdminProductsFind(ctx context.Context, match bson.M, skip, limit int, sort lib.SortParams) ([]AdminProduct, error) {
+func listAdminProductsFind(ctx context.Context, match bson.M, skip, limit int, sort utils.SortParams) ([]AdminProduct, error) {
 	cur, err := lib.Products().Find(ctx, match,
 		options.Find().
 			SetSort(bson.D{{Key: sort.Field, Value: sort.Dir}}).
@@ -427,13 +428,13 @@ func prepareProductInput(input ProductInput) ProductInput {
 
 func validateProductInput(input ProductInput) error {
 	if input.Name == "" || input.Category == "" || input.Price <= 0 {
-		return lib.BadRequest("name, category, and price are required")
+		return utils.BadRequest("name, category, and price are required")
 	}
 	if len(input.Images) == 0 || input.Images[0] == "" {
-		return lib.BadRequest("at least one product image is required")
+		return utils.BadRequest("at least one product image is required")
 	}
 	if input.IsFeatured && (input.BannerImage == "" || input.BannerImageMobile == "") {
-		return lib.BadRequest("desktop and mobile banner images are required for featured products")
+		return utils.BadRequest("desktop and mobile banner images are required for featured products")
 	}
 	return nil
 }

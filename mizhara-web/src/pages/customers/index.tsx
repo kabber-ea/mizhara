@@ -4,6 +4,7 @@ import { formatINR } from "@/utils/format";
 import { api } from "@/lib/api";
 import type { SerializedCustomer } from "@/types/admin";
 import type { PaginationMeta } from "@/utils/pagination";
+import { EMPTY_PAGINATION, parseListResponse } from "@/utils/pagination";
 import SearchInput from "@/components/SearchInput";
 import Pagination from "@/components/Pagination";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -15,12 +16,7 @@ export default function AdminCustomersPage() {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const [items, setItems] = useState<SerializedCustomer[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta>({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 1,
-  });
+  const [pagination, setPagination] = useState<PaginationMeta>(EMPTY_PAGINATION);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -39,14 +35,17 @@ export default function AdminCustomersPage() {
       const { data } = await api.get<{ items: SerializedCustomer[]; pagination: PaginationMeta }>(
         `/api/users?${params}`
       );
-      setItems(data.items);
-      setPagination(data.pagination);
+      const parsed = parseListResponse(data);
+      setItems(parsed.items);
+      setPagination(parsed.pagination);
     } catch (e) {
       console.error(e);
+      setItems([]);
+      setPagination(EMPTY_PAGINATION);
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, sort]);
+  }, [page, debouncedSearch, sort.column, sort.direction]);
 
   useEffect(() => {
     loadCustomers();
@@ -54,7 +53,7 @@ export default function AdminCustomersPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, sort]);
+  }, [debouncedSearch, sort.column, sort.direction]);
 
   const handleSort = (column: string) => {
     setSort((prev) => nextSort(prev, column));
@@ -106,7 +105,7 @@ export default function AdminCustomersPage() {
                         <td className="py-3 pr-4">{c.phone ?? "—"}</td>
                         <td className="py-3 pr-4">{new Date(c.createdAt).toLocaleDateString("en-IN")}</td>
                         <td className="py-3 pr-4">{c.orderCount}</td>
-                        <td className="py-3 pr-4 font-semibold">{formatINR(c.totalSpent)}</td>
+                        <td className="py-3 pr-4 font-semibold">{formatINR(c.totalSpent ?? 0)}</td>
                         <td className="py-3">
                           <button
                             type="button"
@@ -124,7 +123,7 @@ export default function AdminCustomersPage() {
                             <strong className="text-primary-dark">Member since:</strong>{" "}
                             {new Date(c.createdAt).toLocaleString("en-IN")} ·{" "}
                             <strong className="text-primary-dark">Lifetime value:</strong>{" "}
-                            {formatINR(c.totalSpent)} across {c.orderCount} order
+                            {formatINR(c.totalSpent ?? 0)} across {c.orderCount} order
                             {c.orderCount !== 1 ? "s" : ""}
                           </td>
                         </tr>

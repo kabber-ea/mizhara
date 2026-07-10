@@ -1,4 +1,5 @@
-import { INSTAGRAM_URL, SUPPORT_EMAIL, whatsappUrl } from "@/utils/contactLinks";
+import { INSTAGRAM_URL, SUPPORT_EMAIL } from "@/constants/contact";
+import { whatsappUrl } from "@/utils/contact";
 import type { SerializedProduct } from "@/types/catalog";
 
 interface StorySectionProps {

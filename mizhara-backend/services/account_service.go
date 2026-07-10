@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"mizhara-backend/constants"
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-const MaxSavedAddresses = 5
 
 type SavedAddress struct {
 	ID        string `json:"id,omitempty"`
@@ -71,7 +71,7 @@ func GetCustomerProfileForSession(ctx context.Context, session *lib.SessionPaylo
 		return nil, err
 	}
 	if profile == nil {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	return profile, nil
 }
@@ -179,8 +179,8 @@ func toAPISavedAddresses(addrs []models.SavedAddress) []SavedAddress {
 }
 
 func normalizeSavedAddressInput(addrs []SavedAddress) ([]models.SavedAddress, error) {
-	if len(addrs) > MaxSavedAddresses {
-		return nil, lib.BadRequest("you can save up to 5 addresses")
+		if len(addrs) > constants.MaxSavedAddresses {
+		return nil, utils.BadRequest("you can save up to 5 addresses")
 	}
 	out := make([]models.SavedAddress, 0, len(addrs))
 	defaultCount := 0
@@ -190,7 +190,7 @@ func normalizeSavedAddressInput(addrs []SavedAddress) ([]models.SavedAddress, er
 		state := strings.TrimSpace(item.State)
 		pincode := strings.TrimSpace(item.Pincode)
 		if addr == "" || city == "" || state == "" || pincode == "" {
-			return nil, lib.BadRequest("each saved address needs street, city, state, and pincode")
+			return nil, utils.BadRequest("each saved address needs street, city, state, and pincode")
 		}
 		id := strings.TrimSpace(item.ID)
 		if id == "" {
@@ -239,7 +239,7 @@ func UpdateCustomerProfile(ctx context.Context, userID string, data ProfileUpdat
 		if normalized != "" {
 			count, _ := lib.Users().CountDocuments(ctx, bson.M{"phone": normalized, "_id": bson.M{"$ne": oid}})
 			if count > 0 {
-				return nil, lib.BadRequest("mobile number already in use")
+				return nil, utils.BadRequest("mobile number already in use")
 			}
 			user.Phone = normalized
 		}
@@ -284,12 +284,8 @@ func ListCustomerOrders(ctx context.Context, userID string) ([]CustomerOrder, er
 	for cur.Next(ctx) {
 		var o models.Order
 		_ = cur.Decode(&o)
-		count := 0
-		for _, it := range o.Items {
-			count += it.Quantity
-		}
 		out = append(out, CustomerOrder{
-			ID: o.ID.Hex(), OrderNumber: o.OrderNumber, Items: o.Items, ItemCount: count,
+			ID: o.ID.Hex(), OrderNumber: o.OrderNumber, Items: o.Items, ItemCount: sumOrderItemQuantities(o.Items),
 			Total: o.Total, PaymentStatus: string(o.PaymentStatus), DeliveryStatus: string(o.DeliveryStatus),
 			TrackingURL: o.TrackingURL, TrackingNumber: o.TrackingNumber,
 			TrackingProvider: string(o.TrackingProvider),

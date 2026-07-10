@@ -1,65 +1,130 @@
+import { useMemo } from "react";
 import ChartCard from "@/components/ChartCard";
 import { formatINR } from "@/utils/format";
 import { categoryColor } from "@/utils/chartUtils";
-import { DASHBOARD_CONTENT_HEIGHT } from "@/pages/dashboard/constants";
+import { DASHBOARD_PANEL_MIN_HEIGHT, TOP_CATEGORY_LIMIT } from "@/constants/dashboard";
 import type { CategorySales } from "@/types/dashboard";
 
-function CategoryRevenueBarChart({ data }: { data: CategorySales[] }) {
-  if (!data.length) {
+function ProportionStrip({ items, total }: { items: CategorySales[]; total: number }) {
+  if (total <= 0) return null;
+
+  return (
+    <div
+      className="flex h-2.5 w-full overflow-hidden rounded-full bg-accent-pink/30 ring-1 ring-border-custom/50"
+      role="img"
+      aria-label="Category revenue mix"
+    >
+      {items.map((item, i) => {
+        const width = (item.revenue / total) * 100;
+        if (width < 0.4) return null;
+
+        return (
+          <div
+            key={item.category}
+            className="h-full transition-opacity hover:opacity-80"
+            style={{ width: `${width}%`, backgroundColor: categoryColor(i) }}
+            title={`${item.category} · ${Math.round(width)}%`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function CategoryRow({
+  item,
+  index,
+  share,
+  compact,
+}: {
+  item: CategorySales;
+  index: number;
+  share: number;
+  compact: boolean;
+}) {
+  const color = categoryColor(index);
+
+  return (
+    <div className="group relative h-full min-h-0 overflow-hidden rounded-md">
+      <div
+        className="absolute inset-y-0 left-0 opacity-20 transition-opacity group-hover:opacity-30"
+        style={{ width: `${Math.max(share, share === 0 ? 0 : 4)}%`, backgroundColor: color }}
+        aria-hidden
+      />
+      <div className="relative grid h-full grid-cols-[0.625rem_minmax(0,1fr)_5rem_2.25rem] items-center gap-2 px-2">
+        <span
+          className={`shrink-0 rounded-[3px] ring-1 ring-black/5 ${compact ? "h-2 w-2" : "h-2.5 w-2.5"}`}
+          style={{ backgroundColor: color }}
+          aria-hidden
+        />
+        <p
+          className={`truncate font-medium leading-none text-primary-dark ${compact ? "text-[10px]" : "text-[11px]"}`}
+        >
+          {item.category}
+        </p>
+        <p
+          className={`truncate text-right tabular-nums leading-none text-muted-custom ${compact ? "text-[9px]" : "text-[10px]"}`}
+        >
+          {formatINR(item.revenue)}
+        </p>
+        <p
+          className={`text-right font-semibold tabular-nums leading-none ${compact ? "text-[10px]" : "text-[11px]"}`}
+          style={{ color }}
+        >
+          {share}%
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function CategoryRevenuePanel({ data }: { data: CategorySales[] }) {
+  const items = useMemo(
+    () => [...data].sort((a, b) => b.revenue - a.revenue).slice(0, TOP_CATEGORY_LIMIT),
+    [data],
+  );
+
+  if (!items.length) {
     return (
-      <div className="flex items-center justify-center" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
+      <div
+        className="flex flex-1 items-center justify-center"
+        style={{ minHeight: DASHBOARD_PANEL_MIN_HEIGHT }}
+      >
         <p className="text-[11px] text-muted-custom">No category data yet</p>
       </div>
     );
   }
 
-  const items = [...data].sort((a, b) => b.revenue - a.revenue).slice(0, 8);
   const total = items.reduce((sum, item) => sum + item.revenue, 0);
-  const maxRevenue = items[0]?.revenue ?? 1;
+  const compact = items.length >= 9;
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
-      <div className="mb-3 flex shrink-0 items-center justify-between border-b border-border-custom/40 pb-2">
-        <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-custom">Category</p>
-        <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-custom">Revenue share</p>
+    <div className="flex h-full min-h-0 flex-1 flex-col" style={{ minHeight: DASHBOARD_PANEL_MIN_HEIGHT }}>
+      <div className="mb-2 shrink-0">
+        <ProportionStrip items={items} total={total} />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col">
-        {items.map((item, i) => {
-          const pct = total > 0 ? Math.round((item.revenue / total) * 100) : 0;
-          const width = Math.max(6, (item.revenue / maxRevenue) * 100);
-          const color = categoryColor(i);
 
+      <div className="mb-1.5 grid shrink-0 grid-cols-[0.625rem_minmax(0,1fr)_5rem_2.25rem] gap-2 px-2 text-[8px] font-bold uppercase tracking-[0.1em] text-muted-custom">
+        <span aria-hidden />
+        <span>Category</span>
+        <span className="text-right">Revenue</span>
+        <span className="text-right">Share</span>
+      </div>
+
+      <div
+        className="grid min-h-0 flex-1 gap-0.5"
+        style={{ gridTemplateRows: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
+        {items.map((item, index) => {
+          const share = total > 0 ? Math.round((item.revenue / total) * 100) : 0;
           return (
-            <div
+            <CategoryRow
               key={item.category}
-              className="group flex min-h-0 flex-1 flex-col justify-center gap-1.5 border-b border-border-custom/25 py-1 last:border-0"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold tabular-nums text-primary-dark ring-1 ring-white"
-                    style={{ backgroundColor: `${color}22`, color }}
-                  >
-                    {i + 1}
-                  </span>
-                  <p className="truncate text-[11px] font-semibold text-primary-dark">{item.category}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="font-serif text-[11px] font-semibold tabular-nums text-primary-dark">{formatINR(item.revenue)}</p>
-                  <p className="text-[9px] tabular-nums text-muted-custom">{pct}%</p>
-                </div>
-              </div>
-              <div className="relative h-2 overflow-hidden rounded-full bg-gradient-to-r from-accent-pink/60 to-accent-pink/30">
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full shadow-sm transition-all duration-700 ease-out group-hover:brightness-105"
-                  style={{
-                    width: `${width}%`,
-                    background: `linear-gradient(90deg, ${color}bb 0%, ${color} 55%, ${color}dd 100%)`,
-                    boxShadow: `0 1px 8px ${color}44`,
-                  }}
-                />
-              </div>
-            </div>
+              item={item}
+              index={index}
+              share={share}
+              compact={compact}
+            />
           );
         })}
       </div>
@@ -69,8 +134,8 @@ function CategoryRevenueBarChart({ data }: { data: CategorySales[] }) {
 
 export default function CategoryRevenueChart({ data }: { data: CategorySales[] }) {
   return (
-    <ChartCard title="Top Categories" subtitle="Revenue share by category">
-      <CategoryRevenueBarChart data={data} />
+    <ChartCard title="Top Categories" subtitle="Revenue mix">
+      <CategoryRevenuePanel data={data} />
     </ChartCard>
   );
 }

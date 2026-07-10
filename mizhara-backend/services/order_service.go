@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,6 +20,17 @@ type OrderListParams struct {
 	Search            string
 	DeliveryStatus    string
 	PaymentStatus     string
+	SortBy            string
+	SortDir           string
+}
+
+var orderSortFields = map[string]string{
+	"createdAt":      "createdAt",
+	"orderNumber":    "orderNumber",
+	"customerName":   "user.name",
+	"itemCount":      "itemCount",
+	"total":          "total",
+	"deliveryStatus": "deliveryStatus",
 }
 
 type SerializedOrder struct {
@@ -48,37 +60,59 @@ type SerializedOrder struct {
 
 type FulfillmentUpdate struct {
 	DeliveryStatus   models.DeliveryStatus   `json:"deliveryStatus"`
-	TrackingProvider lib.TrackingProvider    `json:"trackingProvider"`
+	TrackingProvider utils.TrackingProvider    `json:"trackingProvider"`
 	TrackingNumber   string                  `json:"trackingNumber"`
 	TrackingURL      string                  `json:"trackingUrl"`
 }
 
+func sumOrderItemQuantities(items []models.OrderItem) int {
+	total := 0
+	for _, item := range items {
+		total += item.Quantity
+	}
+	return total
+}
+
+func orderItemCountFromDoc(doc bson.M, items []models.OrderItem) int {
+	if v, ok := doc["itemCount"]; ok {
+		return intNum(v)
+	}
+	return sumOrderItemQuantities(items)
+}
+
 func serializeOrder(doc bson.M) SerializedOrder {
 	items, _ := doc["items"].(primitive.A)
-	orderItems := make([]models.OrderItem, 0)
-	itemCount := 0
+	orderItems := make([]models.OrderItem, 0, len(items))
 	for _, raw := range items {
 		m, ok := raw.(bson.M)
 		if !ok || m == nil {
 			continue
 		}
 		qty := intNum(m["quantity"])
-		itemCount += qty
 		orderItems = append(orderItems, models.OrderItem{
 			ProductID: str(m["productId"]), Name: str(m["name"]), Price: num(m["price"]),
 			Quantity: qty, Size: str(m["size"]), Image: str(m["image"]), Category: str(m["category"]),
 		})
 	}
+	itemCount := orderItemCountFromDoc(doc, orderItems)
 	user, _ := doc["user"].(bson.M)
 	shipping, _ := doc["shippingAddress"].(bson.M)
 	name := str(user["name"])
 	if name == "" {
 		name = str(shipping["name"])
 	}
+	email := str(user["email"])
+	if email == "" {
+		email = str(shipping["email"])
+	}
+	phone := str(user["phone"])
+	if phone == "" {
+		phone = str(shipping["phone"])
+	}
 	o := SerializedOrder{
 		ID: str(doc["_id"]), OrderNumber: str(doc["orderNumber"]), UserID: str(doc["userId"]),
-		CustomerName: name, CustomerEmail: str(user["email"]),
-		CustomerPhone: str(user["phone"]), Items: orderItems, ItemCount: itemCount,
+		CustomerName: name, CustomerEmail: email,
+		CustomerPhone: phone, Items: orderItems, ItemCount: itemCount,
 		Subtotal: num(doc["subtotal"]), Shipping: num(doc["shipping"]), Total: num(doc["total"]),
 		Currency: str(doc["currency"]), PaymentStatus: str(doc["paymentStatus"]),
 		DeliveryStatus: str(doc["deliveryStatus"]),
@@ -93,14 +127,18 @@ func serializeOrder(doc bson.M) SerializedOrder {
 	}
 	if t, ok := doc["createdAt"].(primitive.DateTime); ok {
 		o.CreatedAt = t.Time().Format(time.RFC3339)
+	} else if t, ok := doc["createdAt"].(time.Time); ok {
+		o.CreatedAt = t.Format(time.RFC3339)
 	}
 	if t, ok := doc["updatedAt"].(primitive.DateTime); ok {
 		o.UpdatedAt = t.Time().Format(time.RFC3339)
+	} else if t, ok := doc["updatedAt"].(time.Time); ok {
+		o.UpdatedAt = t.Format(time.RFC3339)
 	}
-	if sa, ok := shipping["address"]; ok {
+	if shipping != nil {
 		o.ShippingAddress = models.ShippingAddress{
 			Name: str(shipping["name"]), Email: str(shipping["email"]), Phone: str(shipping["phone"]),
-			Address: str(sa), City: str(shipping["city"]), State: str(shipping["state"]), Pincode: str(shipping["pincode"]),
+			Address: str(shipping["address"]), City: str(shipping["city"]), State: str(shipping["state"]), Pincode: str(shipping["pincode"]),
 		}
 	}
 	return o
@@ -148,14 +186,15 @@ func num(v interface{}) float64 {
 	}
 }
 
-func ListOrdersForAdmin(ctx context.Context, session *lib.SessionPayload, page, limit, search, deliveryStatus, paymentStatus string) (map[string]interface{}, error) {
+func ListOrdersForAdmin(ctx context.Context, session *lib.SessionPayload, page, limit, search, deliveryStatus, paymentStatus, sortBy, sortDir string) (map[string]interface{}, error) {
 	if err := RequireAdmin(session); err != nil {
 		return nil, err
 	}
-	p := lib.ParsePagination(page, limit, search)
+	p := utils.ParsePagination(page, limit, search)
 	return ListOrders(ctx, OrderListParams{
 		Page: p.Page, Limit: p.Limit, Skip: p.Skip, Search: p.Search,
 		DeliveryStatus: deliveryStatus, PaymentStatus: paymentStatus,
+		SortBy: sortBy, SortDir: sortDir,
 	})
 }
 
@@ -168,7 +207,7 @@ func GetOrderByIDForAdmin(ctx context.Context, session *lib.SessionPayload, id s
 		return nil, err
 	}
 	if order == nil {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	return order, nil
 }
@@ -182,7 +221,7 @@ func UpdateOrderFulfillmentForAdmin(ctx context.Context, session *lib.SessionPay
 		return nil, err
 	}
 	if order == nil {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	return order, nil
 }
@@ -191,8 +230,12 @@ func ListOrders(ctx context.Context, params OrderListParams) (map[string]interfa
 	match := orderListMatch(params)
 
 	pipeline := orderListLookupPipeline(match, params.Search)
+	sort := utils.ParseSort(params.SortBy, params.SortDir, orderSortFields, "createdAt")
 	pipeline = append(pipeline,
-		bson.D{{Key: "$sort", Value: bson.M{"createdAt": -1}}},
+		bson.D{{Key: "$addFields", Value: bson.M{
+			"itemCount": bson.M{"$sum": "$items.quantity"},
+		}}},
+		bson.D{{Key: "$sort", Value: bson.D{{Key: sort.Field, Value: sort.Dir}}}},
 		bson.D{{Key: "$skip", Value: params.Skip}},
 		bson.D{{Key: "$limit", Value: params.Limit}},
 	)
@@ -215,7 +258,7 @@ func ListOrders(ctx context.Context, params OrderListParams) (map[string]interfa
 	}
 	return map[string]interface{}{
 		"items":      items,
-		"pagination": lib.BuildPaginationMeta(params.Page, params.Limit, int(total)),
+		"pagination": utils.BuildPaginationMeta(params.Page, params.Limit, int(total)),
 	}, nil
 }
 
@@ -243,6 +286,8 @@ func orderListLookupPipeline(match bson.M, search string) mongo.Pipeline {
 				bson.M{"orderNumber": bson.M{"$regex": escaped, "$options": "i"}},
 				bson.M{"user.name": bson.M{"$regex": escaped, "$options": "i"}},
 				bson.M{"user.email": bson.M{"$regex": escaped, "$options": "i"}},
+				bson.M{"shippingAddress.name": bson.M{"$regex": escaped, "$options": "i"}},
+				bson.M{"shippingAddress.phone": bson.M{"$regex": escaped, "$options": "i"}},
 			},
 		}}})
 	}
@@ -330,15 +375,15 @@ func UpdateOrderFulfillment(ctx context.Context, id string, body FulfillmentUpda
 	if order.DeliveryStatus == models.DeliveryShipped {
 		trackingNumber := strings.TrimSpace(body.TrackingNumber)
 		if trackingNumber == "" {
-			return nil, lib.BadRequest("tracking number is required for shipped orders")
+			return nil, utils.BadRequest("tracking number is required for shipped orders")
 		}
 		if body.TrackingProvider == "" {
-			return nil, lib.BadRequest("courier is required for shipped orders")
+			return nil, utils.BadRequest("courier is required for shipped orders")
 		}
-		provider := lib.TrackingProvider(body.TrackingProvider)
-		trackingURL := lib.BuildTrackingURL(provider, trackingNumber, body.TrackingURL)
+		provider := utils.TrackingProvider(body.TrackingProvider)
+		trackingURL := utils.BuildTrackingURL(provider, trackingNumber, body.TrackingURL)
 		if trackingURL == "" {
-			return nil, lib.BadRequest("tracking URL is required for shipped orders")
+			return nil, utils.BadRequest("tracking URL is required for shipped orders")
 		}
 		order.TrackingProvider = models.TrackingProvider(provider)
 		order.TrackingNumber = trackingNumber

@@ -19,7 +19,9 @@ mizhara-backend/
 │   ├── dashboard_controller.go
 │   └── upload_controller.go
 ├── services/        # Business logic & DB queries
-├── lib/
+├── lib/             # DB, auth, integrations
+├── utils/           # Shared helpers (pagination, errors, tracking, …)
+├── constants/       # App-wide constants
 ├── middleware/
 ├── routes/
 └── scripts/seed/
@@ -65,7 +67,7 @@ Seed data lives in `scripts/seed/data/` (`categories.json`, `customers.json`, `p
 go run ./scripts/seed/cmd --skip-images
 
 # Re-upload images for existing DB products only
-go run ./scripts/sync-img-to-cloudinary/
+go run ./scripts/syncImgToCloudinary/
 ```
 
 ## Development (auto-reload)

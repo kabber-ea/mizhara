@@ -3,10 +3,9 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recha
 import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import ChartCard from "@/components/ChartCard";
 import { deliveryStatusColor, formatStatusLabel } from "@/utils/chartUtils";
-import { DASHBOARD_CONTENT_HEIGHT } from "@/pages/dashboard/constants";
+import { DASHBOARD_PANEL_MIN_HEIGHT } from "@/constants/dashboard";
+import { DELIVERY_STATUS_ORDER } from "@/constants/delivery";
 import type { StatusCount } from "@/types/dashboard";
-
-const DELIVERY_STATUS_ORDER = ["processing", "shipped", "delivered"];
 
 function sortDeliveryStatuses(data: StatusCount[]): StatusCount[] {
   const byStatus = new Map(data.map((item) => [item.status, item]));
@@ -23,7 +22,7 @@ export default function DeliveryStatusChart({ data }: { data: StatusCount[] }) {
   const chart = (() => {
     if (total === 0) {
       return (
-        <div className="flex items-center justify-center" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
+        <div className="flex flex-1 items-center justify-center" style={{ minHeight: DASHBOARD_PANEL_MIN_HEIGHT }}>
           <p className="text-[11px] text-muted-custom">No delivery data yet</p>
         </div>
       );
@@ -54,11 +53,11 @@ export default function DeliveryStatusChart({ data }: { data: StatusCount[] }) {
 
     return (
       <div
-        className="flex min-h-0 items-stretch gap-4 overflow-hidden"
-        style={{ height: DASHBOARD_CONTENT_HEIGHT }}
+        className="flex h-full min-h-0 flex-1 items-stretch gap-4 overflow-hidden"
+        style={{ minHeight: DASHBOARD_PANEL_MIN_HEIGHT }}
       >
-        <div className="relative min-w-0 flex-1">
-          <ResponsiveContainer width="100%" height={DASHBOARD_CONTENT_HEIGHT}>
+        <div className="relative min-h-0 min-w-0 flex-1">
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <defs>
                 <filter id="delivery-pie-shadow" x="-30%" y="-30%" width="160%" height="160%">
@@ -127,7 +126,7 @@ export default function DeliveryStatusChart({ data }: { data: StatusCount[] }) {
           </div>
         </div>
 
-        <div className="flex h-full min-h-0 w-[8.5rem] shrink-0 flex-col justify-start gap-2.5 overflow-y-auto overscroll-contain pr-0.5">
+        <div className="flex h-full min-h-0 w-[8.5rem] shrink-0 flex-col justify-center gap-3 overflow-hidden pr-0.5">
           {items.map((entry, i) => {
             const pct = Math.round((entry.count / total) * 100);
             const color = deliveryStatusColor(entry.status, i);
@@ -169,7 +168,7 @@ export default function DeliveryStatusChart({ data }: { data: StatusCount[] }) {
 
   return (
     <ChartCard title="Delivery Status" subtitle="Order fulfillment breakdown">
-      {chart}
+      <div className="flex h-full min-h-0 flex-1 flex-col">{chart}</div>
     </ChartCard>
   );
 }

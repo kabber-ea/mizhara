@@ -4,13 +4,14 @@ import (
 	"os"
 
 	"github.com/razorpay/razorpay-go"
+	"mizhara-backend/utils"
 )
 
 func NewRazorpayClient() (*razorpay.Client, error) {
 	keyID := os.Getenv("RAZORPAY_KEY_ID")
 	keySecret := os.Getenv("RAZORPAY_KEY_SECRET")
 	if keyID == "" || keySecret == "" {
-		return nil, ErrRazorpayNotConfigured
+		return nil, utils.ErrRazorpayNotConfigured
 	}
 	return razorpay.NewClient(keyID, keySecret), nil
 }

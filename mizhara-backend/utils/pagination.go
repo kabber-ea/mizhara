@@ -1,7 +1,9 @@
-package lib
+package utils
 
 import (
 	"strconv"
+
+	"mizhara-backend/constants"
 )
 
 type PaginationParams struct {
@@ -22,13 +24,13 @@ func ParsePagination(pageStr, limitStr, search string) PaginationParams {
 	page, _ := strconv.Atoi(pageStr)
 	limit, _ := strconv.Atoi(limitStr)
 	if page < 1 {
-		page = 1
+		page = constants.DefaultPage
 	}
 	if limit < 1 {
-		limit = 10
+		limit = constants.DefaultLimit
 	}
-	if limit > 50 {
-		limit = 50
+	if limit > constants.MaxLimit {
+		limit = constants.MaxLimit
 	}
 	return PaginationParams{
 		Page:   page,

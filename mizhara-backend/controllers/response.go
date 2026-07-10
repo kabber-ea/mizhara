@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 )
 
 func parseLimit(raw string, fallback int64) int64 {
@@ -45,17 +45,17 @@ func respondError(c *gin.Context, err error) {
 	}
 	status := http.StatusInternalServerError
 	switch {
-	case errors.Is(err, lib.ErrUnauthorized), errors.Is(err, lib.ErrInvalidCredentials):
+	case errors.Is(err, utils.ErrUnauthorized), errors.Is(err, utils.ErrInvalidCredentials):
 		status = http.StatusUnauthorized
-	case errors.Is(err, lib.ErrForbidden):
+	case errors.Is(err, utils.ErrForbidden):
 		status = http.StatusForbidden
-	case errors.Is(err, lib.ErrNotFound):
+	case errors.Is(err, utils.ErrNotFound):
 		status = http.StatusNotFound
-	case errors.Is(err, lib.ErrBadRequest):
+	case errors.Is(err, utils.ErrBadRequest):
 		status = http.StatusBadRequest
 	}
 	msg := err.Error()
-	if errors.Is(err, lib.ErrBadRequest) || errors.Is(err, lib.ErrForbidden) {
+	if errors.Is(err, utils.ErrBadRequest) || errors.Is(err, utils.ErrForbidden) {
 		if parts := strings.SplitN(msg, ": ", 2); len(parts) == 2 {
 			msg = parts[1]
 		}

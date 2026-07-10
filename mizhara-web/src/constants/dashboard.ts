@@ -1,0 +1,2 @@
+export const DASHBOARD_PANEL_MIN_HEIGHT = 280;
+export const TOP_CATEGORY_LIMIT = 10;

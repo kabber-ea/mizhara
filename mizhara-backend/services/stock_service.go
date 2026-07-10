@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -33,7 +34,7 @@ func deductProductStock(ctx context.Context, productID string, quantity int) err
 	}
 	oid, err := primitive.ObjectIDFromHex(productID)
 	if err != nil {
-		return lib.BadRequest("invalid product in order")
+		return utils.BadRequest("invalid product in order")
 	}
 
 	now := time.Now()
@@ -56,7 +57,7 @@ func deductProductStock(ctx context.Context, productID string, quantity int) err
 		return err
 	}
 	if res.MatchedCount == 0 {
-		return lib.BadRequest("insufficient stock for one or more products")
+		return utils.BadRequest("insufficient stock for one or more products")
 	}
 	return nil
 }
@@ -72,7 +73,7 @@ func ValidateOrderStock(ctx context.Context, items []struct {
 		}
 		oid, err := primitive.ObjectIDFromHex(item.ProductID)
 		if err != nil {
-			return lib.BadRequest("invalid product in cart")
+			return utils.BadRequest("invalid product in cart")
 		}
 		var doc struct {
 			Name          string `bson:"name"`
@@ -81,7 +82,7 @@ func ValidateOrderStock(ctx context.Context, items []struct {
 		}
 		err = lib.Products().FindOne(ctx, bson.M{"_id": oid}).Decode(&doc)
 		if err != nil {
-			return lib.BadRequest("product no longer available")
+			return utils.BadRequest("product no longer available")
 		}
 		available := doc.StockQuantity
 		if available <= 0 && doc.InStock {
@@ -92,7 +93,7 @@ func ValidateOrderStock(ctx context.Context, items []struct {
 			if name == "" {
 				name = item.Name
 			}
-			return lib.BadRequest(name + " does not have enough stock")
+			return utils.BadRequest(name + " does not have enough stock")
 		}
 	}
 	return nil

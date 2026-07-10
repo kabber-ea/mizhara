@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -61,21 +62,21 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 	}
 	id, err := primitive.ObjectIDFromHex(strings.TrimSpace(input.ID))
 	if err != nil {
-		return nil, lib.BadRequest("invalid category id")
+		return nil, utils.BadRequest("invalid category id")
 	}
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
-		return nil, lib.BadRequest("category name is required")
+		return nil, utils.BadRequest("category name is required")
 	}
 	var existing models.Category
 	if err := lib.Categories().FindOne(ctx, bson.M{"_id": id}).Decode(&existing); err != nil {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	slug := strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 	var duplicate models.Category
 	dupErr := lib.Categories().FindOne(ctx, bson.M{"name": name, "_id": bson.M{"$ne": id}}).Decode(&duplicate)
 	if dupErr == nil {
-		return nil, lib.BadRequest("a category with this name already exists")
+		return nil, utils.BadRequest("a category with this name already exists")
 	}
 	oldName := existing.Name
 	now := time.Now()
@@ -88,7 +89,7 @@ func UpdateCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, in
 		return nil, err
 	}
 	if res.MatchedCount == 0 {
-		return nil, lib.ErrNotFound
+		return nil, utils.ErrNotFound
 	}
 	if oldName != name {
 		_, _ = lib.Products().UpdateMany(ctx, bson.M{"categoryId": id}, bson.M{
@@ -118,11 +119,11 @@ func DeleteCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, id
 	}
 	oid, err := primitive.ObjectIDFromHex(strings.TrimSpace(id))
 	if err != nil {
-		return lib.BadRequest("invalid category id")
+		return utils.BadRequest("invalid category id")
 	}
 	var cat models.Category
 	if err := lib.Categories().FindOne(ctx, bson.M{"_id": oid}).Decode(&cat); err != nil {
-		return lib.ErrNotFound
+		return utils.ErrNotFound
 	}
 	count, err := lib.Products().CountDocuments(ctx, bson.M{
 		"$or": bson.A{
@@ -140,14 +141,14 @@ func DeleteCategoryForAdmin(ctx context.Context, session *lib.SessionPayload, id
 		return err
 	}
 	if count > 0 {
-		return lib.BadRequest("cannot delete a category that still has products assigned")
+		return utils.BadRequest("cannot delete a category that still has products assigned")
 	}
 	res, err := lib.Categories().DeleteOne(ctx, bson.M{"_id": oid})
 	if err != nil {
 		return err
 	}
 	if res.DeletedCount == 0 {
-		return lib.ErrNotFound
+		return utils.ErrNotFound
 	}
 	return nil
 }
@@ -212,7 +213,7 @@ func ListActiveCategoryNames(ctx context.Context) ([]string, error) {
 func createCategory(ctx context.Context, name string) (*models.Category, error) {
 	trimmed := strings.TrimSpace(name)
 	if trimmed == "" {
-		return nil, lib.BadRequest("category name is required")
+		return nil, utils.BadRequest("category name is required")
 	}
 	slug := strings.ToLower(strings.ReplaceAll(trimmed, " ", "-"))
 	now := time.Now()

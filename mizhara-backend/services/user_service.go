@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mizhara-backend/lib"
+	"mizhara-backend/utils"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -33,7 +34,7 @@ func ListUsersForAdmin(ctx context.Context, session *lib.SessionPayload, page, l
 	if err := RequireAdmin(session); err != nil {
 		return nil, err
 	}
-	p := lib.ParsePagination(page, limit, search)
+	p := utils.ParsePagination(page, limit, search)
 	return ListUsers(ctx, p.Page, p.Limit, p.Skip, p.Search, sortBy, sortDir)
 }
 
@@ -48,7 +49,7 @@ func ListUsers(ctx context.Context, page, limit, skip int, search, sortBy, sortD
 		}
 	}
 
-	sort := lib.ParseSort(sortBy, sortDir, customerSortFields, "createdAt")
+	sort := utils.ParseSort(sortBy, sortDir, customerSortFields, "createdAt")
 	total, _ := lib.Users().CountDocuments(ctx, match)
 
 	var items []SerializedUser
@@ -64,11 +65,11 @@ func ListUsers(ctx context.Context, page, limit, skip int, search, sortBy, sortD
 
 	return map[string]interface{}{
 		"items":      items,
-		"pagination": lib.BuildPaginationMeta(page, limit, int(total)),
+		"pagination": utils.BuildPaginationMeta(page, limit, int(total)),
 	}, nil
 }
 
-func listUsersSimple(ctx context.Context, match bson.M, skip, limit int, sort lib.SortParams) ([]SerializedUser, error) {
+func listUsersSimple(ctx context.Context, match bson.M, skip, limit int, sort utils.SortParams) ([]SerializedUser, error) {
 	cur, err := lib.Users().Find(ctx, match,
 		options.Find().
 			SetSort(bson.D{{Key: sort.Field, Value: sort.Dir}}).
