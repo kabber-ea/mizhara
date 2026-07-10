@@ -8,20 +8,10 @@ export const CHART_COLORS = {
   axis: "#a39a92",
 };
 
-export const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  paid: "#5c9e7a",
-  pending: "#c9a227",
-  failed: "#c4727a",
-};
-
 export const DELIVERY_STATUS_COLORS: Record<string, string> = {
   processing: "#c9a227",
-  packed: "#7b9eb5",
   shipped: "#8b7bb5",
-  out_for_delivery: "#9a7358",
   delivered: "#5c9e7a",
-  cancelled: "#c4727a",
-  returned: "#c4845a",
 };
 
 export const chartMargin = { top: 8, right: 8, left: -8, bottom: 0 };
@@ -44,10 +34,6 @@ export function categoryColor(index: number) {
 
 export function deliveryStatusColor(status: string, index: number) {
   return DELIVERY_STATUS_COLORS[status] ?? ["#9a7358", "#7ba38c", "#c4a484"][index % 3];
-}
-
-export function paymentStatusColor(status: string, index: number) {
-  return PAYMENT_STATUS_COLORS[status] ?? ["#8b5a6b", "#c4a484", "#7ba38c"][index % 3];
 }
 
 export function formatStatusLabel(status: string) {

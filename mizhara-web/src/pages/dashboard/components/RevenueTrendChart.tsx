@@ -3,6 +3,7 @@ import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
 import { CHART_COLORS, axisTick, chartMargin } from "@/utils/chartUtils";
 import { renderChartTooltip } from "@/components/ChartTooltip";
+import { DASHBOARD_CONTENT_HEIGHT } from "@/pages/dashboard/constants";
 
 type RevenueTrendChartProps = {
   data: { date: string; revenue: number; orders: number }[];
@@ -12,7 +13,7 @@ type RevenueTrendChartProps = {
 export default function RevenueTrendChart({ data, revenueTotal }: RevenueTrendChartProps) {
   return (
     <ChartCard title="Revenue Trend" subtitle={`${formatINR(revenueTotal)} over 30 days`}>
-      <ResponsiveContainer width="100%" height={240}>
+      <ResponsiveContainer width="100%" height={DASHBOARD_CONTENT_HEIGHT}>
         <AreaChart data={data} margin={chartMargin}>
           <defs>
             <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">

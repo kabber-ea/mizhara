@@ -1,49 +1,67 @@
-import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
+import { formatINR } from "@/utils/format";
 import { categoryColor } from "@/utils/chartUtils";
+import { DASHBOARD_CONTENT_HEIGHT } from "@/pages/dashboard/constants";
 import type { CategorySales } from "@/types/dashboard";
 
-function CategoryRevenueLeaderboard({ data }: { data: CategorySales[] }) {
+function CategoryRevenueBarChart({ data }: { data: CategorySales[] }) {
   if (!data.length) {
     return (
-      <div className="flex h-[280px] items-center justify-center">
+      <div className="flex items-center justify-center" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
         <p className="text-[11px] text-muted-custom">No category data yet</p>
       </div>
     );
   }
 
-  const items = data.slice(0, 5);
+  const items = [...data].sort((a, b) => b.revenue - a.revenue).slice(0, 8);
+  const total = items.reduce((sum, item) => sum + item.revenue, 0);
   const maxRevenue = items[0]?.revenue ?? 1;
 
   return (
-    <div className="flex h-[280px] flex-col">
-      <div className="mb-2 grid shrink-0 grid-cols-[1fr_2.5rem_4.5rem] gap-2 pr-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-muted-custom">
-        <span>Category</span>
-        <span className="text-right">Sold</span>
-        <span className="text-right">Revenue</span>
+    <div className="flex flex-col overflow-hidden" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
+      <div className="mb-3 flex shrink-0 items-center justify-between border-b border-border-custom/40 pb-2">
+        <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-custom">Category</p>
+        <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted-custom">Revenue share</p>
       </div>
-      <div className="flex flex-1 flex-col justify-evenly">
-        {items.map((item, i) => (
-          <div key={item.category} className="group">
-            <div className="grid grid-cols-[1fr_2.5rem_4.5rem] items-center gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full ring-2 ring-white"
-                  style={{ backgroundColor: categoryColor(i) }}
-                />
-                <p className="truncate text-[11px] font-semibold text-primary-dark">{item.category}</p>
+      <div className="flex min-h-0 flex-1 flex-col">
+        {items.map((item, i) => {
+          const pct = total > 0 ? Math.round((item.revenue / total) * 100) : 0;
+          const width = Math.max(6, (item.revenue / maxRevenue) * 100);
+          const color = categoryColor(i);
+
+          return (
+            <div
+              key={item.category}
+              className="group flex min-h-0 flex-1 flex-col justify-center gap-1.5 border-b border-border-custom/25 py-1 last:border-0"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold tabular-nums text-primary-dark ring-1 ring-white"
+                    style={{ backgroundColor: `${color}22`, color }}
+                  >
+                    {i + 1}
+                  </span>
+                  <p className="truncate text-[11px] font-semibold text-primary-dark">{item.category}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="font-serif text-[11px] font-semibold tabular-nums text-primary-dark">{formatINR(item.revenue)}</p>
+                  <p className="text-[9px] tabular-nums text-muted-custom">{pct}%</p>
+                </div>
               </div>
-              <p className="text-right text-[11px] font-bold tabular-nums text-primary-dark">{item.units}</p>
-              <p className="text-right text-[10px] font-semibold tabular-nums text-muted-custom">{formatINR(item.revenue)}</p>
+              <div className="relative h-2 overflow-hidden rounded-full bg-gradient-to-r from-accent-pink/60 to-accent-pink/30">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full shadow-sm transition-all duration-700 ease-out group-hover:brightness-105"
+                  style={{
+                    width: `${width}%`,
+                    background: `linear-gradient(90deg, ${color}bb 0%, ${color} 55%, ${color}dd 100%)`,
+                    boxShadow: `0 1px 8px ${color}44`,
+                  }}
+                />
+              </div>
             </div>
-            <div className="mt-1 h-1 overflow-hidden rounded-full bg-accent-pink/70">
-              <div
-                className="h-full rounded-full transition-all duration-500 group-hover:opacity-90"
-                style={{ width: `${Math.max(8, (item.revenue / maxRevenue) * 100)}%`, backgroundColor: categoryColor(i) }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -52,7 +70,7 @@ function CategoryRevenueLeaderboard({ data }: { data: CategorySales[] }) {
 export default function CategoryRevenueChart({ data }: { data: CategorySales[] }) {
   return (
     <ChartCard title="Top Categories" subtitle="Revenue share by category">
-      <CategoryRevenueLeaderboard data={data} />
+      <CategoryRevenueBarChart data={data} />
     </ChartCard>
   );
 }

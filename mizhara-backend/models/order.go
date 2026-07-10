@@ -11,13 +11,9 @@ type PaymentStatus string
 type TrackingProvider string
 
 const (
-	DeliveryProcessing      DeliveryStatus = "processing"
-	DeliveryPacked            DeliveryStatus = "packed"
-	DeliveryShipped           DeliveryStatus = "shipped"
-	DeliveryOutForDelivery    DeliveryStatus = "out_for_delivery"
-	DeliveryDelivered         DeliveryStatus = "delivered"
-	DeliveryCancelled         DeliveryStatus = "cancelled"
-	DeliveryReturned          DeliveryStatus = "returned"
+	DeliveryProcessing DeliveryStatus = "processing"
+	DeliveryShipped    DeliveryStatus = "shipped"
+	DeliveryDelivered  DeliveryStatus = "delivered"
 	PaymentPending            PaymentStatus  = "pending"
 	PaymentPaid               PaymentStatus  = "paid"
 	PaymentFailed             PaymentStatus  = "failed"

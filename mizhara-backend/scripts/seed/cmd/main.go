@@ -31,6 +31,7 @@ func main() {
 	}
 
 	ctx := context.Background()
+
 	if *ifEmpty {
 		count, err := lib.Products().CountDocuments(ctx, bson.M{})
 		if err != nil {
@@ -181,61 +182,20 @@ func main() {
 	_, _ = lib.Offers().InsertMany(ctx, offerDocs)
 
 	deliveryStatuses := []models.DeliveryStatus{
-		models.DeliveryProcessing, models.DeliveryPacked, models.DeliveryShipped,
-		models.DeliveryOutForDelivery, models.DeliveryDelivered, models.DeliveryDelivered,
+		models.DeliveryProcessing, models.DeliveryShipped,
+		models.DeliveryDelivered, models.DeliveryDelivered,
 	}
-	paymentStatuses := []models.PaymentStatus{
-		models.PaymentPaid, models.PaymentPaid, models.PaymentPaid,
-		models.PaymentPending, models.PaymentFailed,
-	}
+
+	expensiveProductIDs := sortedProductIDsByPrice(productByID, true)
+	affordableProductIDs := sortedProductIDsByPrice(productByID, false)
 
 	orderCount := 0
-	for i := 0; i < 120; i++ {
-		customerID := customerIDs[rng.Intn(len(customerIDs))]
-		productID := productIDs[rng.Intn(len(productIDs))]
-		product := productByID[productID]
-		qty := 1 + rng.Intn(2)
-		subtotal := product.Price * float64(qty)
-		daysAgo := rng.Intn(60)
-		createdAt := now.AddDate(0, 0, -daysAgo).Add(-time.Duration(rng.Intn(86400)) * time.Second)
-		paymentStatus := paymentStatuses[rng.Intn(len(paymentStatuses))]
-		deliveryStatus := deliveryStatuses[rng.Intn(len(deliveryStatuses))]
-		if paymentStatus != models.PaymentPaid {
-			deliveryStatus = models.DeliveryProcessing
+	for ci, customerID := range customerIDs {
+		paidOrders := paidOrdersForCustomer(ci, rng)
+		for o := 0; o < paidOrders; o++ {
+			productID := pickProductForTier(ci, rng, expensiveProductIDs, affordableProductIDs, productIDs)
+			orderCount += insertSeedOrder(ctx, rng, orderCount, customerID, customerProfiles, productByID, productID, ci, now, models.PaymentPaid, deliveryStatuses)
 		}
-
-		customer := customerProfiles[customerID]
-		itemImage := ""
-		if len(product.Images) > 0 {
-			itemImage = product.Images[0]
-		}
-		itemSize := "One Size"
-		if len(product.Sizes) > 0 {
-			itemSize = product.Sizes[0]
-		}
-
-		order := models.Order{
-			ID: primitive.NewObjectID(), UserID: customerID,
-			OrderNumber: fmt.Sprintf("MIZ-%06d", 100000+orderCount),
-			Items: []models.OrderItem{{
-				ProductID: productID.Hex(), Name: product.Name, Price: product.Price,
-				Quantity: qty, Size: itemSize, Image: itemImage, Category: product.Category,
-			}},
-			ShippingAddress: models.ShippingAddress{
-				Name: customer.Name, Email: customer.Email, Phone: customer.Phone,
-				Address: fmt.Sprintf("%d, MG Road", 10+rng.Intn(200)),
-				City: "Mumbai", State: "Maharashtra", Pincode: "400001",
-			},
-			Subtotal: subtotal, Shipping: 0, Total: subtotal, Currency: "INR",
-			PaymentStatus: paymentStatus, DeliveryStatus: deliveryStatus,
-			CreatedAt: createdAt, UpdatedAt: createdAt,
-		}
-		if paymentStatus == models.PaymentPaid && deliveryStatus == models.DeliveryDelivered {
-			delivered := createdAt.AddDate(0, 0, 3+rng.Intn(5))
-			order.DeliveredAt = &delivered
-		}
-		_, _ = lib.Orders().InsertOne(ctx, order)
-		orderCount++
 	}
 
 	fmt.Println("Seed complete!")
@@ -258,4 +218,124 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func paidOrdersForCustomer(customerIndex int, rng *rand.Rand) int {
+	switch {
+	case customerIndex < 8:
+		return 12 + rng.Intn(7) // top spenders: 12-18 paid orders
+	case customerIndex < 20:
+		return 4 + rng.Intn(4) // 4-7 paid orders
+	case customerIndex < 35:
+		return 1 + rng.Intn(3) // 1-3 paid orders
+	default:
+		return rng.Intn(2) // 0-1 paid orders
+	}
+}
+
+func sortedProductIDsByPrice(productByID map[primitive.ObjectID]models.Product, descending bool) []primitive.ObjectID {
+	ids := make([]primitive.ObjectID, 0, len(productByID))
+	for id := range productByID {
+		ids = append(ids, id)
+	}
+	for i := 0; i < len(ids); i++ {
+		for j := i + 1; j < len(ids); j++ {
+			left := productByID[ids[i]].Price
+			right := productByID[ids[j]].Price
+			swap := descending && left < right
+			if !descending && left > right {
+				swap = true
+			}
+			if swap {
+				ids[i], ids[j] = ids[j], ids[i]
+			}
+		}
+	}
+	return ids
+}
+
+func pickProductForTier(
+	customerIndex int,
+	rng *rand.Rand,
+	expensiveProductIDs, affordableProductIDs, allProductIDs []primitive.ObjectID,
+) primitive.ObjectID {
+	switch {
+	case customerIndex < 8:
+		limit := min(8, len(expensiveProductIDs))
+		return expensiveProductIDs[rng.Intn(limit)]
+	case customerIndex < 20:
+		if rng.Intn(3) == 0 && len(affordableProductIDs) > 0 {
+			limit := min(12, len(affordableProductIDs))
+			return affordableProductIDs[rng.Intn(limit)]
+		}
+		return allProductIDs[rng.Intn(len(allProductIDs))]
+	default:
+		return allProductIDs[rng.Intn(len(allProductIDs))]
+	}
+}
+
+func orderQuantityForTier(customerIndex int, rng *rand.Rand) int {
+	switch {
+	case customerIndex < 8:
+		return 1 + rng.Intn(3) // 1-3 units
+	case customerIndex < 20:
+		return 1 + rng.Intn(2) // 1-2 units
+	default:
+		return 1
+	}
+}
+
+func insertSeedOrder(
+	ctx context.Context,
+	rng *rand.Rand,
+	orderCount int,
+	customerID primitive.ObjectID,
+	customerProfiles map[primitive.ObjectID]seed.CustomerSeed,
+	productByID map[primitive.ObjectID]models.Product,
+	productID primitive.ObjectID,
+	customerIndex int,
+	now time.Time,
+	paymentStatus models.PaymentStatus,
+	deliveryStatuses []models.DeliveryStatus,
+) int {
+	product := productByID[productID]
+	qty := orderQuantityForTier(customerIndex, rng)
+	subtotal := product.Price * float64(qty)
+	daysAgo := rng.Intn(90)
+	createdAt := now.AddDate(0, 0, -daysAgo).Add(-time.Duration(rng.Intn(86400)) * time.Second)
+
+	deliveryStatus := deliveryStatuses[rng.Intn(len(deliveryStatuses))]
+
+	customer := customerProfiles[customerID]
+	itemImage := ""
+	if len(product.Images) > 0 {
+		itemImage = product.Images[0]
+	}
+	itemSize := "One Size"
+	if len(product.Sizes) > 0 {
+		itemSize = product.Sizes[0]
+	}
+
+	order := models.Order{
+		ID: primitive.NewObjectID(), UserID: customerID,
+		OrderNumber: fmt.Sprintf("MIZ-%06d", 100000+orderCount),
+		Items: []models.OrderItem{{
+			ProductID: productID.Hex(), Name: product.Name, Price: product.Price,
+			Quantity: qty, Size: itemSize, Image: itemImage, Category: product.Category,
+		}},
+		ShippingAddress: models.ShippingAddress{
+			Name: customer.Name, Email: customer.Email, Phone: customer.Phone,
+			Address: fmt.Sprintf("%d, MG Road", 10+rng.Intn(200)),
+			City: "Mumbai", State: "Maharashtra", Pincode: "400001",
+		},
+		Subtotal: subtotal, Shipping: 0, Total: subtotal, Currency: "INR",
+		PaymentStatus: paymentStatus, DeliveryStatus: deliveryStatus,
+		CreatedAt: createdAt, UpdatedAt: createdAt,
+	}
+	if paymentStatus == models.PaymentPaid && deliveryStatus == models.DeliveryDelivered {
+		delivered := createdAt.AddDate(0, 0, 3+rng.Intn(5))
+		order.DeliveredAt = &delivered
+	}
+	_, _ = lib.Orders().InsertOne(ctx, order)
+	return 1
 }

@@ -39,9 +39,6 @@ func ConnectDB() error {
 		if err = EnsureIndexes(); err != nil {
 			return
 		}
-		ctx2, cancel2 := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel2()
-		err = RunMigrations(ctx2)
 	})
 	return err
 }

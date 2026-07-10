@@ -1,5 +1,3 @@
-import TableSkeleton from "@/components/TableSkeleton";
-
 export default function DashboardSkeleton() {
   return (
     <div className="space-y-8">
@@ -20,7 +18,11 @@ export default function DashboardSkeleton() {
           <div key={i} className="h-72 animate-pulse rounded-2xl border border-border-custom/60 bg-white" />
         ))}
       </div>
-      <TableSkeleton rows={4} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="h-72 animate-pulse rounded-2xl border border-border-custom/60 bg-white" />
+        ))}
+      </div>
     </div>
   );
 }

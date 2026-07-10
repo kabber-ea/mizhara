@@ -5,8 +5,7 @@ import CategoryRevenueChart from "@/pages/dashboard/components/CategoryRevenueCh
 import DashboardSkeleton from "@/pages/dashboard/components/DashboardSkeleton";
 import DeliveryStatusChart from "@/pages/dashboard/components/DeliveryStatusChart";
 import KpiCard from "@/pages/dashboard/components/KpiCard";
-import PaymentStatusChart from "@/pages/dashboard/components/PaymentStatusChart";
-import RecentCustomersTable from "@/pages/dashboard/components/RecentCustomersTable";
+import TopCustomersChart from "@/pages/dashboard/components/TopCustomersChart";
 import RecentOrdersTable from "@/pages/dashboard/components/RecentOrdersTable";
 import RevenueTrendChart from "@/pages/dashboard/components/RevenueTrendChart";
 import TopProductsShowcase from "@/pages/dashboard/components/TopProductsShowcase";
@@ -40,15 +39,15 @@ export default function DashboardPage() {
     );
   }
 
-  const { kpis, charts, recentOrders, recentCustomers } = data;
+  const { kpis, charts, recentOrders } = data;
   const revenueByDay = charts.revenueByDay ?? [];
   const deliveryStatus = charts.deliveryStatus ?? [];
-  const paymentStatus = charts.paymentStatus ?? [];
   const topCategories = charts.topCategories ?? [];
+  const topCustomers = charts.topCustomers ?? [];
+  const topCustomersByOrders = charts.topCustomersByOrders ?? [];
   const trendingProducts = charts.trendingProducts ?? [];
   const topProductsOverall = charts.topProductsOverall ?? [];
   const orders = recentOrders ?? [];
-  const customers = recentCustomers ?? [];
 
   const revenueTotal = revenueByDay.reduce((s, d) => s + d.revenue, 0);
 
@@ -90,18 +89,28 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
         <RevenueTrendChart data={revenueByDay} revenueTotal={revenueTotal} />
         <DeliveryStatusChart data={deliveryStatus} />
-        <PaymentStatusChart data={paymentStatus} />
         <CategoryRevenueChart data={topCategories} />
         <TrendingLeaderboard data={trendingProducts} />
         <TopProductsShowcase data={topProductsOverall} />
+        <RecentOrdersTable orders={orders} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <RecentOrdersTable orders={orders} />
-        <RecentCustomersTable customers={customers} />
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+        <TopCustomersChart
+          data={topCustomers}
+          metric="revenue"
+          title="Top Customers"
+          subtitle="Highest spenders"
+        />
+        <TopCustomersChart
+          data={topCustomersByOrders}
+          metric="orders"
+          title="Most Orders"
+          subtitle="Customers by order count"
+        />
       </div>
     </div>
   );

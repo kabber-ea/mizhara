@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"strings"
 	"time"
 
 	"mizhara-backend/lib"
@@ -83,6 +84,12 @@ func serializeOrder(doc bson.M) SerializedOrder {
 		DeliveryStatus: str(doc["deliveryStatus"]),
 		TrackingProvider: str(doc["trackingProvider"]), TrackingNumber: str(doc["trackingNumber"]),
 		TrackingURL: str(doc["trackingUrl"]),
+	}
+	deliveryStatus := o.DeliveryStatus
+	if deliveryStatus != string(models.DeliveryShipped) && deliveryStatus != string(models.DeliveryDelivered) {
+		o.TrackingProvider = ""
+		o.TrackingNumber = ""
+		o.TrackingURL = ""
 	}
 	if t, ok := doc["createdAt"].(primitive.DateTime); ok {
 		o.CreatedAt = t.Time().Format(time.RFC3339)
@@ -312,17 +319,30 @@ func UpdateOrderFulfillment(ctx context.Context, id string, body FulfillmentUpda
 			now := time.Now()
 			order.DeliveredAt = &now
 		}
+		if body.DeliveryStatus == models.DeliveryProcessing {
+			order.TrackingProvider = ""
+			order.TrackingNumber = ""
+			order.TrackingURL = ""
+			order.ShippedAt = nil
+		}
 	}
-	if body.TrackingProvider != "" {
-		order.TrackingProvider = models.TrackingProvider(body.TrackingProvider)
-	}
-	if body.TrackingNumber != "" {
-		order.TrackingNumber = body.TrackingNumber
-	}
-	if body.TrackingProvider != "" && body.TrackingNumber != "" {
-		order.TrackingURL = lib.BuildTrackingURL(body.TrackingProvider, body.TrackingNumber, body.TrackingURL)
-	} else if body.TrackingURL != "" {
-		order.TrackingURL = body.TrackingURL
+
+	if order.DeliveryStatus == models.DeliveryShipped {
+		trackingNumber := strings.TrimSpace(body.TrackingNumber)
+		if trackingNumber == "" {
+			return nil, lib.BadRequest("tracking number is required for shipped orders")
+		}
+		if body.TrackingProvider == "" {
+			return nil, lib.BadRequest("courier is required for shipped orders")
+		}
+		provider := lib.TrackingProvider(body.TrackingProvider)
+		trackingURL := lib.BuildTrackingURL(provider, trackingNumber, body.TrackingURL)
+		if trackingURL == "" {
+			return nil, lib.BadRequest("tracking URL is required for shipped orders")
+		}
+		order.TrackingProvider = models.TrackingProvider(provider)
+		order.TrackingNumber = trackingNumber
+		order.TrackingURL = trackingURL
 	}
 	order.UpdatedAt = time.Now()
 	_, err = lib.Orders().ReplaceOne(ctx, bson.M{"_id": oid}, order)

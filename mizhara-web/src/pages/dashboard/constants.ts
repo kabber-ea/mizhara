@@ -1,0 +1,1 @@
+export const DASHBOARD_CONTENT_HEIGHT = 280;

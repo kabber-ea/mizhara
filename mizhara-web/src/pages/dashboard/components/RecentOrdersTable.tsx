@@ -1,55 +1,44 @@
 import StatusBadge from "@/components/StatusBadge";
+import ChartCard from "@/components/ChartCard";
 import { formatINR } from "@/utils/format";
 import type { SerializedOrder } from "@/types/admin";
+import { DASHBOARD_CONTENT_HEIGHT } from "@/pages/dashboard/constants";
+
+const rowGrid = "grid grid-cols-[4.5rem_minmax(0,1fr)_5.85rem_4.5rem] items-center gap-x-2";
 
 export default function RecentOrdersTable({ orders }: { orders: SerializedOrder[] }) {
+  const items = orders.slice(0, 5);
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-border-custom/80 bg-white shadow-sm shadow-primary-dark/[0.03]">
-      <div className="border-b border-border-custom/50 bg-gradient-to-r from-accent-pink/40 to-white px-5 py-4">
-        <h3 className="font-serif text-sm font-semibold text-primary-dark">Recent Orders</h3>
-        <p className="mt-0.5 text-[10px] text-muted-custom">Latest transactions</p>
+    <ChartCard title="Recent Orders" subtitle="Latest transactions">
+      <div className="flex flex-col" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
+        {items.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-[11px] text-muted-custom">No orders yet</p>
+          </div>
+        ) : (
+          <>
+            <div className={`mb-2 shrink-0 ${rowGrid} text-[9px] font-bold uppercase tracking-[0.1em] text-muted-custom`}>
+              <span>Order</span>
+              <span>Customer</span>
+              <span>Status</span>
+              <span className="text-right">Total</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              {items.map((o) => (
+                <div key={o.id} className={`${rowGrid} border-b border-border-custom/30 pb-3 last:border-0 last:pb-0`}>
+                  <span className="truncate font-mono text-[10px] font-medium text-primary-dark">{o.orderNumber}</span>
+                  <p className="truncate text-[11px] font-medium text-primary-dark">{o.customerName}</p>
+                  <div className="flex justify-center">
+                    <StatusBadge status={o.deliveryStatus} />
+                  </div>
+                  <p className="text-right text-[10px] font-semibold tabular-nums text-primary-dark">{formatINR(o.total)}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border-custom/50 bg-accent-pink/20">
-              <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-muted-custom">
-                Order
-              </th>
-              <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-muted-custom">
-                Customer
-              </th>
-              <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-muted-custom">
-                Total
-              </th>
-              <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-muted-custom">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((o) => (
-              <tr
-                key={o.id}
-                className="border-b border-border-custom/30 transition-colors last:border-0 hover:bg-accent-pink/15"
-              >
-                <td className="px-5 py-3">
-                  <span className="rounded-md bg-accent-pink/50 px-2 py-0.5 font-mono text-[10px] font-medium text-primary-dark">
-                    {o.orderNumber}
-                  </span>
-                </td>
-                <td className="px-3 py-3 text-xs font-medium text-primary-dark">{o.customerName}</td>
-                <td className="px-3 py-3 font-serif text-xs font-semibold tabular-nums text-primary-dark">
-                  {formatINR(o.total)}
-                </td>
-                <td className="px-5 py-3">
-                  <StatusBadge status={o.deliveryStatus} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </ChartCard>
   );
 }

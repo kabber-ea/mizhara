@@ -1,4 +1,4 @@
-import type { SerializedCustomer, SerializedOrder } from "@/types/admin";
+import type { SerializedOrder } from "@/types/admin";
 
 export type DashboardData = {
   kpis: {
@@ -13,15 +13,16 @@ export type DashboardData = {
   charts: {
     revenueByDay: { date: string; revenue: number; orders: number }[];
     deliveryStatus: { status: string; count: number }[];
-    paymentStatus: { status: string; count: number }[];
-    topCategories: { category: string; revenue: number; units: number }[];
+    topCategories: { category: string; revenue: number }[];
+    topCustomers: { customerId: string; name: string; revenue: number; orders: number }[];
+    topCustomersByOrders: { customerId: string; name: string; revenue: number; orders: number }[];
     trendingProducts: { productId: string; name: string; units: number; revenue: number }[];
     topProductsOverall: { productId: string; name: string; units: number; revenue: number }[];
   };
   recentOrders: SerializedOrder[];
-  recentCustomers: SerializedCustomer[];
 };
 
 export type ProductSales = { productId: string; name: string; units: number; revenue: number };
-export type CategorySales = { category: string; revenue: number; units: number };
+export type CategorySales = { category: string; revenue: number };
+export type CustomerSales = { customerId: string; name: string; revenue: number; orders: number };
 export type StatusCount = { status: string; count: number };

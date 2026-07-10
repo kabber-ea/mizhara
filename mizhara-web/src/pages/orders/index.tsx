@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { formatINR } from "@/utils/format";
-import { api } from "@/lib/api";
-import { TRACKING_PROVIDERS } from "@/utils/tracking";
+import { api, apiErrorMessage } from "@/lib/api";
+import { TRACKING_PROVIDERS, buildTrackingUrl } from "@/utils/tracking";
+import type { TrackingProvider } from "@/types/order";
 import type { SerializedOrder } from "@/types/admin";
 import type { DeliveryStatus } from "@/types/order";
 import type { PaginationMeta } from "@/utils/pagination";
@@ -15,23 +16,11 @@ import { TableEditButton } from "@/components/TableIconButtons";
 const DELIVERY_FILTERS: { value: string; label: string }[] = [
   { value: "all", label: "All statuses" },
   { value: "processing", label: "Processing" },
-  { value: "packed", label: "Packed" },
   { value: "shipped", label: "Shipped" },
-  { value: "out_for_delivery", label: "Out for delivery" },
   { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "returned", label: "Returned" },
 ];
 
-const DELIVERY_OPTIONS: DeliveryStatus[] = [
-  "processing",
-  "packed",
-  "shipped",
-  "out_for_delivery",
-  "delivered",
-  "cancelled",
-  "returned",
-];
+const DELIVERY_OPTIONS: DeliveryStatus[] = ["processing", "shipped", "delivered"];
 
 export default function AdminOrdersPage() {
   const [search, setSearch] = useState("");
@@ -48,6 +37,7 @@ export default function AdminOrdersPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [editForm, setEditForm] = useState({
     deliveryStatus: "processing" as DeliveryStatus,
     trackingProvider: "delhivery",
@@ -87,22 +77,67 @@ export default function AdminOrdersPage() {
   }, [debouncedSearch, deliveryFilter]);
 
   const openEdit = (order: SerializedOrder) => {
+    setSaveError("");
     setEditingId(order.id);
-    setEditForm({
+    const baseForm = {
       deliveryStatus: order.deliveryStatus,
       trackingProvider: order.trackingProvider ?? "delhivery",
       trackingNumber: order.trackingNumber ?? "",
       trackingUrl: order.trackingUrl ?? "",
-    });
+    };
+    setEditForm(order.deliveryStatus === "shipped" ? withTrackingUrl(baseForm, {}) : baseForm);
   };
 
   const saveOrder = async (orderId: string) => {
+    setSaveError("");
     setSaving(true);
     try {
-      await api.patch(`/api/orders/${orderId}`, editForm);
+      let payload:
+        | { deliveryStatus: DeliveryStatus; trackingProvider?: string; trackingNumber?: string; trackingUrl?: string };
+
+      if (editForm.deliveryStatus === "shipped") {
+        const trackingNumber = editForm.trackingNumber.trim();
+        const trackingProvider = editForm.trackingProvider as TrackingProvider;
+        const trackingUrl =
+          trackingProvider === "other"
+            ? editForm.trackingUrl.trim()
+            : buildTrackingUrl(trackingProvider, trackingNumber);
+
+        if (!trackingNumber) {
+          setSaveError("Tracking number is required for shipped orders.");
+          return;
+        }
+        if (!trackingUrl) {
+          setSaveError(
+            trackingProvider === "other"
+              ? "Tracking URL is required when courier is Other."
+              : "Could not build tracking URL. Check courier and tracking number.",
+          );
+          return;
+        }
+
+        payload = {
+          deliveryStatus: "shipped",
+          trackingProvider,
+          trackingNumber,
+          trackingUrl,
+        };
+      } else if (editForm.deliveryStatus === "delivered") {
+        payload = { deliveryStatus: "delivered" };
+      } else {
+        payload = {
+          deliveryStatus: "processing",
+          trackingProvider: "",
+          trackingNumber: "",
+          trackingUrl: "",
+        };
+      }
+
+      await api.patch(`/api/orders/${orderId}`, payload);
       setEditingId(null);
       await loadOrders();
     } catch (e) {
+      setSaveError(apiErrorMessage(e, "Failed to save order"));
       console.error(e);
     } finally {
       setSaving(false);
@@ -154,7 +189,6 @@ export default function AdminOrdersPage() {
                     <th className="pb-3 pr-3">Customer</th>
                     <th className="pb-3 pr-3">Items</th>
                     <th className="pb-3 pr-3">Total</th>
-                    <th className="pb-3 pr-3">Payment</th>
                     <th className="pb-3 pr-3">Delivery</th>
                     <th className="pb-3 pr-3">Tracking</th>
                     <th className="pb-3">Actions</th>
@@ -169,9 +203,13 @@ export default function AdminOrdersPage() {
                       editing={editingId === o.id}
                       editForm={editForm}
                       saving={saving}
+                      saveError={saveError}
                       onToggleExpand={() => setExpandedId(expandedId === o.id ? null : o.id)}
                       onEdit={() => openEdit(o)}
-                      onCancelEdit={() => setEditingId(null)}
+                      onCancelEdit={() => {
+                        setEditingId(null);
+                        setSaveError("");
+                      }}
                       onSave={() => saveOrder(o.id)}
                       onFormChange={setEditForm}
                     />
@@ -194,6 +232,7 @@ function OrderRow({
   editing,
   editForm,
   saving,
+  saveError,
   onToggleExpand,
   onEdit,
   onCancelEdit,
@@ -210,6 +249,7 @@ function OrderRow({
     trackingUrl: string;
   };
   saving: boolean;
+  saveError: string;
   onToggleExpand: () => void;
   onEdit: () => void;
   onCancelEdit: () => void;
@@ -227,23 +267,26 @@ function OrderRow({
         <td className="py-3 pr-3">{order.itemCount}</td>
         <td className="py-3 pr-3 font-semibold">{formatINR(order.total)}</td>
         <td className="py-3 pr-3">
-          <StatusBadge status={order.paymentStatus} type="payment" />
+          <div className="flex justify-start">
+            <StatusBadge status={order.deliveryStatus} />
+          </div>
         </td>
         <td className="py-3 pr-3">
-          <StatusBadge status={order.deliveryStatus} />
-        </td>
-        <td className="py-3 pr-3">
-          {order.trackingUrl ? (
-            <a
-              href={order.trackingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary font-semibold hover:underline text-[10px]"
-            >
-              Track ↗
-            </a>
-          ) : order.trackingNumber ? (
-            <span className="text-[10px]">{order.trackingNumber}</span>
+          {order.deliveryStatus === "shipped" || order.deliveryStatus === "delivered" ? (
+            order.trackingUrl ? (
+              <a
+                href={order.trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-semibold hover:underline text-[10px]"
+              >
+                Track ↗
+              </a>
+            ) : order.trackingNumber ? (
+              <span className="text-[10px]">{order.trackingNumber}</span>
+            ) : (
+              <span className="text-[10px] text-muted-custom">—</span>
+            )
           ) : (
             <span className="text-[10px] text-muted-custom">—</span>
           )}
@@ -260,7 +303,7 @@ function OrderRow({
 
       {expanded && (
         <tr className="bg-accent-mint/5">
-          <td colSpan={8} className="px-4 py-4">
+          <td colSpan={7} className="px-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px]">
               <div>
                 <p className="font-bold text-primary-dark mb-1">Shipping Address</p>
@@ -294,79 +337,173 @@ function OrderRow({
 
       {editing && (
         <tr className="bg-accent-pink/10">
-          <td colSpan={8} className="px-4 py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-[10px] font-bold uppercase mb-1">Delivery Status</label>
-                <select
-                  value={editForm.deliveryStatus}
-                  onChange={(e) =>
-                    onFormChange({ ...editForm, deliveryStatus: e.target.value as DeliveryStatus })
-                  }
-                  className="w-full px-3 py-2 border border-border-custom rounded-xl text-xs"
-                >
-                  {DELIVERY_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s.replace(/_/g, " ")}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold uppercase mb-1">Courier</label>
-                <select
-                  value={editForm.trackingProvider}
-                  onChange={(e) => onFormChange({ ...editForm, trackingProvider: e.target.value })}
-                  className="w-full px-3 py-2 border border-border-custom rounded-xl text-xs"
-                >
-                  {TRACKING_PROVIDERS.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold uppercase mb-1">Tracking Number</label>
-                <input
-                  type="text"
-                  value={editForm.trackingNumber}
-                  onChange={(e) => onFormChange({ ...editForm, trackingNumber: e.target.value })}
-                  className="w-full px-3 py-2 border border-border-custom rounded-xl text-xs"
-                  placeholder="AWB / consignment #"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold uppercase mb-1">Custom URL (optional)</label>
-                <input
-                  type="url"
-                  value={editForm.trackingUrl}
-                  onChange={(e) => onFormChange({ ...editForm, trackingUrl: e.target.value })}
-                  className="w-full px-3 py-2 border border-border-custom rounded-xl text-xs"
-                  placeholder="Override tracking link"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 mt-3">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={onSave}
-                className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl disabled:opacity-60"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </button>
-              <button
-                type="button"
-                onClick={onCancelEdit}
-                className="px-4 py-2 border border-border-custom text-xs font-semibold rounded-xl"
-              >
-                Cancel
-              </button>
-            </div>
+          <td colSpan={7} className="px-4 py-3">
+            <OrderFulfillmentEditor
+              editForm={editForm}
+              saving={saving}
+              saveError={saveError}
+              onFormChange={onFormChange}
+              onSave={onSave}
+              onCancel={onCancelEdit}
+            />
           </td>
         </tr>
       )}
+    </>
+  );
+}
+
+const fulfillmentFieldClass =
+  "w-full rounded-xl border border-border-custom/80 bg-white px-3 py-2 text-xs text-primary-dark shadow-sm shadow-primary-dark/[0.02] transition focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10";
+
+const fulfillmentLabelClass = "mb-1 block text-[10px] font-bold uppercase tracking-[0.1em] text-muted-custom";
+
+const DELIVERY_LABELS: Record<DeliveryStatus, string> = {
+  processing: "Processing",
+  shipped: "Shipped",
+  delivered: "Delivered",
+};
+
+type FulfillmentForm = {
+  deliveryStatus: DeliveryStatus;
+  trackingProvider: string;
+  trackingNumber: string;
+  trackingUrl: string;
+};
+
+function withTrackingUrl(form: FulfillmentForm, updates: Partial<FulfillmentForm>): FulfillmentForm {
+  const next = { ...form, ...updates };
+  if (next.deliveryStatus !== "shipped") return next;
+
+  const provider = next.trackingProvider as TrackingProvider;
+  if (provider === "other") {
+    if (updates.trackingProvider === "other") {
+      next.trackingUrl = "";
+    }
+    return next;
+  }
+
+  next.trackingUrl = buildTrackingUrl(provider, next.trackingNumber);
+  return next;
+}
+
+function OrderFulfillmentEditor({
+  editForm,
+  saving,
+  saveError,
+  onFormChange,
+  onSave,
+  onCancel,
+}: {
+  editForm: FulfillmentForm;
+  saving: boolean;
+  saveError: string;
+  onFormChange: (f: FulfillmentForm) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const showTracking = editForm.deliveryStatus === "shipped";
+  const isOtherProvider = editForm.trackingProvider === "other";
+
+  const handleStatusChange = (status: DeliveryStatus) => {
+    if (status !== "shipped") {
+      onFormChange({
+        deliveryStatus: status,
+        trackingProvider: "delhivery",
+        trackingNumber: "",
+        trackingUrl: "",
+      });
+      return;
+    }
+    onFormChange(withTrackingUrl({ ...editForm, deliveryStatus: status }, { deliveryStatus: status }));
+  };
+
+  return (
+    <>
+      <div className="space-y-3">
+        <div className="w-full sm:w-48">
+          <label className={fulfillmentLabelClass}>Delivery status</label>
+          <select
+            value={editForm.deliveryStatus}
+            onChange={(e) => handleStatusChange(e.target.value as DeliveryStatus)}
+            className={fulfillmentFieldClass}
+          >
+            {DELIVERY_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {DELIVERY_LABELS[status]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {showTracking && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <label className={fulfillmentLabelClass}>Courier</label>
+              <select
+                value={editForm.trackingProvider}
+                onChange={(e) =>
+                  onFormChange(withTrackingUrl(editForm, { trackingProvider: e.target.value }))
+                }
+                className={fulfillmentFieldClass}
+              >
+                {TRACKING_PROVIDERS.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={fulfillmentLabelClass}>Tracking number</label>
+              <input
+                type="text"
+                value={editForm.trackingNumber}
+                onChange={(e) =>
+                  onFormChange(withTrackingUrl(editForm, { trackingNumber: e.target.value }))
+                }
+                className={fulfillmentFieldClass}
+                placeholder="AWB / consignment #"
+                required
+              />
+            </div>
+            <div>
+              <label className={fulfillmentLabelClass}>
+                Tracking URL {isOtherProvider ? "" : "(auto)"}
+              </label>
+              <input
+                type="url"
+                value={editForm.trackingUrl}
+                onChange={(e) => onFormChange({ ...editForm, trackingUrl: e.target.value })}
+                readOnly={!isOtherProvider}
+                className={`${fulfillmentFieldClass} ${!isOtherProvider ? "bg-accent-pink/20 text-muted-custom" : ""}`}
+                placeholder={isOtherProvider ? "https://..." : "Auto-filled from courier"}
+                required={isOtherProvider}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {saveError && <p className="mt-2 text-[11px] font-medium text-rose-600">{saveError}</p>}
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          disabled={saving}
+          onClick={onSave}
+          className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save changes"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-xl border border-border-custom/80 bg-white px-4 py-2 text-xs font-semibold text-primary-dark"
+        >
+          Cancel
+        </button>
+      </div>
     </>
   );
 }

@@ -8,6 +8,7 @@ import (
 	"mizhara-backend/lib"
 	"mizhara-backend/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetDashboardDataForAdmin(ctx context.Context, session *lib.SessionPayload) (map[string]interface{}, error) {
@@ -27,7 +28,7 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 	pendingShipments, _ := lib.Orders().CountDocuments(ctx, bson.M{
 		"paymentStatus": models.PaymentPaid,
 		"deliveryStatus": bson.M{"$in": bson.A{
-			models.DeliveryProcessing, models.DeliveryPacked, models.DeliveryShipped, models.DeliveryOutForDelivery,
+			models.DeliveryProcessing, models.DeliveryShipped,
 		}},
 	})
 	lowStockCount, _ := lib.Products().CountDocuments(ctx, bson.M{"$or": bson.A{
@@ -62,15 +63,11 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 		}
 	}
 
-	recentCustomers := []SerializedUser{}
-	if users, err := GetRecentUsers(ctx, 5); err == nil && users != nil {
-		recentCustomers = users
-	}
-
 	revenueByDay := aggregateRevenueByDay(ctx, thirtyDaysAgo)
 	deliveryStatus := aggregateStatusCounts(ctx, "$deliveryStatus")
-	paymentStatus := aggregateStatusCounts(ctx, "$paymentStatus")
 	topCategories := aggregateTopCategories(ctx)
+	topCustomers := aggregateTopCustomers(ctx, "revenue")
+	topCustomersByOrders := aggregateTopCustomers(ctx, "orders")
 	trendingProducts := aggregateTopProducts(ctx, &thirtyDaysAgo)
 	topProductsOverall := aggregateTopProducts(ctx, nil)
 
@@ -84,13 +81,13 @@ func GetDashboardData(ctx context.Context) (map[string]interface{}, error) {
 		"charts": map[string]interface{}{
 			"revenueByDay":       revenueByDay,
 			"deliveryStatus":     deliveryStatus,
-			"paymentStatus":      paymentStatus,
-			"topCategories":      topCategories,
+			"topCategories":         topCategories,
+			"topCustomers":            topCustomers,
+			"topCustomersByOrders":    topCustomersByOrders,
 			"trendingProducts":   trendingProducts,
 			"topProductsOverall": topProductsOverall,
 		},
-		"recentOrders":    recentOrdersList,
-		"recentCustomers": recentCustomers,
+		"recentOrders": recentOrdersList,
 	}, nil
 }
 
@@ -160,7 +157,6 @@ func aggregateTopCategories(ctx context.Context) []map[string]interface{} {
 		bson.M{"$group": bson.M{
 			"_id":     "$items.category",
 			"revenue": bson.M{"$sum": bson.M{"$multiply": bson.A{"$items.price", "$items.quantity"}}},
-			"units":   bson.M{"$sum": "$items.quantity"},
 		}},
 		bson.M{"$sort": bson.M{"revenue": -1}},
 		bson.M{"$limit": 8},
@@ -181,10 +177,57 @@ func aggregateTopCategories(ctx context.Context) []map[string]interface{} {
 		out = append(out, map[string]interface{}{
 			"category": category,
 			"revenue":  num(row["revenue"]),
-			"units":    int(num(row["units"])),
 		})
 	}
 	return out
+}
+
+func aggregateTopCustomers(ctx context.Context, sortBy string) []map[string]interface{} {
+	out := []map[string]interface{}{}
+	sort := bson.D{{Key: "revenue", Value: -1}}
+	if sortBy == "orders" {
+		sort = bson.D{{Key: "orders", Value: -1}}
+	}
+
+	cur, err := lib.Orders().Aggregate(ctx, bson.A{
+		bson.M{"$match": bson.M{"paymentStatus": models.PaymentPaid}},
+		bson.M{"$group": bson.M{
+			"_id":     "$userId",
+			"name":    bson.M{"$first": "$shippingAddress.name"},
+			"revenue": bson.M{"$sum": "$total"},
+			"orders":  bson.M{"$sum": 1},
+		}},
+		bson.M{"$sort": sort},
+		bson.M{"$limit": 8},
+	})
+	if err != nil {
+		return out
+	}
+	defer cur.Close(ctx)
+	for cur.Next(ctx) {
+		var row bson.M
+		if cur.Decode(&row) != nil {
+			continue
+		}
+		name := str(row["name"])
+		if name == "" {
+			name = "Unknown customer"
+		}
+		out = append(out, map[string]interface{}{
+			"customerId": objectIDStr(row["_id"]),
+			"name":       name,
+			"revenue":    num(row["revenue"]),
+			"orders":     int(num(row["orders"])),
+		})
+	}
+	return out
+}
+
+func objectIDStr(v interface{}) string {
+	if oid, ok := v.(primitive.ObjectID); ok {
+		return oid.Hex()
+	}
+	return str(v)
 }
 
 func aggregateTopProducts(ctx context.Context, since *time.Time) []map[string]interface{} {

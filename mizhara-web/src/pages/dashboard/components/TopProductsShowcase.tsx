@@ -1,40 +1,50 @@
 import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
+import { DASHBOARD_CONTENT_HEIGHT } from "@/pages/dashboard/constants";
 import type { ProductSales } from "@/types/dashboard";
 
+const LIST_SLOTS = 5;
+
 function TopProductsShowcaseContent({ data }: { data: ProductSales[] }) {
-  if (!data.length) {
+  const items = data.slice(0, LIST_SLOTS);
+  const maxUnits = items[0]?.units ?? 1;
+
+  if (!items.length) {
     return (
-      <div className="flex h-[280px] items-center justify-center">
+      <div className="flex items-center justify-center" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
         <p className="text-[11px] text-muted-custom">No sales data yet</p>
       </div>
     );
   }
 
-  const items = data.slice(0, 5);
-
   return (
-    <div className="flex h-[280px] flex-col">
-      <div className="mb-3 flex shrink-0 items-center justify-between border-b border-border-custom/40 pb-2.5">
-        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-custom">Lifetime leaders</p>
-        <p className="text-[10px] tabular-nums text-muted-custom">By units sold</p>
+    <div className="flex flex-col overflow-hidden" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
+      <div className="mb-2 grid shrink-0 grid-cols-[1fr_2.5rem_4.5rem] gap-2 pl-7 pr-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-muted-custom">
+        <span>Product</span>
+        <span className="text-right">Sold</span>
+        <span className="text-right">Revenue</span>
       </div>
-      <div className="flex flex-1 flex-col justify-between">
+      <div className="flex min-h-0 flex-1 flex-col">
         {items.map((item, i) => (
           <div
             key={item.productId}
-            className="flex items-center gap-3 border-b border-border-custom/30 py-1 last:border-0"
+            className="group flex min-h-0 flex-1 flex-col justify-center gap-1 border-b border-border-custom/30 py-1 last:border-0"
           >
-            <span className="w-5 shrink-0 text-[10px] font-medium tabular-nums tracking-widest text-primary/45">
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-medium text-primary-dark">{item.name}</p>
-              <p className="mt-0.5 text-[10px] tabular-nums text-muted-custom">{formatINR(item.revenue)}</p>
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-pink/80 text-[9px] font-bold tabular-nums text-primary-dark ring-1 ring-border-custom/50">
+                {i + 1}
+              </span>
+              <div className="grid min-w-0 flex-1 grid-cols-[1fr_2.5rem_4.5rem] items-center gap-2">
+                <p className="truncate text-[11px] font-semibold text-primary-dark">{item.name}</p>
+                <p className="text-right text-[11px] font-bold tabular-nums text-primary-dark">{item.units}</p>
+                <p className="text-right text-[10px] font-semibold tabular-nums text-muted-custom">{formatINR(item.revenue)}</p>
+              </div>
             </div>
-            <div className="shrink-0 pl-1 text-right">
-              <p className="text-base font-bold tabular-nums tracking-tight text-primary-dark">{item.units}</p>
-              <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-custom">Sold</p>
+            <div className="ml-7 h-1 overflow-hidden rounded-full bg-accent-pink/70">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#9a7358] to-[#c4a484] transition-all duration-700 ease-out group-hover:from-[#8a6348] group-hover:to-[#b8956a]"
+                style={{ width: `${Math.max(8, (item.units / maxUnits) * 100)}%` }}
+              />
             </div>
           </div>
         ))}

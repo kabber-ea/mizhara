@@ -1,11 +1,12 @@
 import { formatINR } from "@/utils/format";
 import ChartCard from "@/components/ChartCard";
+import { DASHBOARD_CONTENT_HEIGHT } from "@/pages/dashboard/constants";
 import type { ProductSales } from "@/types/dashboard";
 
 function TrendingLeaderboardContent({ data }: { data: ProductSales[] }) {
   if (!data.length) {
     return (
-      <div className="flex h-[280px] items-center justify-center">
+      <div className="flex items-center justify-center" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
         <p className="text-[11px] text-muted-custom">No sales data yet</p>
       </div>
     );
@@ -15,15 +16,15 @@ function TrendingLeaderboardContent({ data }: { data: ProductSales[] }) {
   const maxUnits = items[0]?.units ?? 1;
 
   return (
-    <div className="flex h-[280px] flex-col">
+    <div className="flex flex-col" style={{ height: DASHBOARD_CONTENT_HEIGHT }}>
       <div className="mb-2 grid shrink-0 grid-cols-[1fr_2.5rem_4.5rem] gap-2 pl-7 pr-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-muted-custom">
         <span>Product</span>
         <span className="text-right">Sold</span>
         <span className="text-right">Revenue</span>
       </div>
-      <div className="flex flex-1 flex-col justify-evenly">
+      <div className="flex flex-col gap-3">
         {items.map((item, i) => (
-          <div key={item.productId} className="group">
+          <div key={item.productId} className="group border-b border-border-custom/30 pb-3 last:border-0 last:pb-0">
             <div className="flex items-center gap-2">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-pink/80 text-[9px] font-bold tabular-nums text-primary-dark ring-1 ring-border-custom/50">
                 {i + 1}

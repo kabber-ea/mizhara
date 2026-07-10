@@ -561,7 +561,6 @@ export default function AccountPage() {
                     <p className="font-bold text-sm text-primary-dark">{formatINR(order.total)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <StatusBadge status={order.paymentStatus} type="payment" />
                     <StatusBadge status={order.deliveryStatus} />
                   </div>
                   <ul className="text-[11px] text-muted-custom space-y-1">
@@ -587,9 +586,7 @@ export default function AccountPage() {
                       )}
                       <span>↗</span>
                     </a>
-                  ) : order.deliveryStatus === "shipped" ||
-                    order.deliveryStatus === "out_for_delivery" ||
-                    order.deliveryStatus === "delivered" ? (
+                  ) : order.deliveryStatus === "shipped" || order.deliveryStatus === "delivered" ? (
                     <p className="text-[10px] text-muted-custom">Tracking will appear once added by our team.</p>
                   ) : null}
                 </div>

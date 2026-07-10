@@ -1,11 +1,4 @@
-export type DeliveryStatus =
-  | "processing"
-  | "packed"
-  | "shipped"
-  | "out_for_delivery"
-  | "delivered"
-  | "cancelled"
-  | "returned";
+export type DeliveryStatus = "processing" | "shipped" | "delivered";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 
